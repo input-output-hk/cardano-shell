@@ -65,5 +65,5 @@ packages:
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
 nix:
-  shell-file: scripts/nix/stack-shell.nix
+  shell-file: release.nix
 

@@ -7,7 +7,10 @@ let
           universum           = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callHackage "universum" "1.1.0" {});
           # LIB
           cardano-shell  = haskellPackagesNew.callPackage ./cardano-shell.nix { };
-
+          cardano-chain-env = haskellPackagesNew.lib.buildStackProject { 
+                                                            name = "cardano-chain-env";
+                                                            buildInputs = with pkgs; [ zlib openssl ];
+                                                            };
         };
       };
     };
