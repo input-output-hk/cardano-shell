@@ -1,0 +1,107 @@
+# Cabal & Stack
+.stack-work/
+*/dist
+dist/*
+dist-newstyle/*
+.ghc.environment.*
+
+# From daedalus-bridge
+node_modules/*
+
+# Config files
+.ghci
+
+# Our custom build script (util-scripts/build.sh)
+b
+.no-nix
+.ram
+.Werror
+
+# Various DBs
+node-db*
+wallet-db/
+wallet-new-db/
+db-*/
+wdb-*/
+*.db
+app_users.json
+
+# Keys
+*.key
+*.key.lock
+keys
+!secrets/*.key
+!scripts/tls-files/server.key
+tmp-secrets/
+
+# Node runtime data
+logs
+run
+
+# Emacs
+*~
+*#
+.#*
+.dir-locals.el
+GTAGS
+GRTAGS
+GPATH
+TAGS
+
+# Vim
+tags*
+
+# Intellij Idea & intellij-haskell
+.idea
+.ideaHaskellLib
+*.iml
+out/
+
+# Atom
+.haskell-ghc-mod.json
+
+# Misc
+.DS_Store
+*.swp
+
+# Compiled-scripts cruft
+scripts/haskell/dependencies.hs
+scripts/haskell/dependencies.hi
+scripts/haskell/dependencies.o
+scripts/haskell/dependencies
+
+# 'pkgs/stack2nix' is a symlink into the nix store, it can safely be ignored
+pkgs/stack2nix
+nixpkgs # in case generate.sh clones nixpkgs in here
+pkgs/result
+
+# explorer
+explorer-node.log.*
+explorer-node.log
+explorer.log
+socket-io.log
+
+# importify
+.importify
+
+# custom configuration
+custom-wallet-config.nix
+
+# wallet web API benchmarking results
+wallet-new/bench/results/*.csv
+wallet-new/bench/results/*.txt
+
+# wallet web API golden tests
+wallet-new/test/golden/*.txt.new
+
+# cardano-state-* for wallet data
+cardano-state-*
+state-*
+
+# exchange topology file
+exchange-topology.yaml
+
+# launch scripts
+launch_*
+result*
+cabal.config
