@@ -1,18 +1,13 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
---
--- see: https://github.com/sol/hpack
---
--- hash: c1ac249026fbc3118591061e888b13af82051fe57e6f9e819c9c798a22e938fd
-
 name:           cardano-shell
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/cardano-shell#readme>
-homepage:       https://github.com/githubuser/cardano-shell#readme
-bug-reports:    https://github.com/githubuser/cardano-shell/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2018 Author name here
-license:        BSD3
+category:       Currency
+homepage:       https://github.com/input-output-hk/cardano-shell#readme
+bug-reports:    https://github.com/input-output-hk/cardano-shell/issues
+author:         IOHK
+maintainer:     operations@iohk.io
+copyright:      2018 IOHK
+license:        MIT
 license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
@@ -22,7 +17,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/cardano-shell
+  location: https://github.com/input-output-hk/cardano-shell
 
 library
   exposed-modules:
@@ -33,7 +28,11 @@ library
       src
   build-depends:
       base >=4.7 && <5
-  default-language: Haskell2010
+  default-language:    Haskell2010
+  default-extensions:  OverloadedStrings
+
+  ghc-options:         -Wall
+                       -Werror
 
 executable cardano-shell-exe
   main-is: Main.hs
@@ -45,7 +44,11 @@ executable cardano-shell-exe
   build-depends:
       base >=4.7 && <5
     , cardano-shell
-  default-language: Haskell2010
+  default-language:    Haskell2010
+  default-extensions:  OverloadedStrings
+
+  ghc-options:         -Wall
+                       -Werror
 
 test-suite cardano-shell-test
   type: exitcode-stdio-1.0
@@ -58,4 +61,8 @@ test-suite cardano-shell-test
   build-depends:
       base >=4.7 && <5
     , cardano-shell
-  default-language: Haskell2010
+  default-language:    Haskell2010
+  default-extensions:  OverloadedStrings
+
+  ghc-options:         -Wall
+                       -Werror

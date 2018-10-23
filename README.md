@@ -49,8 +49,6 @@ We need to remove a lot of things that are there in the old version. For example
 
 ## People
 
-We, the squad 4, seem to be responsible for the `cardano-shell`.
-
 Core seems to be split into:
 - blockchain
 - ledger
@@ -60,4 +58,38 @@ Currently, the (relevant) team structure seems to be:
 - core          - Eric
 - logging       - Alexander (squad 3)
 - monitoring    - Alexander (squad 3)
+
+## Building
+
+You can build the project using Stack or Nix.
+
+### Stack
+
+```
+stack build --fast
+```
+
+### Stack + Nix
+
+```
+stack build --fast --nix
+```
+
+Or enable the option for nix building in your local configuration for Stack.
+
+### Cabal + Nix
+
+There is an option of using just Cabal + Nix as well:
+```
+nix-shell ./scripts/nix/stack-shell.nix --run "cabal new-build"
+```
+
+Or use a small utility script that does the same as the command above (watch out, it's a dot before the `cabal`!) and work as you would usually if you develop with cabal:
+```
+./cabal new-build
+```
+
+
+
+
 
