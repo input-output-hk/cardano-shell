@@ -1,0 +1,5 @@
+steps:
+  - label: 'stack nix build'
+    command: 'stack build --fast -j4 --nix'
+    agents:
+      system: x86_64-linux

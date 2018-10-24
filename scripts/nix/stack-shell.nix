@@ -6,6 +6,6 @@
 with pkgs;
 
 haskell.lib.buildStackProject {
-  name = "cardano-chain-env";
+  name = "cardano-shell";
   buildInputs = [ zlib openssl ];
 }
