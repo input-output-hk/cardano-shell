@@ -66,5 +66,7 @@ packages:
 # compiler-check: newer-minor
 
 nix:
+  enable: true 
+  pure: true 
   shell-file: scripts/nix/stack-shell.nix
 
