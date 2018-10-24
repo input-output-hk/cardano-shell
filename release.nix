@@ -3,7 +3,7 @@ let
     packageOverrides = pkgs: rec {
       haskellPackages = pkgs.haskell.packages.ghc843.override {
         overrides = haskellPackagesNew: haskellPackagesOld: rec {
-          universum         = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callHackage "universum" "1.3.0" {});
+          universum         = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callHackage "universum" "1.2.0" {});
           cardano-shell     = haskellPackagesNew.callPackage ./cardano-shell.nix { };
         };
       };
