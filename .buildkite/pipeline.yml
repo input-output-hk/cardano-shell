@@ -1,5 +1,5 @@
 steps:
-  - label: 'stack nix build'
-    command: 'stack build --fast -j4'
+  - label: 'nix build'
+    command: 'nix-build -A cardano-shell release.nix'
     agents:
       system: x86_64-linux
