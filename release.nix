@@ -1,10 +1,21 @@
 let
-   config = {
+
+  config = {
     packageOverrides = pkgs: rec {
+      
       haskellPackages = pkgs.haskell.packages.ghc843.override {
         overrides = haskellPackagesNew: haskellPackagesOld: rec {
-          universum         = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callHackage "universum" "1.2.0" {});
-          cardano-shell     = haskellPackagesNew.callPackage ./cardano-shell.nix { };
+
+          cardano-prelude   = haskellPackagesNew.callPackage ./cardano-prelude.nix {
+            # Oh yeah, let there be pain.
+            # Fails when building canonical-json-0.5.0.0.drv.
+            canonical-json = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./canonical-json.nix {});
+            containers     = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callHackage "containers" "0.5.11.0" {});
+          };
+
+          cardano-shell     = haskellPackagesNew.callPackage ./cardano-shell.nix {
+          };
+
         };
       };
     };

@@ -19,7 +19,8 @@
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
 #resolver: lts-12.14
-resolver: snapshot.yaml
+
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/0a32ec92c461e144f981864c97546db11b52e46a/snapshot.yaml
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -39,7 +40,12 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
-# extra-deps: []
+extra-deps:
+  - git: https://github.com/input-output-hk/cardano-prelude
+    commit: d3a3dfc451725cc3e17f47677739ba3dc7d9bbee
+    subdirs:
+      - .
+      - test
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
@@ -66,7 +72,8 @@ packages:
 # compiler-check: newer-minor
 
 nix:
-  enable: true
-  pure: true
-  shell-file: shell.nix #stack-shell.nix
+  #enable: true
+  #pure: true
+  #shell-file: shell.nix
+  shell-file: stack-shell.nix
 
