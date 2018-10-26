@@ -3,11 +3,11 @@
 }:
 mkDerivation {
   pname = "canonical-json";
-  version = "0.5.0.0";
+  version = "0.5.0.1";
   src = fetchgit {
     url = "https://github.com/well-typed/canonical-json";
-    sha256 = "19lc5pr85jz3f8ifmjxnkxgib0lz3vgagdny50gb04midc7y37pr";
-    rev = "2d261bb971bada1893753b503452d9e6e217bc4a";
+    sha256 = "0bmh3q9m74r6j4zbr9aph44j6h6snlqvargfi8vz7228gknhldhd";
+    rev = "0d2426c6e2bf87388fb4ded751c514d2a2d560b2";
     fetchSubmodules = true;
   };
   libraryHaskellDepends = [
