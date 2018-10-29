@@ -3,7 +3,10 @@ let
     packageOverrides = pkgs: rec {
       haskellPackages = pkgs.haskell.packages.ghc843.override {
         overrides = haskellPackagesNew: haskellPackagesOld: rec {
-          universum         = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callHackage "universum" "1.2.0" {});
+          cardano-prelude   = haskellPackagesNew.callPackage ./cardano-prelude.nix {
+            #canonical-json = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callHackage "canonical-json" "0.5.0.1" {});
+            canonical-json = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./canonical-json.nix {});
+          };
           cardano-shell     = haskellPackagesNew.callPackage ./cardano-shell.nix { };
         };
       };
@@ -15,6 +18,6 @@ let
   };
 
   pkgs = import nixpkgs { inherit config; };
- in
+in
   { cardano-shell = pkgs.haskellPackages.cardano-shell;
   }

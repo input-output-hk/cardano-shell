@@ -1,1 +1,1 @@
-(import ./release.nix).cardano-shell
+(import ./release.nix).cardano-shell.env

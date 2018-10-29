@@ -1,5 +1,5 @@
 steps:
   - label: 'nix build'
-    command: 'nix-build -A cardano-shell release.nix'
+    command: 'nix-build release.nix'
     agents:
       system: x86_64-linux
