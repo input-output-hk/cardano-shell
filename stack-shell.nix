@@ -12,9 +12,10 @@ let
   pkgs = import nixpkgs { inherit config; };
 
 in 
+  with pkgs;
 
-haskell.lib.buildStackProject {
-  name = "cardano-shell-env";
-  buildInputs = [ zlib openssl git ];
-  ghc = haskell.packages.ghc844.ghc;
-}
+  haskell.lib.buildStackProject {
+    name = "cardano-shell-env";
+    buildInputs = [ zlib openssl git ];
+    ghc = haskell.packages.ghc844.ghc;
+  }
