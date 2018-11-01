@@ -30,6 +30,9 @@ library
       base >=4.7 && <5
     , cardano-prelude
     , async
+    --, reasonable-lens
+    , microlens
+    , microlens-th
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
