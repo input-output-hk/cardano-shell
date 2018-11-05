@@ -1,7 +1,5 @@
-let
-  config = import ./config.nix;
-  nixpkgs = import ./nixpkgs.nix;
-  pkgs = import nixpkgs { inherit config; };
-in {
-  cardano-shell = pkgs.haskellPackages.cardano-shell;
+with import ./default.nix {};
+{ cardano-shell         = cardano-shell.components.exes.cardano-shell-exe;
+  cardano-shell-tests   = cardano-shell.components.tests;
+  cardano-shell-library = cardano-shell.components.library;
 }

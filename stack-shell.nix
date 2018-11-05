@@ -1,21 +1,16 @@
-{ system ? builtins.currentSystem
-, config ? {}
+{ config ? {}
+, system ? builtins.currentSystem
 }:
 
 let
 
-  nixpkgs = builtins.fetchTarball {
-    url    = "https://github.com/NixOS/nixpkgs/archive/6054276a8e6e877f8846c79b0779e3310c495a6b.tar.gz";
-    sha256 = "11mv8an4zikh2hybn11znqcbxazqq32byvvvaymy2xkpww2jnkxp";
-  };
-
-  pkgs = import nixpkgs { inherit config; };
+  iohkLib = import ./nix/iohk-common.nix { inherit config system; application = "cardano-sl"; };
 
 in
-  with pkgs;
+  with iohkLib.pkgs;
 
   haskell.lib.buildStackProject {
     name = "cardano-shell-env";
     buildInputs = [ zlib openssl git ];
-    ghc = haskell.packages.ghc863.ghc;
+    ghc = haskell.packages.ghc862.ghc;
   }

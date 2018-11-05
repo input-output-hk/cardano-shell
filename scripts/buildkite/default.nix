@@ -1,4 +1,5 @@
-{ pkgs ? import (import ../../nix/fetch-nixpkgs.nix) { }
+{ iohkLib ? import ../../nix/iohk-common.nix { application = "cardano-sl"; }
+, pkgs ? iohkLib.pkgs
 , buildTools ? with pkgs; [ git nix gnumake ]
 }:
 
