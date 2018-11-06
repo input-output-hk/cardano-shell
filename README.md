@@ -1,7 +1,7 @@
 # cardano-shell
 
 
-| Develop	| All   |
+| Develop	| Master   |
 |---		|---	|
 | [!["develop" Branch Build status](https://badge.buildkite.com/5e4cd5ff2fd87975136914d037c409618deb4d8ed6579f8635.svg?branch=develop)](https://buildkite.com/input-output-hk/cardano-shell) | [!["master" Build status](https://badge.buildkite.com/5e4cd5ff2fd87975136914d037c409618deb4d8ed6579f8635.svg?branch=master)](https://buildkite.com/input-output-hk/cardano-shell) |
 
