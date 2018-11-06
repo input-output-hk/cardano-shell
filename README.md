@@ -91,7 +91,15 @@ Or use a small utility script that does the same as the command above (watch out
 ./cabal new-build
 ```
 
+## Tools
 
+You can install multiple tools that can help you, there are configs for these tools in the project repo:
+```
+stack install hindent
+stack install stylish-haskell
+stack install hsimport
+stack install hdevtools
+```
 
 
 

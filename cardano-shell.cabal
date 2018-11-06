@@ -29,6 +29,10 @@ library
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
+    , aeson
+    , katip
+    , ekg
+    , ekg-core
     , async
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
