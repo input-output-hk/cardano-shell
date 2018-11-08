@@ -2,6 +2,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Lib where
 
@@ -12,371 +14,172 @@ import Data.Aeson.Types
 import qualified Katip as Katip
 import qualified System.Metrics as Ekg
 
--- | Server configuration
-data ServerConfig = ServerConfig
+-- | Cardano configuration
+data CardanoConfiguration = CardanoConfiguration
     { scfgLogPath   :: !FilePath
     , scfgDBPath    :: !FilePath
     , scfgSomeParam :: !Int
     }
 
--- | Sever record
-data Server = Server
-    { serverEnv :: ServerEnv
-    , serverFeatures :: [CardanoFeature]
-    }
-
 -- | The common runtime environment for all features in the server.
 -- All features have access to this environment.
-data ServerEnv = ServerEnv
+data CardanoEnvironment = CardanoEnvironment
     { serverLogEnv      :: Katip.LogEnv
     , serverEkgStore    :: Ekg.Store
      -- ...
     }
 
--- | Cardano feature initialization
-data CardanoFeatureInit deps feature config = CardanoFeatureInit
-    { featureParseConfig    :: ServerConfig -> Parser config -- ??
-    , featureInit           :: ServerEnv -> config -> deps -> IO (feature, CardanoFeature)
-    }
+-- | The feature types we can have in the project.
+data FeatureType
+    = LoggingMonitoringFeature
+    | NetworkingFeature
+    | BlockchainFeature
+    | LedgerFeature
+    | WalletFeature
+    deriving (Eq, Show)
 
--- | Datatype that all features must provide
-data CardanoFeature = CardanoFeature
-    { featureName       :: Text
-    , featureStart      :: IO ()
-    , featureShutdown   :: IO ()
-       -- Any other generic inspection / reporting goes here
+-- | The option to not have any additional dependency for the @CardanoFeature@.
+data NoDependency = NoDependency
+    deriving (Eq, Show)
+
+-- | The option to not have any additional configuration for the @CardanoFeature@.
+data NoConfiguration = NoConfiguration
+    deriving (Eq, Show)
+
+-- | Cardano feature initialization.
+-- We are saying "you have the responsibility to make sure you use the right context!".
+data CardanoFeature dependency configuration layer = CardanoFeature
+    { featureType                   :: !FeatureType
+    -- ^ The type of the feature that we use.
+    , featureParseConfiguration     :: IO configuration
+    -- ^ We don't know where the user wants to fetch the additional configuration from, it could be from
+    -- the filesystem, so we give him the most flexible/powerful context, @IO@.
+    , featureStart                  :: CardanoEnvironment -> dependency -> CardanoConfiguration -> configuration -> layer
+    -- ^ Again, we are not sure how is the user going to run the actual feature,
+    -- so we provide him with the most flexible/powerful context we have, @IO@.
+    -- Notice the arrangement of the parameters - specific, general, specific, general, result.
+    , featureCleanup                :: layer -> IO ()
+    -- ^ If the user wants to clean up the resources after the module has completed running,
+    -- there is an option to do so.
     }
 
 --------------------------------------------------------------------------------
--- Running server
+-- Loggging feature
 --------------------------------------------------------------------------------
 
--- | Initialise all the features
-initialiseCardanoFeatures :: ServerConfig -> ServerEnv -> IO [CardanoFeature]
-initialiseCardanoFeatures config env = do
-    (foo, fooFeature) <-
-        featureInitWithConfig
-            config
-            env
-            featureInitFoo
-            () -- no deps for foo
 
-    (bar, barFeature) <-
-        featureInitWithConfig
-            config
-            env
-            featureInitBar
-            (foo) -- the bar feature depends on foo
-   -- ...
-   -- ...
-    (_, ekgStatsdFeature) <-
-        featureInitWithConfig
-            config
-            env
-            featureInitEkgStats
-            () -- no feature deps, it only uses the EKG store
+--------------------------------
+-- Configuration
+--------------------------------
 
-    (_, myFeature) <-
-        featureInitWithConfig
-            config
-            env
-            featureInitMyFeature
-            (foo, bar)
+-- Ideas picked up from https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LoggerConfig.hs
 
-    let allFeatures =
-            [ fooFeature
-            , barFeature
-         -- ...
-            , ekgStatsdFeature
-            , myFeature
-            ]
+data RotationParameters = RotationParameters
+    { _rpLogLimitBytes :: !Word64  -- ^ max size of file in bytes
+    , _rpMaxAgeHours   :: !Word    -- ^ hours
+    , _rpKeepFilesNum  :: !Word    -- ^ number of files to keep
+    } deriving (Generic, Show, Eq)
 
-    return allFeatures
 
--- | Initalise 'ServerEnv'
-initializeServerEnv :: ServerConfig -> IO ServerEnv
-initializeServerEnv config = do
-  --  logenv   <- Katip.initLogEnv (...) (...)
-    ekgStore <- Ekg.newStore
-  --  ...
-    return ServerEnv {serverLogEnv = undefined, serverEkgStore = ekgStore}
+testRotationParameters :: RotationParameters
+testRotationParameters = RotationParameters
+    { _rpLogLimitBytes = 10
+    , _rpMaxAgeHours   = 3
+    , _rpKeepFilesNum  = 5
+    }
 
--- | Clean up 'ServerEnv'
-shutdownServerEnv :: ServerEnv -> IO ()
-shutdownServerEnv ServerEnv {..} = putTextLn "Cleaning up server envs"
+--------------------------------
+-- Layer
+--------------------------------
 
--- | Initialise server
-initiaiseServer :: ServerConfig -> IO Server
-initiaiseServer config = do
-    env <- initializeServerEnv config
-    features <- initialiseCardanoFeatures config env
-    return Server {serverEnv = env, serverFeatures = features}
+-- | The LogginLayer interface that we can expose.
+-- We want to do this since we want to be able to mock out any function tied to logging.
+--
+-- The bad side of this is that we unfiy _all functions on m_, which is not a good idea.
+-- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
+data LoggingLayer m = LoggingLayer
+    { iolLogDebug   :: Text     -> m ()
+    , iolLogInfo    :: Text     -> m ()
+    }
 
--- | Shutdown all the features
-shutdownServer :: Server -> IO ()
-shutdownServer Server {serverEnv, serverFeatures} = do
-    mapM_ featureShutdown serverFeatures
-    shutdownServerEnv serverEnv
+loggingLayer :: (MonadIO m) => LoggingLayer m
+loggingLayer = LoggingLayer
+    { iolLogDebug               = liftIO . putTextLn
+    , iolLogInfo                = liftIO . putTextLn
+    }
 
--- | Start an server with starting all the features
-startServer :: Server -> IO ()
-startServer Server {serverFeatures} = do
-    mapM_ featureStart serverFeatures
+--------------------------------
+-- Feature
+--------------------------------
 
--- | Run action with given 'ServerConfig'
-withServer :: ServerConfig -> (Server -> IO a) -> IO a
-withServer config = bracket (initiaiseServer config) shutdownServer
+type LoggingCardanoFeature m = CardanoFeature NoDependency RotationParameters (LoggingLayer m)
 
-withServerFramework ::
-       (ServerConfig -> ServerEnv -> IO [CardanoFeature])
-    -> ServerConfig
-    -> (Server -> IO a)
-    -> IO a
-withServerFramework initializeFeatures serverConfig actionWithServer = do
-    bracket initialiseServer shutdownServer actionWithServer
+loggingCardanoFeature :: forall m. (MonadIO m) => LoggingCardanoFeature m
+loggingCardanoFeature = CardanoFeature
+    { featureType                   = LoggingMonitoringFeature
+    , featureParseConfiguration     = pure testRotationParameters
+    , featureStart                  = featureStart'
+    , featureCleanup                = featureCleanup'
+    }
   where
-    initialiseServer :: IO Server
-    initialiseServer = do
-        serverEnv <- initializeServerEnv serverConfig
-        cardanoFeatures <- initializeFeatures serverConfig serverEnv
-        return $ Server serverEnv cardanoFeatures
+    featureStart' :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> LoggingLayer m
+    featureStart' cardanoEnvironment _ cardanoConfiguration rotationParameters = loggingLayer
 
-initialiseMyFeatures :: ServerConfig -> ServerEnv -> IO [CardanoFeature]
-initialiseMyFeatures serverConfig serverEnv = do
-    (fooFeature, fooCardanoFeature) <- featureInitWithConfig' featureInitFoo ()
-    (barFeature, barCardanoFeature) <- featureInitWithConfig' featureInitBar (fooFeature)
-    (myFeature, myCardanoFeature)   <- featureInitWithConfig' featureInitMyFeature (fooFeature, barFeature)
+    featureCleanup' :: (LoggingLayer m) -> IO ()
+    featureCleanup' _ = pure () -- save a file, for example
 
-    return [fooCardanoFeature, barCardanoFeature, myCardanoFeature]
+
+--------------------------------------------------------------------------------
+-- Networking feature
+--------------------------------------------------------------------------------
+
+--------------------------------
+-- Configuration
+--------------------------------
+
+-- https://github.com/input-output-hk/cardano-sl/blob/develop/networking/src/Node.hs
+
+type Message = Text
+
+newtype NodeId = NodeId
+    { getNodeId :: Int
+    } deriving (Eq, Show)
+
+-- TODO(ks): Add some configuration from somewhere?
+
+--------------------------------
+-- Layer
+--------------------------------
+
+data NetworkLayer m = NetworkLayer
+    { sendToNodes   :: NodeId -> m Message
+    , readFromNodes :: NodeId -> m Message -- yes, it's pointless
+    }
+
+testNetworkLayer :: forall m. (MonadIO m) => NetworkLayer m
+testNetworkLayer = NetworkLayer
+    { sendToNodes       = \_ -> pure "SEND"
+    , readFromNodes     = \_ -> pure "READ"
+    }
+
+--------------------------------
+-- Feature
+--------------------------------
+
+type NetworkingCardanoFeature m = CardanoFeature (LoggingLayer m) Text (NetworkLayer m)
+
+networkingCardanoFeature :: forall m. (MonadIO m) => NetworkingCardanoFeature m
+networkingCardanoFeature = CardanoFeature
+    { featureType                   = NetworkingFeature
+    , featureParseConfiguration     = readFile "./shell.nix"
+    , featureStart                  = featureStart'
+    , featureCleanup                = featureCleanup'
+    }
   where
-    featureInitWithConfig' = featureInitWithConfig serverConfig serverEnv
+    featureStart' :: CardanoEnvironment -> LoggingLayer m -> CardanoConfiguration -> Text -> (NetworkLayer m)
+    featureStart' cardanoEnvironment loggingLayer cardanoConfiguration _ = testNetworkLayer
 
-initialiseFooFeatures :: ServerConfig -> ServerEnv -> IO [CardanoFeature]
-initialiseFooFeatures serverConfig serverEnv = do
-    (_, fooCardanoFeature) <- featureInitWithConfig' featureInitFoo ()
-    return [fooCardanoFeature]
-  where
-    featureInitWithConfig' = featureInitWithConfig serverConfig serverEnv
+    featureCleanup' :: (NetworkLayer m) -> IO ()
+    featureCleanup' filePath = pure () -- save a file, for example
 
-featureInitWithConfig ::
-       ServerConfig
-    -> ServerEnv
-    -> CardanoFeatureInit deps feature config
-    -> deps
-    -> IO (feature, CardanoFeature)
-featureInitWithConfig config env CardanoFeatureInit {..} deps = do
-    featureConfig <-
-        case parseEither featureParseConfig config of
-            Left e  -> exitFailure
-            Right c -> return c
 
-    featureInit env featureConfig deps
-
--- | Running server
-runServer :: IO ()
-runServer = do
-    let serverConfig = ServerConfig mempty mempty 0
-    -- Do everything within bracket in case the program shutdown unexpectedly..
-    putTextLn "\nPerforming some computation with Foo features"
-    withServerFramework initialiseFooFeatures serverConfig $ \server -> do
-        putTextLn "Action was perfomed successfully!"
-    putTextLn "\nPerforming some computation with My features"
-    withServerFramework initialiseMyFeatures serverConfig $ \server -> do
-        putTextLn "Action was perfomed successfully!"
-
---------------------------------------------------------------------------------
--- CardanoFeatureInits
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- Foo
---------------------------------------------------------------------------------
-data FooConfig = FooConfig
-    { fooCfgA :: !Text
-    , fooCfgB :: !Int
-    }
-
-data FooFeature = FooFeature
-    { fooA :: Text -> IO ()
-    , fooB :: forall a. [a] -> Int
-    , fooC :: Integer -> Integer -> Integer
-    }
-
-fooConfig :: FooConfig
-fooConfig = FooConfig "This is Foo" 1
-
-fooCardanoFeature :: CardanoFeature
-fooCardanoFeature =
-    CardanoFeature
-        { featureName = "Foo"
-        , featureStart = putTextLn "Starting Foo"
-        , featureShutdown = putTextLn "Shutting down Foo"
-        }
-
-featureInitFoo :: CardanoFeatureInit () FooFeature FooConfig
-featureInitFoo =
-    CardanoFeatureInit
-        { featureParseConfig = \_ -> return fooConfig
-        , featureInit = mkFooFeature
-        }
-
-mkFooFeature :: ServerEnv -> FooConfig -> () -> IO (FooFeature, CardanoFeature)
-mkFooFeature serverEnv config _ = do
-    return (fooFeature, fooCardanoFeature)
-  where
-    fooFeature :: FooFeature
-    fooFeature =
-        FooFeature
-            { fooA = \str -> putTextLn $ "Using Foo feature: " <> str
-            , fooB = length
-            , fooC = (+)
-            }
-
---------------------------------------------------------------------------------
--- Bar
---------------------------------------------------------------------------------
-data BarFeature = BarFeature
-    { barA :: Text -> IO ()
-    , barB :: Int -> Bool
-    , barC :: Text -> Bool
-    }
-
-data BarConfig = BarConfig
-    { barCfgA :: !Text
-    , barCfgB :: !Int
-    }
-
-barConfig :: BarConfig
-barConfig = BarConfig "This is bar" 10
-
-barCardanoFeature :: CardanoFeature
-barCardanoFeature =
-    CardanoFeature
-        { featureName = "Bar"
-        , featureStart = putTextLn "Starting Bar"
-        , featureShutdown = putTextLn "Shutting down Bar"
-        }
-
-featureInitBar :: CardanoFeatureInit FooFeature BarFeature BarConfig
-featureInitBar =
-    CardanoFeatureInit
-        { featureParseConfig = \_ -> return barConfig
-        , featureInit = mkBarFeature
-        }
-
-mkBarFeature ::
-       ServerEnv -> BarConfig -> FooFeature -> IO (BarFeature, CardanoFeature)
-mkBarFeature serverEnv config foo = do
-    fooA foo $ "Doing bar stuff"
-    return (barFeature, barCardanoFeature)
-  where
-    barFeature :: BarFeature
-    barFeature =
-        BarFeature
-            { barA = \str -> putTextLn $ "Using Bar feature: " <> str
-            , barB = (> 10)
-            , barC = (== "Blockchain")
-            }
-
---------------------------------------------------------------------------------
--- EkgStats
---------------------------------------------------------------------------------
-data EkgStatsFeature = EkgStatsFeature
-    { ekgA :: FilePath -> Int
-    , ekgB :: Text -> Text -> Text
-    }
-
-data EkgStateConfig = EkgStateConfig
-    { ekgCfgA :: !Text
-    , ekgCfgB :: !Int
-    }
-
-ekgStatsCardanoFeature :: CardanoFeature
-ekgStatsCardanoFeature =
-    CardanoFeature
-        { featureName = "EkgState"
-        , featureStart = putTextLn "Starting EkgState"
-        , featureShutdown = putTextLn "Shutting down EkgState"
-        }
-
-ekgStateConfig :: EkgStateConfig
-ekgStateConfig = EkgStateConfig "This is ekgState " 100
-
-featureInitEkgStats :: CardanoFeatureInit () EkgStatsFeature EkgStateConfig
-featureInitEkgStats =
-    CardanoFeatureInit
-        { featureParseConfig = \_ -> return ekgStateConfig
-        , featureInit = mkEkgStatsFeature
-        }
-
-mkEkgStatsFeature ::
-       ServerEnv -> EkgStateConfig -> () -> IO (EkgStatsFeature, CardanoFeature)
-mkEkgStatsFeature serverEnv config _ =
-    return (ekgStatsFeature, ekgStatsCardanoFeature)
-  where
-    ekgStatsFeature :: EkgStatsFeature
-    ekgStatsFeature = EkgStatsFeature {ekgA = genericLength, ekgB = (<>)}
-
---------------------------------------------------------------------------------
--- MyFeature
---------------------------------------------------------------------------------
-data MyFeature = MyFeature
-    { myA :: Text -> IO ()
-    , myB :: Int -> Int
-    }
-
-data MyConfig = MyConfig
-    { mcfgA :: !Text
-    , mcfgB :: !Int
-    }
-
-myConfig :: MyConfig
-myConfig = MyConfig "This is MyFeature" 1000
-
-featureInitMyFeature ::
-       CardanoFeatureInit (FooFeature, BarFeature) MyFeature MyConfig
-featureInitMyFeature =
-    CardanoFeatureInit
-        { featureParseConfig = \_ -> return myConfig
-        , featureInit = mkMyFeatureInit
-        }
-
-mkMyFeatureInit ::
-       ServerEnv
-    -> MyConfig
-    -> (FooFeature, BarFeature)
-    -> IO (MyFeature, CardanoFeature)
-mkMyFeatureInit serverEnv config (fooCfg, barCfg) = do
-    myFeature <- mkMyFeature config fooCfg barCfg
-    return (myFeature, myCardanoFeature)
-  where
-    mkMyFeature :: MyConfig -> FooFeature -> BarFeature -> IO MyFeature
-    mkMyFeature config foo bar = do
-        fooA foo (mcfgA config)
-        barA bar (show $ mcfgB config)
-        return $
-            MyFeature
-                { myA = \str -> putTextLn $ "Using my feature: " <> str
-                , myB = \num -> num + mcfgB config
-                }
-    myCardanoFeature :: CardanoFeature
-    myCardanoFeature =
-        CardanoFeature
-            { featureName = "MyFeature"
-            , featureStart = putTextLn "Starting MyFeature"
-            , featureShutdown = putTextLn "Shutting down MyFeature"
-            }
-
--- *Main Lib> runServer
--- Performing some computation with Foo features
--- Action was perfomed successfully!
--- Shutting down Foo
--- Cleaning up server envs
--- Performing some computation with My features
--- Using Foo feature: Doing bar stuff
--- Using Foo feature: This is MyFeature
--- Using Bar feature: 1000
--- Action was perfomed successfully!
--- Shutting down Foo
--- Shutting down Bar
--- Shutting down MyFeature
--- Cleaning up server envs
