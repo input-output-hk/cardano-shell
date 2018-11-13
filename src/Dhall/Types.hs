@@ -2,19 +2,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Dhall.Types
-    ( OS(..)
-    , Cluster(..)
+    ( Cluster(..)
     , ClusterConfig(..)
-    , OSConfig(..)
-    , NodeArgs(..)
-    , Pass(..)
+    , Host(..)
     , Launcher(..)
     , LauncherConfig(..)
+    , NodeArgs(..)
+    , OS(..)
+    , OSConfig(..)
+    , Pass(..)
+    , Topology(..)
+    , WalletConfig(..)
+    , renderOS
+    , renderCluster
     ) where
 
 import           Cardano.Prelude
 import           Dhall           (Interpret (..))
-import qualified Dhall           as D 
+import qualified Dhall           as D
 -- Importing as qualified since Dhall exports functions such as 'maybe', 'bool', 'bool'
 
 data OS
@@ -32,6 +37,12 @@ renderOS :: OS -> Text
 renderOS MacOS   = "macos64"
 renderOS Windows = "win64"
 renderOS Linux   = "linux64"
+
+renderCluster :: Cluster -> Text
+renderCluster Mainnet = "mainnet"
+renderCluster Testnet = "testnet"
+renderCluster Staging = "staging"
+renderCluster Demo    = "demo"
 
 
 data ClusterConfig = ClusterConfig {
@@ -194,3 +205,40 @@ launcherConfig = D.record
 
 instance Interpret LauncherConfig where
     autoWith _ = launcherConfig
+
+newtype Topology = Topology WalletConfig
+    deriving (Eq, Show)
+
+topology :: D.Type Topology
+topology = D.record
+    (Topology <$> D.field "wallet" walletConfig)
+
+instance Interpret Topology where
+    autoWith _ = topology
+
+data WalletConfig = WalletConfig {
+      wcfgRelays    :: ![[Host]]
+    , wcfgValency   :: !Natural
+    , wcfgFallbacks :: !Natural
+    } deriving (Eq, Show)
+
+walletConfig :: D.Type WalletConfig
+walletConfig = D.record
+    ( WalletConfig
+        <$> D.field "relays" (D.list $ D.list host)
+        <*> D.field "valency" D.natural
+        <*> D.field "fallbacks" D.natural
+    )
+
+instance Interpret WalletConfig where
+    autoWith _ = walletConfig
+
+newtype Host = Host { getHost :: Text}
+    deriving (Eq, Show)
+
+host :: D.Type Host
+host = D.record
+    ( Host <$> D.field "host" D.strictText)
+
+instance Interpret Host where
+    autoWith _ = host
