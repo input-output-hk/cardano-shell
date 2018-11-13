@@ -5,6 +5,7 @@ module Dhall.Types
     ( Cluster(..)
     , ClusterConfig(..)
     , Host(..)
+    , InstallerConfig (..)
     , Launcher(..)
     , LauncherConfig(..)
     , NodeArgs(..)
@@ -242,3 +243,20 @@ host = D.record
 
 instance Interpret Host where
     autoWith _ = host
+
+data InstallerConfig = InstallerConfig {
+      icfgInstallDirectory :: !Text
+    , icfgMacPackageName   :: !Text
+    , icfgWalletPort       :: !Natural   
+    }
+
+instance Interpret InstallerConfig where
+    autoWith _ = installerConfig
+
+installerConfig :: D.Type InstallerConfig
+installerConfig = D.record
+    ( InstallerConfig
+        <$> D.field "installDirectory" D.strictText
+        <*> D.field "macPackageName" D.strictText
+        <*> D.field "walletPort" D.natural
+    )

@@ -24,6 +24,7 @@ library
       Cardano.Shell.Lib
     , Lib
     , Dhall.Types
+    , Dhall.Config
   other-modules:
       Paths_cardano_shell
     , Cardano.Shell.Types
