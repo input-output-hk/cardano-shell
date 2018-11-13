@@ -3,8 +3,8 @@
 { configuration  =
     { filePath     = os.configurationYaml
     , key          = "${cluster.keyPrefix}_${os.name}"
-    , systemStart  = [] : Optional Integer
-    , seed         = [] : Optional Integer
+    , systemStart  = [] : Optional Natural
+    , seed         = [] : Optional Natural
     }
 , nodeTimeoutSec = 60
 , reportServer   = cluster.reportServer
@@ -27,4 +27,5 @@
     -- XXX: this is a workaround for Linux
     , "--update-with-package"
     ]
-} // os.pass
+, pass = os.pass
+}
