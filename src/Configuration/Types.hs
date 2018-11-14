@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Dhall.Types
+module Configuration.Types
     ( Cluster(..)
     , ClusterConfig(..)
     , Host(..)
@@ -100,7 +100,7 @@ osConfig = D.record
         <*> D.field "macPackageName" D.strictText
         <*> D.field "x509ToolPath" D.strictText
         <*> D.field "nodeArgs" nodeArgs
-        <*> D.field "pass" Dhall.Types.pass
+        <*> D.field "pass" Configuration.Types.pass
     )
 
 data NodeArgs = NodeArgs {
@@ -163,7 +163,7 @@ pass = D.record
     )
 
 instance Interpret Pass where
-    autoWith _ = Dhall.Types.pass
+    autoWith _ = Configuration.Types.pass
 
 data Launcher = Launcher {
       lConfig         :: !LauncherConfig
@@ -188,7 +188,7 @@ launcher = D.record
         <*> D.field "tlsPath" D.strictText
         <*> D.field "x509ToolPath" D.strictText
         <*> D.field "nodeArgs" (D.list D.strictText)
-        <*> D.field "pass" Dhall.Types.pass
+        <*> D.field "pass" Configuration.Types.pass
     )
 
 instance Interpret Launcher where

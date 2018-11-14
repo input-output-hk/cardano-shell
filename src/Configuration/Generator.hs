@@ -1,12 +1,12 @@
-module Dhall.Config where
+module Configuration.Generator where
 
 import           Cardano.Prelude
 
-import qualified Dhall           as D
+import qualified Dhall               as D
 
-import           Dhall.Types     (Cluster (..), InstallerConfig, Launcher,
-                                  OS (..), OSConfig, Topology, renderCluster,
-                                  renderOS)
+import           Configuration.Types (Cluster (..), InstallerConfig, Launcher,
+                                      OS (..), OSConfig, Topology,
+                                      renderCluster, renderOS)
 
 mkLauncher :: OS -> Cluster -> IO Launcher
 mkLauncher os cluster = D.input D.auto launcherPath
