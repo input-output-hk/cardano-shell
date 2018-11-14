@@ -21,7 +21,8 @@ module Dhall.Types
 import           Cardano.Prelude
 import           Dhall           (Interpret (..))
 import qualified Dhall           as D
--- Importing as qualified since Dhall exports functions such as 'maybe', 'bool', 'bool'
+-- Importing as qualified since Dhall exports functions such as 'maybe', 'bool', 'list' 
+-- which conflicts with some of the prelude functions
 
 data OS
     = MacOS
@@ -45,7 +46,6 @@ renderCluster Testnet = "testnet"
 renderCluster Staging = "staging"
 renderCluster Demo    = "demo"
 
-
 data ClusterConfig = ClusterConfig {
       ccfgName                   :: !Text
     , ccfgKeyPrefix              :: !Text
@@ -60,7 +60,7 @@ data ClusterConfig = ClusterConfig {
 instance Interpret ClusterConfig where
     autoWith _ = clusterConfig
 
--- > Unfortunatly, there's no monad instance for 'Dhall.Type', perhaps use ApplicativeDo?
+-- Unfortunatly, there's no monad instance for 'Dhall.Type', perhaps use ApplicativeDo?
 clusterConfig :: D.Type ClusterConfig
 clusterConfig =
     D.record
@@ -101,12 +101,12 @@ osConfig = D.record
     )
 
 data NodeArgs = NodeArgs {
-      naKeyfile          :: Text
-    , naLogsPrefix       :: Text
-    , naTopology         :: Text
-    , naUpdateLatestPath :: Text
-    , naWalletDBPath     :: Text
-    , naTlsPath          :: Text
+      naKeyfile          :: !Text
+    , naLogsPrefix       :: !Text
+    , naTopology         :: !Text
+    , naUpdateLatestPath :: !Text
+    , naWalletDBPath     :: !Text
+    , naTlsPath          :: !Text
     } deriving (Eq, Show)
 
 nodeArgs :: D.Type NodeArgs
@@ -191,8 +191,8 @@ instance Interpret Launcher where
 data LauncherConfig = LauncherConfig {
       lcfgFilePath    :: !Text
     , lcfgKey         :: !Text
-    , lcfgSystemStart :: Maybe Natural
-    , lcfgSeed        :: Maybe Natural
+    , lcfgSystemStart :: !(Maybe Natural)
+    , lcfgSeed        :: !(Maybe Natural)
     } deriving (Eq, Show)
 
 launcherConfig :: D.Type LauncherConfig
@@ -247,8 +247,8 @@ instance Interpret Host where
 data InstallerConfig = InstallerConfig {
       icfgInstallDirectory :: !Text
     , icfgMacPackageName   :: !Text
-    , icfgWalletPort       :: !Natural   
-    }
+    , icfgWalletPort       :: !Natural
+    } deriving (Eq, Show)
 
 instance Interpret InstallerConfig where
     autoWith _ = installerConfig
