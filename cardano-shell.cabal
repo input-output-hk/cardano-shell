@@ -26,6 +26,7 @@ library
     , Dhall.Types
     , Dhall.Config
     , Configuration.Generator
+    , Configuration.Lib
     , Configuration.Types
   other-modules:
       Paths_cardano_shell

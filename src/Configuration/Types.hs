@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Configuration.Types
@@ -12,7 +11,7 @@ module Configuration.Types
     , OS(..)
     , OSConfig(..)
     , Pass(..)
-    , Topology(..)
+    , TopologyConfig(..)
     , WalletConfig(..)
     , renderOS
     , renderCluster
@@ -25,28 +24,35 @@ import qualified Dhall           as D
 -- Importing as qualified since Dhall exports functions such as 'maybe', 'bool', 'list'
 -- which conflicts with some of the prelude functions
 
+-- | Operating system
 data OS
-    = MacOS
-    | Windows
-    | Linux
-
+    = Linux64
+    | Macos64
+    | Win64
+    deriving (Bounded, Enum, Eq, Read, Show)
+  
+-- | Cluster
 data Cluster
     = Mainnet
-    | Testnet
     | Staging
+    | Testnet
     | Demo
+    deriving (Bounded, Enum, Eq, Read, Show)
 
+-- | Convert 'OS' into 'Text'
 renderOS :: OS -> Text
-renderOS MacOS   = "macos64"
-renderOS Windows = "win64"
-renderOS Linux   = "linux64"
+renderOS Linux64  = "linux64"
+renderOS Macos64  = "macos64"
+renderOS Win64    = "win64"
 
+-- | Convert 'Cluster' into 'Text'
 renderCluster :: Cluster -> Text
 renderCluster Mainnet = "mainnet"
 renderCluster Testnet = "testnet"
 renderCluster Staging = "staging"
 renderCluster Demo    = "demo"
 
+-- | Cluster configuration
 data ClusterConfig = ClusterConfig {
       ccfgName                   :: !Text
     , ccfgKeyPrefix              :: !Text
@@ -78,6 +84,7 @@ clusterConfig =
             <*> D.field "walletPort" D.natural
        )
 
+-- | OS configuration
 data OSConfig = OSConfig {
       osName              :: !Text
     , osConfigurationYaml :: !Text
@@ -87,9 +94,6 @@ data OSConfig = OSConfig {
     , osNodeArgs          :: !NodeArgs
     , osPass              :: !Pass
     } deriving (Eq, Show)
-
-instance Interpret OSConfig where
-    autoWith _ = osConfig
 
 osConfig :: D.Type OSConfig
 osConfig = D.record
@@ -103,6 +107,10 @@ osConfig = D.record
         <*> D.field "pass" Configuration.Types.pass
     )
 
+instance Interpret OSConfig where
+    autoWith _ = osConfig
+
+-- | Node arguments
 data NodeArgs = NodeArgs {
       naKeyfile          :: !Text
     , naLogsPrefix       :: !Text
@@ -126,6 +134,7 @@ nodeArgs = D.record
 instance Interpret NodeArgs where
     autoWith _ = nodeArgs
 
+-- | Paths
 data Pass = Pass {
       pStatePath           :: !Text
     , pNodePath            :: !Text
@@ -165,6 +174,7 @@ pass = D.record
 instance Interpret Pass where
     autoWith _ = Configuration.Types.pass
 
+-- | Launcher configuration
 data Launcher = Launcher {
       lConfig         :: !LauncherConfig
     , lNodeTimeoutSec :: !Natural
@@ -194,6 +204,7 @@ launcher = D.record
 instance Interpret Launcher where
     autoWith _ = launcher
 
+-- | Launcher configuration
 data LauncherConfig = LauncherConfig {
       lcfgFilePath    :: !Text
     , lcfgKey         :: !Text
@@ -213,16 +224,19 @@ launcherConfig = D.record
 instance Interpret LauncherConfig where
     autoWith _ = launcherConfig
 
-newtype Topology = Topology WalletConfig
-    deriving (Eq, Show)
+-- | Topology configuration
+newtype TopologyConfig = TopologyConfig {
+      getWalletConfig :: WalletConfig
+    } deriving (Eq, Show)
 
-topology :: D.Type Topology
+topology :: D.Type TopologyConfig
 topology = D.record
-    (Topology <$> D.field "wallet" walletConfig)
+    (TopologyConfig <$> D.field "wallet" walletConfig)
 
-instance Interpret Topology where
+instance Interpret TopologyConfig where
     autoWith _ = topology
 
+-- | Wallet configuration
 data WalletConfig = WalletConfig {
       wcfgRelays    :: ![[Host]]
     , wcfgValency   :: !Natural
@@ -240,8 +254,10 @@ walletConfig = D.record
 instance Interpret WalletConfig where
     autoWith _ = walletConfig
 
-newtype Host = Host { getHost :: Text}
-    deriving (Eq, Show)
+-- | Host
+newtype Host = Host {
+    getHost :: Text
+    } deriving (Eq, Show)
 
 host :: D.Type Host
 host = D.record
@@ -250,6 +266,7 @@ host = D.record
 instance Interpret Host where
     autoWith _ = host
 
+-- | Installer configuration
 data InstallerConfig = InstallerConfig {
       icfgInstallDirectory :: !Text
     , icfgMacPackageName   :: !Text
