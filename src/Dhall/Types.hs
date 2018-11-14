@@ -58,6 +58,8 @@ data ClusterConfig = ClusterConfig {
     , ccfgWalletPort             :: !Natural
     } deriving (Eq, Show)
 
+-- Defining each 'Intrepret' instance. 
+-- There is an simplier way to defining these instances but it's causing infinite loops
 instance Interpret ClusterConfig where
     autoWith _ = clusterConfig
 
@@ -121,6 +123,9 @@ nodeArgs = D.record
         <*> D.field "tlsPath" D.strictText
     )
 
+instance Interpret NodeArgs where
+    autoWith _ = nodeArgs
+
 data Pass = Pass {
       pStatePath           :: !Text
     , pNodePath            :: !Text
@@ -137,9 +142,6 @@ data Pass = Pass {
     , pUpdateWindowsRunner :: !(Maybe Text)
     , pLauncherLogsPrefix  :: !Text
     } deriving (Eq, Show)
-
-instance Interpret Pass where
-    autoWith _ = Dhall.Types.pass
 
 pass :: D.Type Pass
 pass = D.record
@@ -159,6 +161,9 @@ pass = D.record
         <*> D.field "updateWindowsRunner" (D.maybe D.strictText)
         <*> D.field "launcherLogsPrefix" D.strictText
     )
+
+instance Interpret Pass where
+    autoWith _ = Dhall.Types.pass
 
 data Launcher = Launcher {
       lConfig         :: !LauncherConfig
@@ -251,9 +256,6 @@ data InstallerConfig = InstallerConfig {
     , icfgWalletPort       :: !Natural
     } deriving (Eq, Show)
 
-instance Interpret InstallerConfig where
-    autoWith _ = installerConfig
-
 installerConfig :: D.Type InstallerConfig
 installerConfig = D.record
     ( InstallerConfig
@@ -261,3 +263,6 @@ installerConfig = D.record
         <*> D.field "macPackageName" D.strictText
         <*> D.field "walletPort" D.natural
     )
+
+instance Interpret InstallerConfig where
+    autoWith _ = installerConfig
