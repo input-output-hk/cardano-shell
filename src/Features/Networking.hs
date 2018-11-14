@@ -72,7 +72,7 @@ networkingCardanoFeature = CardanoFeature
     , featureCleanup                = featureCleanup'
     }
   where
-    featureStart' :: CardanoEnvironment -> Async LoggingLayer -> CardanoConfiguration -> Text -> IO (Async NetworkLayer)
+    featureStart' :: CardanoEnvironment -> LoggingLayer -> CardanoConfiguration -> Text -> IO NetworkLayer
     featureStart' = actualNetworkFeature
 
     featureCleanup' :: NetworkLayer -> IO ()
@@ -80,9 +80,9 @@ networkingCardanoFeature = CardanoFeature
 
 -- MonadConc m => m a -> m (Async m a)
 -- :: forall m. (MonadConc m, MonadIO m) => CardanoEnvironment -> Async LoggingLayer -> CardanoConfiguration -> Text -> m (Async m NetworkLayer)
-actualNetworkFeature :: CardanoEnvironment -> Async LoggingLayer -> CardanoConfiguration -> Text -> IO (Async NetworkLayer)
+actualNetworkFeature :: CardanoEnvironment -> LoggingLayer -> CardanoConfiguration -> Text -> IO NetworkLayer
 actualNetworkFeature _ asyncLoggingLayer _ _ =
-    async $ pure $ testNetworkLayer <$> asyncLoggingLayer
+    pure $ testNetworkLayer asyncLoggingLayer
     --pure $ asyncLoggingLayer >>= \loggingLayer -> async $ testNetworkLayer loggingLayer
 
 

@@ -4,6 +4,8 @@ module Lib where
 
 import Cardano.Prelude
 
+import qualified Control.Exception.Base as E
+
 import Types
 
 import Features.Logging
@@ -26,8 +28,7 @@ instance Exception GeneralException
 -- Feature initialization
 --------------------------------------------------------------------------------
 
--- https://www.seas.upenn.edu/~cis552/11fa/lectures/concurrency.html
--- https://mazzo.li/posts/threads-resources.html
+-- http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Exception-Base.html#v:bracket
 
 -- Let's presume that we have the order of the features like this:
 -- 1. logging
@@ -47,6 +48,13 @@ instance Exception GeneralException
 -- Another interesting thing is that we stack the effects ONLY when we use a function from
 -- another layer, and we don't get all the effects, just the ones the function contains.
 
+-- forkFinally :: IO a -> (Either SomeException a -> IO ()) -> IO ThreadId
+forkFinallyRaise :: IO a -> (a -> IO ()) -> IO ThreadId
+forkFinallyRaise action f = forkFinally action $ \(value :: Either SomeException a)-> do
+
+    result <- either (\_ -> E.throwIO UnknownFailureException) pure value
+
+    f result
 
 initializeRunAllFeatures :: IO ()
 initializeRunAllFeatures = do
@@ -61,11 +69,16 @@ initializeRunAllFeatures = do
     networkingConfiguration     <-  featureParseConfiguration networkingCardanoFeature
 
 
+
     -- A general pattern. The dependency is always in a new thread, and we depend on it,
     -- so when that dependency gets shut down all the other features that depend on it get
     -- shut down as well.
     -- http://hackage.haskell.org/package/async-2.2.1/docs/Control-Concurrent-Async.html#v:withAsync
-    withAsync (pure NoDependency) $ \loggingDependency -> do
+    -- http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent.html#v:forkFinally
+    let noDependency :: IO NoDependency
+        noDependency = pure NoDependency
+
+    _ <- forkFinallyRaise noDependency $ \(loggingDependency :: NoDependency) -> do
 
         let loggingLayerIO = (featureStart loggingCardanoFeature)
                                 cardanoEnvironment
@@ -74,7 +87,7 @@ initializeRunAllFeatures = do
                                 loggingConfiguration
 
         putTextLn "Starting up logging layer!"
-        withAsync loggingLayerIO $ \loggingLayer -> do
+        _ <- forkFinallyRaise loggingLayerIO $ \loggingLayer -> do
 
             let networkLayerIO =    (featureStart networkingCardanoFeature)
                                         cardanoEnvironment
@@ -83,7 +96,7 @@ initializeRunAllFeatures = do
                                         networkingConfiguration
 
             putTextLn "Starting up networking layer!"
-            withAsync networkLayerIO $ \networkLayer -> do
+            _ <- forkFinallyRaise networkLayerIO $ \networkLayer -> do
 
                 -- something that depends on network layer!
                 --_ <- forever $ threadDelay 1000000 >> (putTextLn "Running node/wallet/whatever!")
@@ -96,30 +109,21 @@ initializeRunAllFeatures = do
 
                 -- something we might want to have?
                 -- waitCatch?
-                catchAny application $ \_ -> putTextLn "Exception occured!" >> cancel networkLayer -- >> restart feature?
-
-                -- wait for finish
-                networkLayerResult  <- wait networkLayer
+                catchAny application $ \_ -> putTextLn "Exception occured!"
 
                 -- cleanup
-                (featureCleanup networkingCardanoFeature) networkLayerResult
+                (featureCleanup networkingCardanoFeature) networkLayer
 
-
-            -- wait for finish
-            loggingLayerResult  <- wait loggingLayer
 
             -- cleanup
-            (featureCleanup loggingCardanoFeature) loggingLayerResult
-
-
-
-        -- wait for finish
-        --loggingDependencyResult <- wait loggingDependency
-        _ <- wait loggingDependency
-
+            (featureCleanup loggingCardanoFeature) loggingLayer
 
         -- some cleanup?
         pure ()
+
+    pure ()
+    -- wait for sync
+    threadDelay 10000000
 
   where
     -- | Util function. Yes, yes, we can import this.

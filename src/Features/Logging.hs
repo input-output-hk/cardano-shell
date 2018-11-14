@@ -82,12 +82,12 @@ loggingCardanoFeature = CardanoFeature
     , featureCleanup                = featureCleanup'
     }
   where
-    featureStart' :: CardanoEnvironment -> Async NoDependency -> CardanoConfiguration -> RotationParameters -> IO (Async LoggingLayer)
+    featureStart' :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
     featureStart' = actualLoggingFeature
 
     featureCleanup' :: LoggingLayer -> IO ()
     featureCleanup' _ = putTextLn "Shutting down logging feature!" -- save a file, for example
 
-actualLoggingFeature :: CardanoEnvironment -> Async NoDependency -> CardanoConfiguration -> RotationParameters -> IO (Async LoggingLayer)
-actualLoggingFeature _ _ _ _ = async $ pure testLoggingLayer
+actualLoggingFeature :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
+actualLoggingFeature _ _ _ _ = pure testLoggingLayer
 

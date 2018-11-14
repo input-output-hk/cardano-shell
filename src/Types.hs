@@ -57,7 +57,7 @@ data CardanoFeature dependency configuration layer = CardanoFeature
     , featureParseConfiguration     :: IO configuration
     -- ^ We don't know where the user wants to fetch the additional configuration from, it could be from
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
-    , featureStart                  :: CardanoEnvironment -> Async dependency -> CardanoConfiguration -> configuration -> IO (Async layer)
+    , featureStart                  :: CardanoEnvironment -> dependency -> CardanoConfiguration -> configuration -> IO layer
     -- ^ Again, we are not sure how is the user going to run the actual feature,
     -- so we provide him with the most flexible/powerful context we have, @IO@.
     -- Notice the arrangement of the parameters - specific, general, specific, general, result.
