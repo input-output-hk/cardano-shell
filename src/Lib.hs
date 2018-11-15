@@ -26,9 +26,6 @@ instance Exception GeneralException
 -- Feature initialization
 --------------------------------------------------------------------------------
 
--- https://www.seas.upenn.edu/~cis552/11fa/lectures/concurrency.html
--- https://mazzo.li/posts/threads-resources.html
-
 -- Let's presume that we have the order of the features like this:
 -- 1. logging
 -- 2. networking
@@ -46,87 +43,63 @@ instance Exception GeneralException
 -- anytime.
 -- Another interesting thing is that we stack the effects ONLY when we use a function from
 -- another layer, and we don't get all the effects, just the ones the function contains.
-
-
 initializeRunAllFeatures :: IO ()
 initializeRunAllFeatures = do
     -- General
-    cardanoConfiguration        <-  loadCardanoConfiguration
-    cardanoEnvironment          <-  initializeCardanoEnvironment
+    cardanoConfiguration            <-  loadCardanoConfiguration
+    cardanoEnvironment              <-  initializeCardanoEnvironment
 
-    -- Logging
-    loggingConfiguration        <-  featureParseConfiguration loggingCardanoFeature
+    (loggingLayer, loggingFeature)  <- createLoggingFeature cardanoEnvironment cardanoConfiguration
 
-    -- Networking
-    networkingConfiguration     <-  featureParseConfiguration networkingCardanoFeature
-
+    -- networkLayer
+    (_           , networkFeature)  <- createNetworkingFeature loggingLayer cardanoEnvironment cardanoConfiguration
 
     -- A general pattern. The dependency is always in a new thread, and we depend on it,
     -- so when that dependency gets shut down all the other features that depend on it get
     -- shut down as well.
     -- http://hackage.haskell.org/package/async-2.2.1/docs/Control-Concurrent-Async.html#v:withAsync
-    withAsync (pure NoDependency) $ \loggingDependency -> do
+    -- withAsync :: IO a -> (Async a -> IO b) -> IO b
+    putTextLn "Starting up logging layer!"
+    _ <- withAsync (pure loggingFeature) $ \runningLoggingFeature -> do
 
-        let loggingLayerIO = (featureStart loggingCardanoFeature)
-                                cardanoEnvironment
-                                loggingDependency
-                                cardanoConfiguration
-                                loggingConfiguration
+        -- We run the feature
+        _ <- pure $ featureStart <$> runningLoggingFeature
 
-        putTextLn "Starting up logging layer!"
-        withAsync loggingLayerIO $ \loggingLayer -> do
+        putTextLn "Starting up networking layer!"
+        _ <- withAsync (pure networkFeature) $ \runningNetworkFeature -> do
 
-            let networkLayerIO =    (featureStart networkingCardanoFeature)
-                                        cardanoEnvironment
-                                        loggingLayer
-                                        cardanoConfiguration
-                                        networkingConfiguration
+            -- We run the feature
+            _ <- pure $ featureStart <$> runningNetworkFeature
 
-            putTextLn "Starting up networking layer!"
-            withAsync networkLayerIO $ \networkLayer -> do
+            -- ...
+            -- More features
+            -- ...
 
-                -- something that depends on network layer!
-                --_ <- forever $ threadDelay 1000000 >> (putTextLn "Running node/wallet/whatever!")
+            let application :: IO ()
+                application = replicateM 3 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> cancel runningNetworkFeature
 
-                --let application :: IO ()
-                --    application = replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> cancel networkLayer
+            _ <- application
 
-                let application :: IO ()
-                    application = replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> throwIO UnknownFailureException
+            --let application :: IO ()
+            --    application = replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> throwIO UnknownFailureException
 
-                -- something we might want to have?
-                -- waitCatch?
-                catchAny application $ \_ -> putTextLn "Exception occured!" >> cancel networkLayer -- >> restart feature?
+            -- something we might want to have?
+            -- waitCatch?
+            --catchAny application $ \_ -> putTextLn "Exception occured!" >> cancel networkLayer -- >> restart feature?
 
-                -- wait for finish
-                networkLayerResult  <- wait networkLayer
+            -- We wait until the feature ends.
+            _ <- wait runningNetworkFeature
 
-                -- cleanup
-                (featureCleanup networkingCardanoFeature) networkLayerResult
+            -- We shutdown the feature.
+            pure $ featureShutdown <$> runningNetworkFeature
 
 
-            -- wait for finish
-            loggingLayerResult  <- wait loggingLayer
+        -- We wait until the feature ends.
+        _ <- wait runningLoggingFeature
 
-            -- cleanup
-            (featureCleanup loggingCardanoFeature) loggingLayerResult
+        -- We shutdown the feature.
+        pure $ featureShutdown <$> runningLoggingFeature
 
+    _ <- threadDelay 1000000
 
-
-        -- wait for finish
-        --loggingDependencyResult <- wait loggingDependency
-        _ <- wait loggingDependency
-
-
-        -- some cleanup?
-        pure ()
-
-  where
-    -- | Util function. Yes, yes, we can import this.
-    catchAny :: IO a -> (SomeException -> IO a) -> IO a
-    catchAny = catch
-
-
-
-
-
+    pure ()

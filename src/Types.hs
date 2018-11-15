@@ -51,19 +51,25 @@ data NoConfiguration = NoConfiguration
 
 -- | Cardano feature initialization.
 -- We are saying "you have the responsibility to make sure you use the right context!".
-data CardanoFeature dependency configuration layer = CardanoFeature
+data CardanoFeatureInit dependency configuration layer = CardanoFeatureInit
     { featureType                   :: !FeatureType
     -- ^ The type of the feature that we use.
-    , featureParseConfiguration     :: IO configuration
-    -- ^ We don't know where the user wants to fetch the additional configuration from, it could be from
-    -- the filesystem, so we give him the most flexible/powerful context, @IO@.
-    , featureStart                  :: CardanoEnvironment -> Async dependency -> CardanoConfiguration -> configuration -> IO (Async layer)
+    , featureInit                   :: CardanoEnvironment -> dependency -> CardanoConfiguration -> configuration -> IO layer
     -- ^ Again, we are not sure how is the user going to run the actual feature,
     -- so we provide him with the most flexible/powerful context we have, @IO@.
     -- Notice the arrangement of the parameters - specific, general, specific, general, result.
-    -- The dependency is an @Async@, since it's _always run in another thread_.
     , featureCleanup                :: layer -> IO ()
     -- ^ If the user wants to clean up the resources after the module has completed running,
     -- there is an option to do so.
+    }
+
+-- | The interface for the running feature, the high-level interface we use for running it.
+data CardanoFeature = CardanoFeature
+    { featureName       :: Text
+    -- ^ The name of the feature.
+    , featureStart      :: IO ()
+    -- ^ What we call when we start the feature.
+    , featureShutdown   :: IO ()
+    -- ^ What we call when we shut down the feature.
     }
 

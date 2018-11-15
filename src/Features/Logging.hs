@@ -49,7 +49,7 @@ testRotationParameters = RotationParameters
 -- Layer
 --------------------------------
 
--- | The LogginLayer interface that we can expose.
+-- | The LoggingLayer interface that we can expose.
 -- We want to do this since we want to be able to mock out any function tied to logging.
 --
 -- The good side of this is that _each function has it's own effects_ and that is ideal for tracking
@@ -72,22 +72,50 @@ testLoggingLayer = LoggingLayer
 -- Feature
 --------------------------------
 
-type LoggingCardanoFeature = CardanoFeature NoDependency RotationParameters LoggingLayer
+type LoggingCardanoFeature = CardanoFeatureInit NoDependency RotationParameters LoggingLayer
 
-loggingCardanoFeature :: LoggingCardanoFeature
-loggingCardanoFeature = CardanoFeature
+createLoggingFeature :: CardanoEnvironment -> CardanoConfiguration -> IO (LoggingLayer, CardanoFeature)
+createLoggingFeature cardanoEnvironment cardanoConfiguration = do
+    -- we parse any additional configuration if there is any
+    -- We don't know where the user wants to fetch the additional configuration from, it could be from
+    -- the filesystem, so we give him the most flexible/powerful context, @IO@.
+    loggingConfiguration    <-  pure testRotationParameters
+
+    -- we construct the layer
+    loggingLayer            <- (featureInit loggingCardanoFeatureInit) cardanoEnvironment NoDependency cardanoConfiguration loggingConfiguration
+
+    -- we construct the cardano feature
+    let cardanoFeature      = loggingCardanoFeature loggingCardanoFeatureInit loggingLayer
+
+    -- we return both
+    pure (loggingLayer, cardanoFeature)
+
+loggingCardanoFeatureInit :: LoggingCardanoFeature
+loggingCardanoFeatureInit = CardanoFeatureInit
     { featureType                   = LoggingMonitoringFeature
-    , featureParseConfiguration     = pure testRotationParameters
-    , featureStart                  = featureStart'
+    , featureInit                   = featureInit'
     , featureCleanup                = featureCleanup'
     }
   where
-    featureStart' :: CardanoEnvironment -> Async NoDependency -> CardanoConfiguration -> RotationParameters -> IO (Async LoggingLayer)
-    featureStart' = actualLoggingFeature
+    featureInit' :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
+    featureInit' = actualLoggingFeature
+      where
+        actualLoggingFeature :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
+        actualLoggingFeature _ _ _ _ = do
+            putTextLn "Starting up logging!"
+            pure testLoggingLayer
 
     featureCleanup' :: LoggingLayer -> IO ()
     featureCleanup' _ = putTextLn "Shutting down logging feature!" -- save a file, for example
 
-actualLoggingFeature :: CardanoEnvironment -> Async NoDependency -> CardanoConfiguration -> RotationParameters -> IO (Async LoggingLayer)
-actualLoggingFeature _ _ _ _ = async $ pure testLoggingLayer
+loggingCardanoFeature :: LoggingCardanoFeature -> LoggingLayer -> CardanoFeature
+loggingCardanoFeature loggingCardanoFeature' loggingLayer = CardanoFeature
+    { featureName       = show $ featureType loggingCardanoFeature'
+    , featureStart      = do
+        putTextLn "Starting up loggingCardanoFeature!"
+        void $ pure loggingLayer -- or whatever it means for YOU (a specific team)
+    , featureShutdown   = do
+        putTextLn "Shutting down loggingCardanoFeature!"
+        (featureCleanup loggingCardanoFeature') loggingLayer
+    }
 

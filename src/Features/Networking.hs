@@ -62,28 +62,54 @@ testNetworkLayer loggingLayer = NetworkLayer
 -- Feature
 --------------------------------
 
-type NetworkingCardanoFeature = CardanoFeature LoggingLayer Text NetworkLayer
+type NetworkingCardanoFeature = CardanoFeatureInit LoggingLayer Text NetworkLayer
 
-networkingCardanoFeature :: NetworkingCardanoFeature
-networkingCardanoFeature = CardanoFeature
+
+createNetworkingFeature :: LoggingLayer -> CardanoEnvironment -> CardanoConfiguration -> IO (NetworkLayer, CardanoFeature)
+createNetworkingFeature loggingLayer cardanoEnvironment cardanoConfiguration = do
+    -- we parse any additional configuration if there is any
+    -- We don't know where the user wants to fetch the additional configuration from, it could be from
+    -- the filesystem, so we give him the most flexible/powerful context, @IO@.
+    networkingConfiguration <-  pure "THIS IS AN EXAMPLE OF A CONFIGURATION!"
+
+    -- we construct the layer
+    networkingLayer         <- (featureInit networkingCardanoFeatureInit) cardanoEnvironment loggingLayer cardanoConfiguration networkingConfiguration
+
+    -- we construct the cardano feature
+    let cardanoFeature      = networkingCardanoFeature networkingCardanoFeatureInit networkingLayer
+
+    -- we return both
+    pure (networkingLayer, cardanoFeature)
+
+
+networkingCardanoFeatureInit :: NetworkingCardanoFeature
+networkingCardanoFeatureInit = CardanoFeatureInit
     { featureType                   = NetworkingFeature
-    , featureParseConfiguration     = readFile "./shell.nix"
-    , featureStart                  = featureStart'
+    , featureInit                   = featureStart'
     , featureCleanup                = featureCleanup'
     }
   where
-    featureStart' :: CardanoEnvironment -> Async LoggingLayer -> CardanoConfiguration -> Text -> IO (Async NetworkLayer)
+    featureStart' :: CardanoEnvironment -> LoggingLayer -> CardanoConfiguration -> Text -> IO NetworkLayer
     featureStart' = actualNetworkFeature
+      where
+        actualNetworkFeature :: CardanoEnvironment -> LoggingLayer -> CardanoConfiguration -> Text -> IO NetworkLayer
+        actualNetworkFeature _ loggingLayer _ _ = do
+            putTextLn "Starting up networking!"
+            pure $ testNetworkLayer loggingLayer
 
     featureCleanup' :: NetworkLayer -> IO ()
     featureCleanup' _ = putTextLn "Shutting down networking feature!" -- close all connections, for example
 
--- MonadConc m => m a -> m (Async m a)
--- :: forall m. (MonadConc m, MonadIO m) => CardanoEnvironment -> Async LoggingLayer -> CardanoConfiguration -> Text -> m (Async m NetworkLayer)
-actualNetworkFeature :: CardanoEnvironment -> Async LoggingLayer -> CardanoConfiguration -> Text -> IO (Async NetworkLayer)
-actualNetworkFeature _ asyncLoggingLayer _ _ =
-    async $ pure $ testNetworkLayer <$> asyncLoggingLayer
-    --pure $ asyncLoggingLayer >>= \loggingLayer -> async $ testNetworkLayer loggingLayer
 
+networkingCardanoFeature :: NetworkingCardanoFeature -> NetworkLayer -> CardanoFeature
+networkingCardanoFeature networkingCardanoFeature' networkingLayer = CardanoFeature
+    { featureName       = show $ featureType networkingCardanoFeature'
+    , featureStart      = do
+        putTextLn "Starting up networkingCardanoFeature!"
+        void $ pure networkingLayer -- or whatever it means for YOU (a specific team)
+    , featureShutdown   = do
+        putTextLn "Shutting down networkingCardanoFeature!"
+        (featureCleanup networkingCardanoFeature') networkingLayer
+    }
 
 
