@@ -21,6 +21,7 @@ import           Cardano.Prelude
 
 import           Dhall           (Interpret (..))
 import qualified Dhall           as D
+
 -- Importing as qualified since Dhall exports functions such as 'maybe', 'bool', 'list'
 -- which conflicts with some of the prelude functions
 
