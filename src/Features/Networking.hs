@@ -81,9 +81,9 @@ networkingCardanoFeature = CardanoFeature
 -- MonadConc m => m a -> m (Async m a)
 -- :: forall m. (MonadConc m, MonadIO m) => CardanoEnvironment -> Async LoggingLayer -> CardanoConfiguration -> Text -> m (Async m NetworkLayer)
 actualNetworkFeature :: CardanoEnvironment -> LoggingLayer -> CardanoConfiguration -> Text -> IO NetworkLayer
-actualNetworkFeature _ asyncLoggingLayer _ _ =
+actualNetworkFeature _ asyncLoggingLayer _ _ = do
+    putTextLn "Starting up networking feature!"
     pure $ testNetworkLayer asyncLoggingLayer
-    --pure $ asyncLoggingLayer >>= \loggingLayer -> async $ testNetworkLayer loggingLayer
 
 
 

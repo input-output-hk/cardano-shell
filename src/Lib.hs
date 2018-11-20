@@ -1,30 +1,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Lib where
 
 import Cardano.Prelude
 
-import qualified Control.Exception.Base as E
-
 import Types
 
 import Features.Logging
 import Features.Networking
-
---------------------------------------------------------------------------------
--- General exceptions
---------------------------------------------------------------------------------
-
-data GeneralException
-    = UnknownFailureException -- the "catch-all"
-    | FeatureCancelled
-    | MissingResourceException
-    | FileNotFoundException
-    -- | ...
-    deriving (Eq, Show)
-
-instance Exception GeneralException
 
 --------------------------------------------------------------------------------
 -- Feature initialization
@@ -49,45 +32,6 @@ instance Exception GeneralException
 -- anytime.
 -- Another interesting thing is that we stack the effects ONLY when we use a function from
 -- another layer, and we don't get all the effects, just the ones the function contains.
-
--- | A feature layer with the corresponding feature @ThreadId@.
-data Feature a = Feature ThreadId a
-    deriving (Eq, Show)
-
--- | The construction very similar to @Async@ which allows us to cancel specific threads/features.
-withFeatureUsing :: forall a b. IO a -> (a -> IO b) -> IO b
-withFeatureUsing = \action inner -> do
-  var <- newEmptyMVar
-
-  mask $ \restore -> do
-    -- In another thread, we don't know the type of exception beforehand.
-    threadId    <- forkIO $ try @SomeException (restore action) >>= putMVar var
-    var         <- readMVar var
-
-    -- If there is an error when building the feature.
-    result      <- either (\_ -> E.throwIO UnknownFailureException) pure var
-
-    let constructedFeature :: Feature a
-        constructedFeature = Feature threadId result
-
-    r           <- restore (inner result) `catchAll` \e -> do
-      uninterruptibleCancel constructedFeature
-      throwIO e
-
-    uninterruptibleCancel constructedFeature
-    return r
-
-  where
-    catchAll :: forall a b. IO a -> (SomeException -> IO a) -> IO a
-    catchAll = catch
-
-    uninterruptibleCancel :: forall a. Feature a -> IO ()
-    uninterruptibleCancel = uninterruptibleMask_ . featureCancel
-
-featureCancel :: forall a. Feature a -> IO ()
-featureCancel (Feature t _) = throwTo t FeatureCancelled
-
-
 
 initializeRunAllFeatures :: IO ()
 initializeRunAllFeatures = do
@@ -119,8 +63,7 @@ initializeRunAllFeatures = do
                                 cardanoConfiguration
                                 loggingConfiguration
 
-        putTextLn "Starting up logging layer!"
-        loggingThreadId <- withFeatureUsing loggingLayerIO $ \loggingLayer -> do
+        _ <- withFeatureUsing loggingLayerIO $ \loggingLayer -> do
 
             let networkLayerIO =    (featureStart networkingCardanoFeature)
                                         cardanoEnvironment
@@ -128,7 +71,6 @@ initializeRunAllFeatures = do
                                         cardanoConfiguration
                                         networkingConfiguration
 
-            putTextLn "Starting up networking layer!"
             _ <- withFeatureUsing networkLayerIO $ \networkLayer -> do
 
                 -- something that depends on network layer!
@@ -141,12 +83,8 @@ initializeRunAllFeatures = do
                         _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
                         pure ()
 
-                --let application :: IO ()
-                --    application = replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> throwIO UnknownFailureException
-
                 --_ <- application
-                -- something we might want to have?
-                -- waitCatch?
+                -- something we MUST have!
                 catchAny application $ \_ -> putTextLn "Exception occured!"
 
                 -- cleanup

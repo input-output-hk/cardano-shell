@@ -89,5 +89,5 @@ loggingCardanoFeature = CardanoFeature
     featureCleanup' _ = putTextLn "Shutting down logging feature!" -- save a file, for example
 
 actualLoggingFeature :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
-actualLoggingFeature _ _ _ _ = pure testLoggingLayer
+actualLoggingFeature _ _ _ _ = putTextLn "Starting up logging feature!" >> pure testLoggingLayer
 

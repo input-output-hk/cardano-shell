@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Types where
 
 import Cardano.Prelude
@@ -66,4 +69,61 @@ data CardanoFeature dependency configuration layer = CardanoFeature
     -- ^ If the user wants to clean up the resources after the module has completed running,
     -- there is an option to do so.
     }
+
+--------------------------------------------------------------------------------
+-- General exceptions
+--------------------------------------------------------------------------------
+
+data GeneralException
+    = UnknownFailureException -- the "catch-all"
+    | FeatureCancelled
+    | MissingResourceException
+    | FileNotFoundException
+    -- | ...
+    deriving (Eq, Show)
+
+instance Exception GeneralException
+
+--------------------------------------------------------------------------------
+-- Feature
+--------------------------------------------------------------------------------
+
+-- | A feature layer with the corresponding feature @ThreadId@.
+data Feature a = Feature ThreadId a
+    deriving (Eq, Show)
+
+-- | The construction same as/very similar to @Async@ which allows us to cancel specific threads/features.
+withFeatureUsing :: forall a b. IO a -> (a -> IO b) -> IO b
+withFeatureUsing = \action inner -> do
+  var <- newEmptyMVar
+
+  mask $ \restore -> do
+    -- In another thread, we don't know the type of exception beforehand.
+    threadId    <- forkIO $ try @SomeException (restore action) >>= putMVar var
+    var         <- readMVar var
+
+    -- If there is an error when building the feature.
+    result      <- either (\_ -> throwIO UnknownFailureException) pure var
+
+    let constructedFeature :: Feature a
+        constructedFeature = Feature threadId result
+
+    r           <- restore (inner result) `catchAll` \e -> do
+      uninterruptibleCancel constructedFeature
+      throwIO e
+
+    uninterruptibleCancel constructedFeature
+    return r
+
+  where
+    catchAll :: forall a b. IO a -> (SomeException -> IO a) -> IO a
+    catchAll = catch
+
+    uninterruptibleCancel :: forall a. Feature a -> IO ()
+    uninterruptibleCancel = uninterruptibleMask_ . featureCancel
+
+featureCancel :: forall a. Feature a -> IO ()
+featureCancel (Feature t _) = throwTo t FeatureCancelled
+
+
 
