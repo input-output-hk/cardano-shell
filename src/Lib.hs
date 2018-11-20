@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Lib where
 
@@ -49,43 +50,42 @@ instance Exception GeneralException
 -- Another interesting thing is that we stack the effects ONLY when we use a function from
 -- another layer, and we don't get all the effects, just the ones the function contains.
 
--- forkFinally :: IO a -> (Either SomeException a -> IO ()) -> IO ThreadId
-forkFinallyRaise :: IO a -> (a -> IO ()) -> IO ThreadId
-forkFinallyRaise action f = forkFinally action $ \(value :: Either SomeException a)-> do
+-- | A feature layer with the corresponding feature @ThreadId@.
+data Feature a = Feature ThreadId a
+    deriving (Eq, Show)
 
-    result <- either (\_ -> E.throwIO UnknownFailureException) pure value
-
-    f result
-
-
-withThreadUsing :: forall a b. IO a -> ((ThreadId, Either SomeException a) -> IO b) -> IO b
-withThreadUsing = \action inner -> do
+-- | The construction very similar to @Async@ which allows us to cancel specific threads/features.
+withFeatureUsing :: forall a b. IO a -> (a -> IO b) -> IO b
+withFeatureUsing = \action inner -> do
   var <- newEmptyMVar
 
   mask $ \restore -> do
-    -- In another thread
-    threadId    <- forkIO $ try (restore action) >>= putMVar var
+    -- In another thread, we don't know the type of exception beforehand.
+    threadId    <- forkIO $ try @SomeException (restore action) >>= putMVar var
     var         <- readMVar var
 
-    let a :: (ThreadId, Either SomeException a)
-        a = (threadId, var)
+    -- If there is an error when building the feature.
+    result      <- either (\_ -> E.throwIO UnknownFailureException) pure var
 
-    r       <- restore (inner a) `catchAll` \e -> do
-      uninterruptibleCancel a
+    let constructedFeature :: Feature a
+        constructedFeature = Feature threadId result
+
+    r           <- restore (inner result) `catchAll` \e -> do
+      uninterruptibleCancel constructedFeature
       throwIO e
 
-    uninterruptibleCancel a
+    uninterruptibleCancel constructedFeature
     return r
 
   where
     catchAll :: forall a b. IO a -> (SomeException -> IO a) -> IO a
     catchAll = catch
 
-    uninterruptibleCancel :: forall a. (ThreadId, Either SomeException a) -> IO ()
+    uninterruptibleCancel :: forall a. Feature a -> IO ()
     uninterruptibleCancel = uninterruptibleMask_ . featureCancel
 
-featureCancel :: forall a. (ThreadId, Either SomeException a) -> IO ()
-featureCancel (t, _) = throwTo t FeatureCancelled
+featureCancel :: forall a. Feature a -> IO ()
+featureCancel (Feature t _) = throwTo t FeatureCancelled
 
 
 
@@ -111,31 +111,25 @@ initializeRunAllFeatures = do
     let noDependency :: IO NoDependency
         noDependency = pure NoDependency
 
-    _ <- withThreadUsing noDependency $ \(loggingDependency :: (ThreadId, Either SomeException NoDependency)) -> do
-
-        loggingDependency' <- either (\_ -> E.throwIO UnknownFailureException) pure (snd loggingDependency)
+    _ <- withFeatureUsing noDependency $ \loggingDependency -> do
 
         let loggingLayerIO = (featureStart loggingCardanoFeature)
                                 cardanoEnvironment
-                                loggingDependency'
+                                loggingDependency
                                 cardanoConfiguration
                                 loggingConfiguration
 
         putTextLn "Starting up logging layer!"
-        loggingThreadId <- withThreadUsing loggingLayerIO $ \loggingLayer -> do
-
-            loggingLayer' <- either (\_ -> E.throwIO UnknownFailureException) pure (snd loggingLayer)
+        loggingThreadId <- withFeatureUsing loggingLayerIO $ \loggingLayer -> do
 
             let networkLayerIO =    (featureStart networkingCardanoFeature)
                                         cardanoEnvironment
-                                        loggingLayer'
+                                        loggingLayer
                                         cardanoConfiguration
                                         networkingConfiguration
 
             putTextLn "Starting up networking layer!"
-            _ <- withThreadUsing networkLayerIO $ \networkLayer -> do
-
-                networkLayer' <- either (\_ -> E.throwIO UnknownFailureException) pure (snd networkLayer)
+            _ <- withFeatureUsing networkLayerIO $ \networkLayer -> do
 
                 -- something that depends on network layer!
                 --_ <- forever $ threadDelay 1000000 >> (putTextLn "Running node/wallet/whatever!")
@@ -143,24 +137,24 @@ initializeRunAllFeatures = do
                 let application :: IO ()
                     application = do
                         _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
-                        _ <- featureCancel networkLayer
+                        _ <- throwIO UnknownFailureException
                         _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
                         pure ()
 
                 --let application :: IO ()
                 --    application = replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> throwIO UnknownFailureException
 
-                _ <- application
+                --_ <- application
                 -- something we might want to have?
                 -- waitCatch?
-                --catchAny application $ \_ -> putTextLn "Exception occured!"
+                catchAny application $ \_ -> putTextLn "Exception occured!"
 
                 -- cleanup
-                (featureCleanup networkingCardanoFeature) networkLayer'
+                (featureCleanup networkingCardanoFeature) networkLayer
 
 
             -- cleanup
-            (featureCleanup loggingCardanoFeature) loggingLayer'
+            (featureCleanup loggingCardanoFeature) loggingLayer
 
         -- some cleanup?
         pure ()
