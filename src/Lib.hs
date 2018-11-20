@@ -17,6 +17,7 @@ import Features.Networking
 
 data GeneralException
     = UnknownFailureException -- the "catch-all"
+    | FeatureCancelled
     | MissingResourceException
     | FileNotFoundException
     -- | ...
@@ -56,6 +57,38 @@ forkFinallyRaise action f = forkFinally action $ \(value :: Either SomeException
 
     f result
 
+
+withThreadUsing :: forall a b. IO a -> ((ThreadId, Either SomeException a) -> IO b) -> IO b
+withThreadUsing = \action inner -> do
+  var <- newEmptyMVar
+
+  mask $ \restore -> do
+    -- In another thread
+    threadId    <- forkIO $ try (restore action) >>= putMVar var
+    var         <- readMVar var
+
+    let a :: (ThreadId, Either SomeException a)
+        a = (threadId, var)
+
+    r       <- restore (inner a) `catchAll` \e -> do
+      uninterruptibleCancel a
+      throwIO e
+
+    uninterruptibleCancel a
+    return r
+
+  where
+    catchAll :: forall a b. IO a -> (SomeException -> IO a) -> IO a
+    catchAll = catch
+
+    uninterruptibleCancel :: forall a. (ThreadId, Either SomeException a) -> IO ()
+    uninterruptibleCancel = uninterruptibleMask_ . cancel
+
+    cancel :: forall a. (ThreadId, Either SomeException a) -> IO ()
+    cancel (t, _) = throwTo t FeatureCancelled
+
+
+
 initializeRunAllFeatures :: IO ()
 initializeRunAllFeatures = do
     -- General
@@ -87,7 +120,7 @@ initializeRunAllFeatures = do
                                 loggingConfiguration
 
         putTextLn "Starting up logging layer!"
-        _ <- forkFinallyRaise loggingLayerIO $ \loggingLayer -> do
+        loggingThreadId <- forkFinallyRaise loggingLayerIO $ \loggingLayer -> do
 
             let networkLayerIO =    (featureStart networkingCardanoFeature)
                                         cardanoEnvironment
