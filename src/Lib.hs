@@ -82,10 +82,10 @@ withThreadUsing = \action inner -> do
     catchAll = catch
 
     uninterruptibleCancel :: forall a. (ThreadId, Either SomeException a) -> IO ()
-    uninterruptibleCancel = uninterruptibleMask_ . cancel
+    uninterruptibleCancel = uninterruptibleMask_ . featureCancel
 
-    cancel :: forall a. (ThreadId, Either SomeException a) -> IO ()
-    cancel (t, _) = throwTo t FeatureCancelled
+featureCancel :: forall a. (ThreadId, Either SomeException a) -> IO ()
+featureCancel (t, _) = throwTo t FeatureCancelled
 
 
 
@@ -111,52 +111,61 @@ initializeRunAllFeatures = do
     let noDependency :: IO NoDependency
         noDependency = pure NoDependency
 
-    _ <- forkFinallyRaise noDependency $ \(loggingDependency :: NoDependency) -> do
+    _ <- withThreadUsing noDependency $ \(loggingDependency :: (ThreadId, Either SomeException NoDependency)) -> do
+
+        loggingDependency' <- either (\_ -> E.throwIO UnknownFailureException) pure (snd loggingDependency)
 
         let loggingLayerIO = (featureStart loggingCardanoFeature)
                                 cardanoEnvironment
-                                loggingDependency
+                                loggingDependency'
                                 cardanoConfiguration
                                 loggingConfiguration
 
         putTextLn "Starting up logging layer!"
-        loggingThreadId <- forkFinallyRaise loggingLayerIO $ \loggingLayer -> do
+        loggingThreadId <- withThreadUsing loggingLayerIO $ \loggingLayer -> do
+
+            loggingLayer' <- either (\_ -> E.throwIO UnknownFailureException) pure (snd loggingLayer)
 
             let networkLayerIO =    (featureStart networkingCardanoFeature)
                                         cardanoEnvironment
-                                        loggingLayer
+                                        loggingLayer'
                                         cardanoConfiguration
                                         networkingConfiguration
 
             putTextLn "Starting up networking layer!"
-            _ <- forkFinallyRaise networkLayerIO $ \networkLayer -> do
+            _ <- withThreadUsing networkLayerIO $ \networkLayer -> do
+
+                networkLayer' <- either (\_ -> E.throwIO UnknownFailureException) pure (snd networkLayer)
 
                 -- something that depends on network layer!
                 --_ <- forever $ threadDelay 1000000 >> (putTextLn "Running node/wallet/whatever!")
 
-                --let application :: IO ()
-                --    application = replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> cancel networkLayer
-
                 let application :: IO ()
-                    application = replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> throwIO UnknownFailureException
+                    application = do
+                        _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
+                        _ <- featureCancel networkLayer
+                        _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
+                        pure ()
 
+                --let application :: IO ()
+                --    application = replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> throwIO UnknownFailureException
+
+                _ <- application
                 -- something we might want to have?
                 -- waitCatch?
-                catchAny application $ \_ -> putTextLn "Exception occured!"
+                --catchAny application $ \_ -> putTextLn "Exception occured!"
 
                 -- cleanup
-                (featureCleanup networkingCardanoFeature) networkLayer
+                (featureCleanup networkingCardanoFeature) networkLayer'
 
 
             -- cleanup
-            (featureCleanup loggingCardanoFeature) loggingLayer
+            (featureCleanup loggingCardanoFeature) loggingLayer'
 
         -- some cleanup?
         pure ()
 
     pure ()
-    -- wait for sync
-    threadDelay 10000000
 
   where
     -- | Util function. Yes, yes, we can import this.
