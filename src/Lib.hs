@@ -59,47 +59,49 @@ initializeRunAllFeatures = do
     -- shut down as well.
     -- http://hackage.haskell.org/package/async-2.2.1/docs/Control-Concurrent-Async.html#v:withAsync
     -- withAsync :: IO a -> (Async a -> IO b) -> IO b
-    putTextLn "Starting up logging layer!"
-    _ <- withAsync (pure loggingFeature) $ \runningLoggingFeature -> do
+    _ <- withAsync (featureStart loggingFeature) $ \runningLoggingFeature -> do
 
-        -- We run the feature
-        _ <- pure $ featureStart <$> runningLoggingFeature
-
-        putTextLn "Starting up networking layer!"
-        _ <- withAsync (pure networkFeature) $ \runningNetworkFeature -> do
-
-            -- We run the feature
-            _ <- pure $ featureStart <$> runningNetworkFeature
+        _ <- withAsync (featureStart networkFeature) $ \runningNetworkFeature -> do
 
             -- ...
             -- More features
             -- ...
 
+            {-
             let application :: IO ()
-                application = replicateM 3 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> cancel runningNetworkFeature
-
+                application = do
+                    _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
+                    _ <- cancel runningNetworkFeature
+                    _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
+                    pure ()
             _ <- application
+            -}
 
-            --let application :: IO ()
-            --    application = replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!") >> throwIO UnknownFailureException
+            let application :: IO ()
+                application = do
+                    _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
+                    _ <- throwIO UnknownFailureException
+                    _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
+                    pure ()
 
-            -- something we might want to have?
-            -- waitCatch?
-            --catchAny application $ \_ -> putTextLn "Exception occured!" >> cancel networkLayer -- >> restart feature?
+            -- something we NEED to have!
+            catchAny application $ \_ -> putTextLn "Exception occured!" >> cancel runningNetworkFeature -- >> restart feature?
 
             -- We wait until the feature ends.
-            _ <- wait runningNetworkFeature
+            wait runningNetworkFeature
 
             -- We shutdown the feature.
-            pure $ featureShutdown <$> runningNetworkFeature
+            featureShutdown networkFeature
 
 
         -- We wait until the feature ends.
-        _ <- wait runningLoggingFeature
+        wait runningLoggingFeature
 
         -- We shutdown the feature.
-        pure $ featureShutdown <$> runningLoggingFeature
-
-    _ <- threadDelay 1000000
+        featureShutdown loggingFeature
 
     pure ()
+  where
+    -- | Util function. Yes, yes, we can import this.
+    catchAny :: IO a -> (SomeException -> IO a) -> IO a
+    catchAny = catch
