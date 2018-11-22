@@ -7,6 +7,7 @@ module Configuration.Types
     , InstallerConfig (..)
     , Launcher(..)
     , LauncherConfig(..)
+    , NewLauncher(..)
     , NodeArgs(..)
     , OS(..)
     , OSConfig(..)
@@ -68,13 +69,8 @@ data ClusterConfig = ClusterConfig {
 -- Defining each 'Intrepret' instance. 
 -- There is an simplier way to defining these instances but it's causing infinite loops
 instance Interpret ClusterConfig where
-    autoWith _ = clusterConfig
-
--- Unfortunatly, there's no monad instance for 'Dhall.Type', perhaps use ApplicativeDo?
-clusterConfig :: D.Type ClusterConfig
-clusterConfig =
-    D.record
-       ( ClusterConfig
+    autoWith _ = D.record
+        ( ClusterConfig
             <$> D.field "name" D.strictText
             <*> D.field "keyPrefix" D.strictText
             <*> D.field "relays" D.strictText
@@ -83,7 +79,7 @@ clusterConfig =
             <*> D.field "installDirectorySuffix" D.strictText
             <*> D.field "macPackageSuffix" D.strictText
             <*> D.field "walletPort" D.natural
-       )
+        )
 
 -- | OS configuration
 data OSConfig = OSConfig {
@@ -104,8 +100,8 @@ osConfig = D.record
         <*> D.field "installDirectory" D.strictText
         <*> D.field "macPackageName" D.strictText
         <*> D.field "x509ToolPath" D.strictText
-        <*> D.field "nodeArgs" nodeArgs
-        <*> D.field "pass" Configuration.Types.pass
+        <*> D.field "nodeArgs" D.auto
+        <*> D.field "pass" D.auto
     )
 
 instance Interpret OSConfig where
@@ -121,19 +117,16 @@ data NodeArgs = NodeArgs {
     , naTlsPath          :: !Text
     } deriving (Eq, Show)
 
-nodeArgs :: D.Type NodeArgs
-nodeArgs = D.record
-    ( NodeArgs
-        <$> D.field "keyfile" D.strictText
-        <*> D.field "logsPrefix" D.strictText
-        <*> D.field "topology" D.strictText
-        <*> D.field "updateLatestPath" D.strictText
-        <*> D.field "walletDBPath" D.strictText
-        <*> D.field "tlsPath" D.strictText
-    )
-
 instance Interpret NodeArgs where
-    autoWith _ = nodeArgs
+    autoWith _ = D.record
+        ( NodeArgs
+            <$> D.field "keyfile" D.strictText
+            <*> D.field "logsPrefix" D.strictText
+            <*> D.field "topology" D.strictText
+            <*> D.field "updateLatestPath" D.strictText
+            <*> D.field "walletDBPath" D.strictText
+            <*> D.field "tlsPath" D.strictText
+        )
 
 -- | Paths
 data Pass = Pass {
@@ -153,27 +146,24 @@ data Pass = Pass {
     , pLauncherLogsPrefix  :: !Text
     } deriving (Eq, Show)
 
-pass :: D.Type Pass
-pass = D.record
-    ( Pass
-        <$> D.field "statePath" D.strictText
-        <*> D.field "nodePath" D.strictText
-        <*> D.field "nodeDbPath" D.strictText
-        <*> D.field "nodeLogConfig" D.strictText
-        <*> D.field "nodeLogPath" (D.maybe D.strictText)
-        <*> D.field "walletPath" D.strictText
-        <*> D.field "walletLogging" D.bool
-        <*> D.field "workingDir" D.strictText
-        <*> D.field "frontendOnlyMode" D.bool
-        <*> D.field "updaterPath" D.strictText
-        <*> D.field "updaterArgs" (D.list D.strictText)
-        <*> D.field "updateArchive" (D.maybe D.strictText)
-        <*> D.field "updateWindowsRunner" (D.maybe D.strictText)
-        <*> D.field "launcherLogsPrefix" D.strictText
-    )
-
 instance Interpret Pass where
-    autoWith _ = Configuration.Types.pass
+    autoWith _ = D.record
+        ( Pass
+            <$> D.field "statePath" D.strictText
+            <*> D.field "nodePath" D.strictText
+            <*> D.field "nodeDbPath" D.strictText
+            <*> D.field "nodeLogConfig" D.strictText
+            <*> D.field "nodeLogPath" (D.maybe D.strictText)
+            <*> D.field "walletPath" D.strictText
+            <*> D.field "walletLogging" D.bool
+            <*> D.field "workingDir" D.strictText
+            <*> D.field "frontendOnlyMode" D.bool
+            <*> D.field "updaterPath" D.strictText
+            <*> D.field "updaterArgs" (D.list D.strictText)
+            <*> D.field "updateArchive" (D.maybe D.strictText)
+            <*> D.field "updateWindowsRunner" (D.maybe D.strictText)
+            <*> D.field "launcherLogsPrefix" D.strictText
+        )
 
 -- | Launcher configuration
 data Launcher = Launcher {
@@ -188,22 +178,19 @@ data Launcher = Launcher {
     , lPass           :: !Pass
     } deriving (Eq, Show)
 
-launcher :: D.Type Launcher
-launcher = D.record
-    ( Launcher
-        <$> D.field "configuration" launcherConfig
-        <*> D.field "nodeTimeoutSec" D.natural
-        <*> D.field "reportServer" D.strictText
-        <*> D.field "walletArgs" (D.list D.strictText)
-        <*> D.field "logsPrefix" D.strictText
-        <*> D.field "tlsPath" D.strictText
-        <*> D.field "x509ToolPath" D.strictText
-        <*> D.field "nodeArgs" (D.list D.strictText)
-        <*> D.field "pass" Configuration.Types.pass
-    )
-
 instance Interpret Launcher where
-    autoWith _ = launcher
+    autoWith _ = D.record
+        ( Launcher
+            <$> D.field "configuration" D.auto
+            <*> D.field "nodeTimeoutSec" D.natural
+            <*> D.field "reportServer" D.strictText
+            <*> D.field "walletArgs" (D.list D.strictText)
+            <*> D.field "logsPrefix" D.strictText
+            <*> D.field "tlsPath" D.strictText
+            <*> D.field "x509ToolPath" D.strictText
+            <*> D.field "nodeArgs" (D.list D.strictText)
+            <*> D.field "pass" D.auto
+        )
 
 -- | Launcher configuration
 data LauncherConfig = LauncherConfig {
@@ -213,29 +200,23 @@ data LauncherConfig = LauncherConfig {
     , lcfgSeed        :: !(Maybe Natural)
     } deriving (Eq, Show)
 
-launcherConfig :: D.Type LauncherConfig
-launcherConfig = D.record
-    ( LauncherConfig
-        <$> D.field "filePath" D.strictText
-        <*> D.field "key" D.strictText
-        <*> D.field "systemStart" (D.maybe D.natural)
-        <*> D.field "seed" (D.maybe D.natural)
-    )
-
 instance Interpret LauncherConfig where
-    autoWith _ = launcherConfig
+    autoWith _ = D.record
+        ( LauncherConfig
+            <$> D.field "filePath" D.strictText
+            <*> D.field "key" D.strictText
+            <*> D.field "systemStart" (D.maybe D.natural)
+            <*> D.field "seed" (D.maybe D.natural)
+        )
 
 -- | Topology configuration
 newtype TopologyConfig = TopologyConfig {
       getWalletConfig :: WalletConfig
     } deriving (Eq, Show)
 
-topology :: D.Type TopologyConfig
-topology = D.record
-    (TopologyConfig <$> D.field "wallet" walletConfig)
-
 instance Interpret TopologyConfig where
-    autoWith _ = topology
+    autoWith _ = D.record
+        (TopologyConfig <$> D.field "wallet" D.auto)
 
 -- | Wallet configuration
 data WalletConfig = WalletConfig {
@@ -244,28 +225,22 @@ data WalletConfig = WalletConfig {
     , wcfgFallbacks :: !Natural
     } deriving (Eq, Show)
 
-walletConfig :: D.Type WalletConfig
-walletConfig = D.record
-    ( WalletConfig
-        <$> D.field "relays" (D.list $ D.list host)
-        <*> D.field "valency" D.natural
-        <*> D.field "fallbacks" D.natural
-    )
-
 instance Interpret WalletConfig where
-    autoWith _ = walletConfig
+    autoWith _ = D.record
+        ( WalletConfig
+            <$> D.field "relays" (D.list $ D.list D.auto)
+            <*> D.field "valency" D.natural
+            <*> D.field "fallbacks" D.natural
+        )
 
 -- | Host
 newtype Host = Host {
     getHost :: Text
     } deriving (Eq, Show)
 
-host :: D.Type Host
-host = D.record
-    ( Host <$> D.field "host" D.strictText)
-
 instance Interpret Host where
-    autoWith _ = host
+    autoWith _ = D.record
+        (Host <$> D.field "host" D.strictText)
 
 -- | Installer configuration
 data InstallerConfig = InstallerConfig {
@@ -274,13 +249,59 @@ data InstallerConfig = InstallerConfig {
     , icfgWalletPort       :: !Natural
     } deriving (Eq, Show)
 
-installerConfig :: D.Type InstallerConfig
-installerConfig = D.record
-    ( InstallerConfig
-        <$> D.field "installDirectory" D.strictText
-        <*> D.field "macPackageName" D.strictText
-        <*> D.field "walletPort" D.natural
-    )
-
 instance Interpret InstallerConfig where
-    autoWith _ = installerConfig
+    autoWith _ = D.record
+        ( InstallerConfig
+            <$> D.field "installDirectory" D.strictText
+            <*> D.field "macPackageName" D.strictText
+            <*> D.field "walletPort" D.natural
+        )
+
+-- | Launcher configuration
+data NewLauncher = NewLauncher {
+      nlConfig            :: !LauncherConfig
+    , nlNodeDbPath        :: !Text
+    , nlNodeLogConfig     :: !Text
+    , nlUpdaterPath       :: !Text
+    , nlUpdaterArgs       :: ![Text]
+    , nlUpdateArchive     :: !(Maybe Text)
+    , nlReportServer      :: !Text
+    , nlLogsPrefix        :: !Text
+    , nlTlsca             :: !Text
+    , nlTlscert           :: !Text
+    , nlTlsKey            :: !Text
+    , nlNoClientAuth      :: !Bool
+    , nlLogConsoleOff     :: !Bool
+    , nlUpdateServer      :: !Text
+    , nlKeyFile           :: !Text
+    , nlTopology          :: !Text
+    , nlWalletDbPath      :: !Text
+    , nlUpdateLatestPath  :: !Text
+    , nlWalletAddress     :: !Text
+    , nlupdateWithPackage :: !Bool
+    } deriving (Eq, Show)
+
+instance Interpret NewLauncher where
+    autoWith _ = D.record
+        ( NewLauncher
+            <$> D.field "configuration" D.auto
+            <*> D.field "nodeDbPath" D.strictText
+            <*> D.field "nodeLogConfig" D.strictText
+            <*> D.field "updaterPath" D.strictText
+            <*> D.field "updaterArgs" (D.list D.strictText)
+            <*> D.field "updateArchive" (D.maybe D.strictText)
+            <*> D.field "reportServer" D.strictText
+            <*> D.field "logsPrefix" D.strictText
+            <*> D.field "tlsca" D.strictText
+            <*> D.field "tlscert" D.strictText
+            <*> D.field "tlsKey" D.strictText
+            <*> D.field "noClientAuth" D.bool
+            <*> D.field "logConsoleOff" D.bool
+            <*> D.field "updateServer" D.strictText
+            <*> D.field "keyFile" D.strictText
+            <*> D.field "topology" D.strictText
+            <*> D.field "walletDbPath" D.strictText
+            <*> D.field "updateLatestPath" D.strictText
+            <*> D.field "walletAddress" D.strictText
+            <*> D.field "updateWithPackage" D.bool
+        )

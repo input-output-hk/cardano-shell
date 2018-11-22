@@ -3,6 +3,8 @@ module Configuration.Lib
     , mkTopology
     , mkOSConfig
     , mkInstallerConfig
+    -- * Experimental
+    , mkNewLauncher
     ) where
 
 import           Cardano.Prelude
@@ -10,8 +12,8 @@ import           Cardano.Prelude
 import qualified Dhall               as D
 
 import           Configuration.Types (Cluster (..), InstallerConfig, Launcher,
-                                      OS (..), OSConfig, TopologyConfig,
-                                      renderCluster, renderOS)
+                                      NewLauncher, OS (..), OSConfig,
+                                      TopologyConfig, renderCluster, renderOS)
 
 -- | Generate 'Launcher' configuration with given 'OS' and 'Cluster'
 mkLauncher :: OS -> Cluster -> IO Launcher
@@ -41,6 +43,14 @@ mkInstallerConfig os cluster = D.input D.auto installerConfigPath
         <> " " <> toPath (renderCluster cluster)
         <> " (" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ")"
 
--- | Given an FileName, return 'FilePath' to dhall file 
+-- NewLauncher (Experimental)
+mkNewLauncher :: OS -> Cluster -> IO NewLauncher
+mkNewLauncher os cluster = D.input D.auto launcherPath
+  where
+    launcherPath = toPath "newLauncher"
+        <> " " <> toPath (renderCluster cluster)
+        <> " " <> "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ")"
+
+-- | Given an FileName, return 'FilePath' to dhall file
 toPath :: Text -> Text
 toPath fileName = "./dhall/" <> fileName <> ".dhall"
