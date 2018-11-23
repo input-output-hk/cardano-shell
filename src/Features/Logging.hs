@@ -20,7 +20,6 @@ import Types
 
 data LoggingException
     = MissingLogFileException
-    -- | ...
     deriving (Eq, Show)
 
 instance Exception LoggingException

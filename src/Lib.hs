@@ -17,7 +17,6 @@ data GeneralException
     = UnknownFailureException -- the "catch-all"
     | MissingResourceException
     | FileNotFoundException
-    -- | ...
     deriving (Eq, Show)
 
 instance Exception GeneralException

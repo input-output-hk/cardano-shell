@@ -87,6 +87,11 @@ There is an option of using just Cabal + Nix as well - use a small utility scrip
 ./cabal new-build
 ```
 
+Adding new dependencies can be easy with, for example:
+```
+cabal2nix https://github.com/input-output-hk/cardano-prelude --revision "2d6624af423d0a5c7ced6f3ae465eaaeb4ec739e" > cardano-prelude.nix
+```
+
 ## Tools
 
 You can install multiple tools that can help you, there are configs for these tools in the project repo:

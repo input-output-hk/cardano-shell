@@ -24,7 +24,6 @@ import Features.Logging
 
 data NetworkingException
     = UnknownPeerException
-    -- | ...
     deriving (Eq, Show)
 
 instance Exception NetworkingException
