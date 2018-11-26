@@ -1,31 +1,32 @@
 \(cluster : ./cluster.type) ->
 \(os      : ./os.type)      ->
-{ configuration  =
-    { filePath     = os.configurationYaml
-    , key          = "${cluster.keyPrefix}_${os.name}"
-    , systemStart  = [] : Optional Natural
-    , seed         = [] : Optional Natural
+{ configuration         =
+    { filePath          = os.configurationYaml
+    , key               = "${cluster.keyPrefix}_${os.name}"
+    , systemStart       = [] : Optional Natural
+    , seed              = [] : Optional Natural
     }
-, nodeTimeoutSec = 60
-, reportServer   = cluster.reportServer
-, walletArgs     = [] : List Text
-, logsPrefix     = os.nodeArgs.logsPrefix
-, tlsPath        = os.nodeArgs.tlsPath
-, x509ToolPath   = os.x509ToolPath
-, nodeArgs =
-    [ "--tlsca",               "${os.nodeArgs.tlsPath}/server/ca.crt"
-    , "--tlscert",             "${os.nodeArgs.tlsPath}/server/server.crt"
-    , "--tlskey",              "${os.nodeArgs.tlsPath}/server/server.key"
-    , "--no-client-auth"
-    , "--log-console-off"
-    , "--update-server",       cluster.updateServer
-    , "--keyfile",             os.nodeArgs.keyfile
-    , "--topology",            os.nodeArgs.topology
-    , "--wallet-db-path",      os.nodeArgs.walletDBPath
-    , "--update-latest-path",  os.nodeArgs.updateLatestPath
-    , "--wallet-address",      "127.0.0.1:0"
-    -- XXX: this is a workaround for Linux
-    , "--update-with-package"
-    ]
-, pass = os.pass
+, nodeDbPath            = os.pass.nodeDbPath
+, nodeLogConfig         = os.pass.nodeLogConfig
+, updaterPath           = os.pass.updaterPath
+, updaterArgs           = os.pass.updaterArgs
+, updateArchive         = os.pass.updateArchive
+, logsPrefix            = os.nodeArgs.logsPrefix
+, reportServer          = cluster.reportServer
+
+-- XXX: NodeArgs
+, tlsca                 = "${os.nodeArgs.tlsPath}/server/ca.crt"
+, tlscert               = "${os.nodeArgs.tlsPath}/server/server.crt"
+, tlsKey                = "${os.nodeArgs.tlsPath}/server/server.key"
+, noClientAuth          = True
+, logConsoleOff         = True
+, updateServer          = cluster.updateServer
+, keyFile               = os.nodeArgs.keyfile
+, topology              = os.nodeArgs.topology
+, walletDbPath          = os.nodeArgs.walletDBPath
+, updateLatestPath      = os.nodeArgs.updateLatestPath
+, walletAddress         = "127.0.0.1:0"
+
+-- XXX: this is a workaround for Linux
+, updateWithPackage     = True
 }

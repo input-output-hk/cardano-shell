@@ -7,7 +7,6 @@ module Configuration.Types
     , InstallerConfig (..)
     , Launcher(..)
     , LauncherConfig(..)
-    , NewLauncher(..)
     , NodeArgs(..)
     , OS(..)
     , OSConfig(..)
@@ -55,8 +54,8 @@ renderCluster Staging = "staging"
 renderCluster Demo    = "demo"
 
 -- | Cluster configuration
-data ClusterConfig = ClusterConfig {
-      ccfgName                   :: !Text
+data ClusterConfig = ClusterConfig
+    { ccfgName                   :: !Text
     , ccfgKeyPrefix              :: !Text
     , ccfgRelays                 :: !Text
     , ccfgUpdateServer           :: !Text
@@ -82,8 +81,8 @@ instance Interpret ClusterConfig where
         )
 
 -- | OS configuration
-data OSConfig = OSConfig {
-      osName              :: !Text
+data OSConfig = OSConfig
+    { osName              :: !Text
     , osConfigurationYaml :: !Text
     , osInstallDirectory  :: !Text
     , osMacPackageName    :: !Text
@@ -108,8 +107,8 @@ instance Interpret OSConfig where
     autoWith _ = osConfig
 
 -- | Node arguments
-data NodeArgs = NodeArgs {
-      naKeyfile          :: !Text
+data NodeArgs = NodeArgs
+    { naKeyfile          :: !Text
     , naLogsPrefix       :: !Text
     , naTopology         :: !Text
     , naUpdateLatestPath :: !Text
@@ -129,8 +128,8 @@ instance Interpret NodeArgs where
         )
 
 -- | Paths
-data Pass = Pass {
-      pStatePath           :: !Text
+data Pass = Pass
+    { pStatePath           :: !Text
     , pNodePath            :: !Text
     , pNodeDbPath          :: !Text
     , pNodeLogConfig       :: !Text
@@ -166,35 +165,8 @@ instance Interpret Pass where
         )
 
 -- | Launcher configuration
-data Launcher = Launcher {
-      lConfig         :: !LauncherConfig
-    , lNodeTimeoutSec :: !Natural
-    , lReportServer   :: !Text
-    , lWalletArgs     :: ![Text]
-    , lLogsPrefix     :: !Text
-    , lTlsPath        :: !Text
-    , lX509ToolPath   :: !Text
-    , lNodeArgs       :: ![Text]
-    , lPass           :: !Pass
-    } deriving (Eq, Show)
-
-instance Interpret Launcher where
-    autoWith _ = D.record
-        ( Launcher
-            <$> D.field "configuration" D.auto
-            <*> D.field "nodeTimeoutSec" D.natural
-            <*> D.field "reportServer" D.strictText
-            <*> D.field "walletArgs" (D.list D.strictText)
-            <*> D.field "logsPrefix" D.strictText
-            <*> D.field "tlsPath" D.strictText
-            <*> D.field "x509ToolPath" D.strictText
-            <*> D.field "nodeArgs" (D.list D.strictText)
-            <*> D.field "pass" D.auto
-        )
-
--- | Launcher configuration
-data LauncherConfig = LauncherConfig {
-      lcfgFilePath    :: !Text
+data LauncherConfig = LauncherConfig
+    { lcfgFilePath    :: !Text
     , lcfgKey         :: !Text
     , lcfgSystemStart :: !(Maybe Natural)
     , lcfgSeed        :: !(Maybe Natural)
@@ -219,8 +191,8 @@ instance Interpret TopologyConfig where
         (TopologyConfig <$> D.field "wallet" D.auto)
 
 -- | Wallet configuration
-data WalletConfig = WalletConfig {
-      wcfgRelays    :: ![[Host]]
+data WalletConfig = WalletConfig
+    { wcfgRelays    :: ![[Host]]
     , wcfgValency   :: !Natural
     , wcfgFallbacks :: !Natural
     } deriving (Eq, Show)
@@ -243,8 +215,8 @@ instance Interpret Host where
         (Host <$> D.field "host" D.strictText)
 
 -- | Installer configuration
-data InstallerConfig = InstallerConfig {
-      icfgInstallDirectory :: !Text
+data InstallerConfig = InstallerConfig
+    { icfgInstallDirectory :: !Text
     , icfgMacPackageName   :: !Text
     , icfgWalletPort       :: !Natural
     } deriving (Eq, Show)
@@ -258,32 +230,32 @@ instance Interpret InstallerConfig where
         )
 
 -- | Launcher configuration
-data NewLauncher = NewLauncher {
-      nlConfig            :: !LauncherConfig
-    , nlNodeDbPath        :: !Text
-    , nlNodeLogConfig     :: !Text
-    , nlUpdaterPath       :: !Text
-    , nlUpdaterArgs       :: ![Text]
-    , nlUpdateArchive     :: !(Maybe Text)
-    , nlReportServer      :: !Text
-    , nlLogsPrefix        :: !Text
-    , nlTlsca             :: !Text
-    , nlTlscert           :: !Text
-    , nlTlsKey            :: !Text
-    , nlNoClientAuth      :: !Bool
-    , nlLogConsoleOff     :: !Bool
-    , nlUpdateServer      :: !Text
-    , nlKeyFile           :: !Text
-    , nlTopology          :: !Text
-    , nlWalletDbPath      :: !Text
-    , nlUpdateLatestPath  :: !Text
-    , nlWalletAddress     :: !Text
-    , nlupdateWithPackage :: !Bool
+data Launcher = Launcher
+    { lConfig            :: !LauncherConfig
+    , lNodeDbPath        :: !Text
+    , lNodeLogConfig     :: !Text
+    , lUpdaterPath       :: !Text
+    , lUpdaterArgs       :: ![Text]
+    , lUpdateArchive     :: !(Maybe Text)
+    , lReportServer      :: !Text
+    , lLogsPrefix        :: !Text
+    , lTlsca             :: !Text
+    , lTlscert           :: !Text
+    , lTlsKey            :: !Text
+    , lNoClientAuth      :: !Bool
+    , lLogConsoleOff     :: !Bool
+    , lUpdateServer      :: !Text
+    , lKeyFile           :: !Text
+    , lTopology          :: !Text
+    , lWalletDbPath      :: !Text
+    , lUpdateLatestPath  :: !Text
+    , lWalletAddress     :: !Text
+    , lupdateWithPackage :: !Bool
     } deriving (Eq, Show)
 
-instance Interpret NewLauncher where
+instance Interpret Launcher where
     autoWith _ = D.record
-        ( NewLauncher
+        ( Launcher
             <$> D.field "configuration" D.auto
             <*> D.field "nodeDbPath" D.strictText
             <*> D.field "nodeLogConfig" D.strictText
