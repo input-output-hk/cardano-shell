@@ -5,4 +5,6 @@ import           Cardano.Prelude
 import           Lib
 
 main :: IO ()
-main = someFunc
+main = initializeRunAllFeatures
+
+

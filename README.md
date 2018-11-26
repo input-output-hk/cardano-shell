@@ -44,8 +44,10 @@ Any module that requires a substantial amount of logging or monitoring, should p
 For example, 1 thread per module should be enough from the point of view of `cardano-shell`.
 If, for example, `network` module requires 5 threads, it should provide such resources itself.
 
-For serving the module functionality, we can use `withAsync` for top-leve calls which is resource/exception safe.
+For serving the module functionality, we can use `withAsync` for top-level calls which is resource/exception safe.
 The option left for discussion is whether we should have a need for a restart on a module/process.
+
+For more info about the architecture, please take a look at [here](ARCHITECTURE.md).
 
 ## Example
 
@@ -59,10 +61,9 @@ Core seems to be split into:
 - ledger
 
 Currently, the (relevant) team structure seems to be:
-- networking    - Duncan
-- core          - Eric
-- logging       - Alexander (squad 3)
-- monitoring    - Alexander (squad 3)
+- networking            - Duncan
+- core                  - Eric
+- logging & monitoring  - Alexander
 
 ## Building
 
@@ -84,17 +85,25 @@ Or enable the option for nix building in your local configuration for Stack.
 
 ### Cabal + Nix
 
-There is an option of using just Cabal + Nix as well:
-```
-nix-shell ./scripts/nix/stack-shell.nix --run "cabal new-build"
-```
-
-Or use a small utility script that does the same as the command above (watch out, it's a dot before the `cabal`!) and work as you would usually if you develop with cabal:
+There is an option of using just Cabal + Nix as well - use a small utility script (watch out, it's a dot before the `cabal`!) and work as you would usually if you develop with cabal:
 ```
 ./cabal new-build
 ```
 
+Adding new dependencies can be easy with, for example:
+```
+cabal2nix https://github.com/input-output-hk/cardano-prelude --revision "2d6624af423d0a5c7ced6f3ae465eaaeb4ec739e" > cardano-prelude.nix
+```
 
+## Tools
+
+You can install multiple tools that can help you, there are configs for these tools in the project repo:
+```
+stack install hindent
+stack install stylish-haskell
+stack install hsimport
+stack install hdevtools
+```
 
 
 

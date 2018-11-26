@@ -24,18 +24,27 @@ library
       Lib
   other-modules:
       Paths_cardano_shell
+    , Types
+    , Features.Logging
+    , Features.Networking
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
-    , async
+    , aeson
+    , katip
+    , ekg
+    , ekg-core
+    --, async
+    --, concurrency
+    , safe-exceptions
+
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
 
   ghc-options:         -Wall
-                       -Werror
                        -Wcompat
                        -Wincomplete-record-updates
                        -Wincomplete-uni-patterns

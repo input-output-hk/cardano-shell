@@ -41,10 +41,12 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
   - git: https://github.com/input-output-hk/cardano-prelude
-    commit: d3a3dfc451725cc3e17f47677739ba3dc7d9bbee
+    commit: 2d6624af423d0a5c7ced6f3ae465eaaeb4ec739e
     subdirs:
       - .
       - test
+
+  - katip-0.6.3.0@sha256:55de9e007352cf3fb9de8de8b9ac17c1070824e07e6f6d5b676f9f3cff44d23c
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
