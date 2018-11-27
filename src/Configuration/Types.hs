@@ -215,7 +215,6 @@ instance Interpret Host where
 -- | Installer configuration
 data InstallerConfig = InstallerConfig
     { icfgInstallDirectory :: !Text
-    , icfgMacPackageName   :: !Text
     , icfgWalletPort       :: !Natural
     } deriving (Eq, Show)
 
@@ -223,7 +222,6 @@ instance Interpret InstallerConfig where
     autoWith _ = D.record
         ( InstallerConfig
             <$> D.field "installDirectory" D.strictText
-            <*> D.field "macPackageName" D.strictText
             <*> D.field "walletPort" D.natural
         )
 
