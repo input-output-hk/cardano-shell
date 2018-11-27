@@ -14,6 +14,9 @@
 , logsPrefix            = os.nodeArgs.logsPrefix
 , reportServer          = cluster.reportServer
 
+-- Remove this field once x509tool is introduced in Cardano
+, x509ToolPath          = os.x509ToolPath
+
 -- XXX: NodeArgs
 , tlsca                 = "${os.nodeArgs.tlsPath}/server/ca.crt"
 , tlscert               = "${os.nodeArgs.tlsPath}/server/server.crt"

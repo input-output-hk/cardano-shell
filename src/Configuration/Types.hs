@@ -236,6 +236,7 @@ data Launcher = Launcher
     , lUpdaterArgs       :: ![Text]
     , lUpdateArchive     :: !(Maybe Text)
     , lReportServer      :: !Text
+    , lX509ToolPath      :: !Text
     , lLogsPrefix        :: !Text
     , lTlsca             :: !Text
     , lTlscert           :: !Text
@@ -261,6 +262,7 @@ instance Interpret Launcher where
             <*> D.field "updaterArgs" (D.list D.strictText)
             <*> D.field "updateArchive" (D.maybe D.strictText)
             <*> D.field "reportServer" D.strictText
+            <*> D.field "x509ToolPath" D.strictText
             <*> D.field "logsPrefix" D.strictText
             <*> D.field "tlsca" D.strictText
             <*> D.field "tlscert" D.strictText
