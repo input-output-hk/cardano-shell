@@ -85,7 +85,6 @@ data OSConfig = OSConfig
     { osName              :: !Text
     , osConfigurationYaml :: !Text
     , osInstallDirectory  :: !Text
-    , osMacPackageName    :: !Text
     , osX509ToolPath      :: !Text
     , osNodeArgs          :: !NodeArgs
     , osPass              :: !Pass
@@ -97,7 +96,6 @@ osConfig = D.record
         <$> D.field "name" D.strictText
         <*> D.field "configurationYaml" D.strictText
         <*> D.field "installDirectory" D.strictText
-        <*> D.field "macPackageName" D.strictText
         <*> D.field "x509ToolPath" D.strictText
         <*> D.field "nodeArgs" D.auto
         <*> D.field "pass" D.auto

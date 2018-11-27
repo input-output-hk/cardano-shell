@@ -1,7 +1,6 @@
 { name       : Text
 , configurationYaml  : Text
 , installDirectory   : Text
-, macPackageName     : Text
 , x509ToolPath       : Text
 , nodeArgs           :
   { keyfile          : Text

@@ -6,7 +6,6 @@ in
 { name      = "macos64"
 , configurationYaml  = "\${DAEDALUS_INSTALL_DIRECTORY}/configuration.yaml"
 , installDirectory = "Daedalus${cluster.installDirectorySuffix}"
-, macPackageName   = "Daedalus${cluster.macPackageSuffix}"
 , x509ToolPath       = "\${DAEDALUS_INSTALL_DIRECTORY}/cardano-x509-certificates"
 , nodeArgs           =
   { keyfile          = "${dataDir}/Secrets-1.0/secret.key"

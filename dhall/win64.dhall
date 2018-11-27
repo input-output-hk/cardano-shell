@@ -7,7 +7,6 @@ in
 { name      = "win64"
 , configurationYaml  = "\${DAEDALUS_INSTALL_DIRECTORY}\\configuration.yaml"
 , installDirectory   = installDir
-, macPackageName     = "unused"
 , x509ToolPath       = "\${DAEDALUS_DIR}\\cardano-x509-certificates.exe"
 , nodeArgs           =
   { keyfile          = "Secrets-1.0\\secret.key"

@@ -4,7 +4,6 @@ in
 { name      = "linux64"
 , configurationYaml  = "\${DAEDALUS_CONFIG}/configuration.yaml"
 , installDirectory   = ""
-, macPackageName     = "unused"
 , x509ToolPath       = "cardano-x509-certificates"
 , nodeArgs           =
   { keyfile          = "${dataDir}/Secrets/secret.key"
