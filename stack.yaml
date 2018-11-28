@@ -19,7 +19,7 @@
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
 
-resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/0a32ec92c461e144f981864c97546db11b52e46a/snapshot.yaml
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/4b4457e75303ce352223b9723f7771fac6fe0600/snapshot.yaml
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
