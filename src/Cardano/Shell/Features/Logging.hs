@@ -1,13 +1,13 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Features.Logging where
+module Cardano.Shell.Features.Logging where
 
 import Cardano.Prelude
 
 import Control.Exception.Safe
 
-import Types
+import Cardano.Shell.Types
 
 
 --------------------------------------------------------------------------------

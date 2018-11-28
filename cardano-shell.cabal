@@ -21,12 +21,12 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Cardano.Shell.Lib
   other-modules:
       Paths_cardano_shell
-    , Types
-    , Features.Logging
-    , Features.Networking
+    , Cardano.Shell.Types
+    , Cardano.Shell.Features.Logging
+    , Cardano.Shell.Features.Networking
   hs-source-dirs:
       src
   build-depends:
