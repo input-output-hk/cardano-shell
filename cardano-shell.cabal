@@ -46,6 +46,9 @@ library
     --, concurrency
     , safe-exceptions
     , dhall
+    , text
+    , transformers
+    , contravariant
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings

@@ -1,5 +1,5 @@
 { mkDerivation, aeson, base, cardano-prelude, dhall, ekg, ekg-core, katip
-, safe-exceptions, stdenv
+, safe-exceptions, stdenv, text, transformers
 }:
 mkDerivation {
   pname = "cardano-shell";
@@ -8,7 +8,7 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson base cardano-prelude dhall ekg ekg-core katip safe-exceptions
+    aeson base cardano-prelude dhall ekg ekg-core katip safe-exceptions text transformers
   ];
   executableHaskellDepends = [ base cardano-prelude ];
   testHaskellDepends = [ base cardano-prelude ];

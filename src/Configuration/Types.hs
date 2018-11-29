@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Configuration.Types
@@ -17,13 +18,15 @@ module Configuration.Types
     , renderCluster
     ) where
 
-import           Cardano.Prelude
+import           Cardano.Prelude hiding (evalState)
 
-import           Dhall           (Interpret (..))
-import qualified Dhall           as D
-
--- Importing as qualified since Dhall exports functions such as 'maybe', 'bool', 'list'
--- which conflicts with some of the prelude functions
+import           Control.Monad.Trans.State.Strict (evalState)
+import           Data.Functor.Contravariant (contramap)
+import qualified Data.Text as T
+import           Dhall (Inject (..), Interpret (..), InterpretOptions (..),
+                        auto, defaultInterpretOptions, field, genericAutoWith,
+                        genericInjectWith, record, strictText)
+import           GHC.Generics (from, to)
 
 -- | Operating system
 data OS
@@ -31,7 +34,7 @@ data OS
     | Macos64
     | Win64
     deriving (Bounded, Enum, Eq, Read, Show)
-  
+
 -- | Cluster
 data Cluster
     = Mainnet
@@ -42,9 +45,9 @@ data Cluster
 
 -- | Convert 'OS' into 'Text'
 renderOS :: OS -> Text
-renderOS Linux64  = "linux64"
-renderOS Macos64  = "macos64"
-renderOS Win64    = "win64"
+renderOS Linux64 = "linux64"
+renderOS Macos64 = "macos64"
+renderOS Win64   = "win64"
 
 -- | Convert 'Cluster' into 'Text'
 renderCluster :: Cluster -> Text
@@ -63,22 +66,18 @@ data ClusterConfig = ClusterConfig
     , ccfgInstallDirectorySuffix :: !Text
     , ccfgMacPackageSuffix       :: !Text
     , ccfgWalletPort             :: !Natural
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
 
--- Defining each 'Intrepret' instance. 
--- There is an simplier way to defining these instances but it's causing infinite loops
+-- Defining each 'Intrepret' instance.
 instance Interpret ClusterConfig where
-    autoWith _ = D.record
-        ( ClusterConfig
-            <$> D.field "name" D.strictText
-            <*> D.field "keyPrefix" D.strictText
-            <*> D.field "relays" D.strictText
-            <*> D.field "updateServer" D.strictText
-            <*> D.field "reportServer" D.strictText
-            <*> D.field "installDirectorySuffix" D.strictText
-            <*> D.field "macPackageSuffix" D.strictText
-            <*> D.field "walletPort" D.natural
-        )
+    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+
+instance Inject ClusterConfig where
+    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
 
 -- | OS configuration
 data OSConfig = OSConfig
@@ -88,21 +87,17 @@ data OSConfig = OSConfig
     , osX509ToolPath      :: !Text
     , osNodeArgs          :: !NodeArgs
     , osPass              :: !Pass
-    } deriving (Eq, Show)
-
-osConfig :: D.Type OSConfig
-osConfig = D.record
-    ( OSConfig
-        <$> D.field "name" D.strictText
-        <*> D.field "configurationYaml" D.strictText
-        <*> D.field "installDirectory" D.strictText
-        <*> D.field "x509ToolPath" D.strictText
-        <*> D.field "nodeArgs" D.auto
-        <*> D.field "pass" D.auto
-    )
+    } deriving (Eq, Generic, Show)
 
 instance Interpret OSConfig where
-    autoWith _ = osConfig
+    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
+
+instance Inject OSConfig where
+    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
 
 -- | Node arguments
 data NodeArgs = NodeArgs
@@ -112,18 +107,17 @@ data NodeArgs = NodeArgs
     , naUpdateLatestPath :: !Text
     , naWalletDBPath     :: !Text
     , naTlsPath          :: !Text
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
 
 instance Interpret NodeArgs where
-    autoWith _ = D.record
-        ( NodeArgs
-            <$> D.field "keyfile" D.strictText
-            <*> D.field "logsPrefix" D.strictText
-            <*> D.field "topology" D.strictText
-            <*> D.field "updateLatestPath" D.strictText
-            <*> D.field "walletDBPath" D.strictText
-            <*> D.field "tlsPath" D.strictText
-        )
+    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
+
+instance Inject NodeArgs where
+    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
 
 -- | Paths
 data Pass = Pass
@@ -141,26 +135,17 @@ data Pass = Pass
     , pUpdateArchive       :: !(Maybe Text)
     , pUpdateWindowsRunner :: !(Maybe Text)
     , pLauncherLogsPrefix  :: !Text
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
 
 instance Interpret Pass where
-    autoWith _ = D.record
-        ( Pass
-            <$> D.field "statePath" D.strictText
-            <*> D.field "nodePath" D.strictText
-            <*> D.field "nodeDbPath" D.strictText
-            <*> D.field "nodeLogConfig" D.strictText
-            <*> D.field "nodeLogPath" (D.maybe D.strictText)
-            <*> D.field "walletPath" D.strictText
-            <*> D.field "walletLogging" D.bool
-            <*> D.field "workingDir" D.strictText
-            <*> D.field "frontendOnlyMode" D.bool
-            <*> D.field "updaterPath" D.strictText
-            <*> D.field "updaterArgs" (D.list D.strictText)
-            <*> D.field "updateArchive" (D.maybe D.strictText)
-            <*> D.field "updateWindowsRunner" (D.maybe D.strictText)
-            <*> D.field "launcherLogsPrefix" D.strictText
-        )
+    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 1}
+
+instance Inject Pass where
+    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 1}
 
 -- | Launcher configuration
 data LauncherConfig = LauncherConfig
@@ -168,66 +153,89 @@ data LauncherConfig = LauncherConfig
     , lcfgKey         :: !Text
     , lcfgSystemStart :: !(Maybe Natural)
     , lcfgSeed        :: !(Maybe Natural)
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
 
 instance Interpret LauncherConfig where
-    autoWith _ = D.record
-        ( LauncherConfig
-            <$> D.field "filePath" D.strictText
-            <*> D.field "key" D.strictText
-            <*> D.field "systemStart" (D.maybe D.natural)
-            <*> D.field "seed" (D.maybe D.natural)
-        )
+    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+
+instance Inject LauncherConfig where
+    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
 
 -- | Topology configuration
 newtype TopologyConfig = TopologyConfig {
       getWalletConfig :: WalletConfig
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
 
 instance Interpret TopologyConfig where
-    autoWith _ = D.record
-        (TopologyConfig <$> D.field "wallet" D.auto)
+    autoWith _ = record
+        (TopologyConfig <$> field "wallet" auto)
+
+instance Inject TopologyConfig where
+    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = replaceWithWallet}
+        replaceWithWallet :: Text -> Text
+        replaceWithWallet "getWalletConfig" = "wallet"
+        replaceWithWallet text              = text
 
 -- | Wallet configuration
 data WalletConfig = WalletConfig
     { wcfgRelays    :: ![[Host]]
     , wcfgValency   :: !Natural
     , wcfgFallbacks :: !Natural
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
 
 instance Interpret WalletConfig where
-    autoWith _ = D.record
-        ( WalletConfig
-            <$> D.field "relays" (D.list $ D.list D.auto)
-            <*> D.field "valency" D.natural
-            <*> D.field "fallbacks" D.natural
-        )
+    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+
+instance Inject WalletConfig where
+    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
 
 -- | Host
 newtype Host = Host {
     getHost :: Text
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
 
 instance Interpret Host where
-    autoWith _ = D.record
-        (Host <$> D.field "host" D.strictText)
+    autoWith _ = record
+        (Host <$> field "host" strictText)
+
+instance Inject Host where
+    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = replaceWithHost}
+        replaceWithHost :: Text -> Text
+        replaceWithHost "getHost" = "host"
+        replaceWithHost text      = text
+
 
 -- | Installer configuration
 data InstallerConfig = InstallerConfig
     { icfgInstallDirectory :: !Text
     , icfgWalletPort       :: !Natural
-    } deriving (Eq, Show)
+    } deriving (Eq, Generic, Show)
 
 instance Interpret InstallerConfig where
-    autoWith _ = D.record
-        ( InstallerConfig
-            <$> D.field "installDirectory" D.strictText
-            <*> D.field "walletPort" D.natural
-        )
+    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+
+instance Inject InstallerConfig where
+    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
 
 -- | Launcher configuration
 data Launcher = Launcher
-    { lConfig            :: !LauncherConfig
+    { lConfiguration     :: !LauncherConfig
     , lNodeDbPath        :: !Text
     , lNodeLogConfig     :: !Text
     , lUpdaterPath       :: !Text
@@ -247,31 +255,18 @@ data Launcher = Launcher
     , lWalletDbPath      :: !Text
     , lUpdateLatestPath  :: !Text
     , lWalletAddress     :: !Text
-    , lupdateWithPackage :: !Bool
-    } deriving (Eq, Show)
+    , lUpdateWithPackage :: !Bool
+    } deriving (Eq, Generic, Show)
 
 instance Interpret Launcher where
-    autoWith _ = D.record
-        ( Launcher
-            <$> D.field "configuration" D.auto
-            <*> D.field "nodeDbPath" D.strictText
-            <*> D.field "nodeLogConfig" D.strictText
-            <*> D.field "updaterPath" D.strictText
-            <*> D.field "updaterArgs" (D.list D.strictText)
-            <*> D.field "updateArchive" (D.maybe D.strictText)
-            <*> D.field "reportServer" D.strictText
-            <*> D.field "x509ToolPath" D.strictText
-            <*> D.field "logsPrefix" D.strictText
-            <*> D.field "tlsca" D.strictText
-            <*> D.field "tlscert" D.strictText
-            <*> D.field "tlsKey" D.strictText
-            <*> D.field "noClientAuth" D.bool
-            <*> D.field "logConsoleOff" D.bool
-            <*> D.field "updateServer" D.strictText
-            <*> D.field "keyFile" D.strictText
-            <*> D.field "topology" D.strictText
-            <*> D.field "walletDbPath" D.strictText
-            <*> D.field "updateLatestPath" D.strictText
-            <*> D.field "walletAddress" D.strictText
-            <*> D.field "updateWithPackage" D.bool
-        )
+    autoWith opts = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
+      where
+        options = opts {fieldModifier = lowerHead . T.drop 1}
+
+instance Inject Launcher where
+    injectWith opts = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+      where
+        options = opts {fieldModifier = lowerHead . T.drop 1}
+
+lowerHead :: T.Text -> T.Text
+lowerHead str = T.toLower (T.take 1 str) <> T.drop 1 str
