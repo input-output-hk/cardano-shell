@@ -1,4 +1,4 @@
-{ mkDerivation, aeson, base, cardano-prelude, dhall, ekg, ekg-core, katip
+{ mkDerivation, aeson, base, cardano-prelude, dhall, ekg, ekg-core, katip, QuickCheck
 , safe-exceptions, stdenv, text, transformers
 }:
 mkDerivation {
@@ -8,7 +8,7 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson base cardano-prelude dhall ekg ekg-core katip safe-exceptions text transformers
+    aeson base cardano-prelude dhall ekg ekg-core katip QuickCheck safe-exceptions text transformers
   ];
   executableHaskellDepends = [ base cardano-prelude ];
   testHaskellDepends = [ base cardano-prelude ];

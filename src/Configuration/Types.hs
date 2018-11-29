@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Configuration.Types
     ( Cluster(..)
@@ -22,11 +23,14 @@ import           Cardano.Prelude hiding (evalState)
 
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
+import           Data.String (fromString)
 import qualified Data.Text as T
 import           Dhall (Inject (..), Interpret (..), InterpretOptions (..),
                         auto, defaultInterpretOptions, field, genericAutoWith,
                         genericInjectWith, record, strictText)
 import           GHC.Generics (from, to)
+
+import           Test.QuickCheck
 
 -- | Operating system
 data OS
@@ -79,6 +83,20 @@ instance Inject ClusterConfig where
       where
         options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
 
+
+instance Arbitrary ClusterConfig where
+    arbitrary = do
+        ccfgName                   <- arbitrary
+        ccfgKeyPrefix              <- arbitrary
+        ccfgRelays                 <- arbitrary
+        ccfgUpdateServer           <- arbitrary
+        ccfgReportServer           <- arbitrary
+        ccfgInstallDirectorySuffix <- arbitrary
+        ccfgMacPackageSuffix       <- arbitrary
+        ccfgWalletPort             <- arbitrary
+
+        pure ClusterConfig {..}
+
 -- | OS configuration
 data OSConfig = OSConfig
     { osName              :: !Text
@@ -99,6 +117,17 @@ instance Inject OSConfig where
       where
         options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
 
+instance Arbitrary OSConfig where
+    arbitrary = do
+        osName <- arbitrary
+        osConfigurationYaml <- arbitrary
+        osInstallDirectory  <- arbitrary
+        osX509ToolPath      <- arbitrary
+        osNodeArgs          <- arbitrary
+        osPass              <- arbitrary
+
+        pure OSConfig{..}
+
 -- | Node arguments
 data NodeArgs = NodeArgs
     { naKeyfile          :: !Text
@@ -118,6 +147,17 @@ instance Inject NodeArgs where
     injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
       where
         options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
+
+instance Arbitrary NodeArgs where
+    arbitrary = do
+        naKeyfile          <- arbitrary
+        naLogsPrefix       <- arbitrary
+        naTopology         <- arbitrary
+        naUpdateLatestPath <- arbitrary
+        naWalletDBPath     <- arbitrary
+        naTlsPath          <- arbitrary
+
+        pure NodeArgs{..}
 
 -- | Paths
 data Pass = Pass
@@ -147,6 +187,24 @@ instance Inject Pass where
       where
         options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 1}
 
+instance Arbitrary Pass where
+    arbitrary = do
+        pStatePath           <- arbitrary
+        pNodePath            <- arbitrary
+        pNodeDbPath          <- arbitrary
+        pNodeLogConfig       <- arbitrary
+        pNodeLogPath         <- arbitrary
+        pWalletPath          <- arbitrary
+        pWalletLogging       <- arbitrary
+        pWorkingDir          <- arbitrary
+        pFrontendOnlyMode    <- arbitrary
+        pUpdaterPath         <- arbitrary
+        pUpdaterArgs         <- arbitrary
+        pUpdateArchive       <- arbitrary
+        pUpdateWindowsRunner <- arbitrary
+        pLauncherLogsPrefix  <- arbitrary
+
+        pure Pass{..}
 -- | Launcher configuration
 data LauncherConfig = LauncherConfig
     { lcfgFilePath    :: !Text
@@ -165,6 +223,15 @@ instance Inject LauncherConfig where
       where
         options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
 
+instance Arbitrary LauncherConfig where
+    arbitrary = do
+        lcfgFilePath    <- arbitrary
+        lcfgKey         <- arbitrary
+        lcfgSystemStart <- arbitrary
+        lcfgSeed        <- arbitrary
+        
+        pure LauncherConfig{..}
+
 -- | Topology configuration
 newtype TopologyConfig = TopologyConfig {
       getWalletConfig :: WalletConfig
@@ -181,6 +248,9 @@ instance Inject TopologyConfig where
         replaceWithWallet :: Text -> Text
         replaceWithWallet "getWalletConfig" = "wallet"
         replaceWithWallet text              = text
+
+instance Arbitrary TopologyConfig where
+    arbitrary = TopologyConfig <$> arbitrary
 
 -- | Wallet configuration
 data WalletConfig = WalletConfig
@@ -199,6 +269,13 @@ instance Inject WalletConfig where
       where
         options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
 
+instance Arbitrary WalletConfig where
+    arbitrary = do
+        wcfgRelays    <- arbitrary
+        wcfgValency   <- arbitrary
+        wcfgFallbacks <- arbitrary
+
+        pure WalletConfig{..}
 -- | Host
 newtype Host = Host {
     getHost :: Text
@@ -216,6 +293,8 @@ instance Inject Host where
         replaceWithHost "getHost" = "host"
         replaceWithHost text      = text
 
+instance Arbitrary Host where
+    arbitrary = Host <$> arbitrary
 
 -- | Installer configuration
 data InstallerConfig = InstallerConfig
@@ -232,6 +311,13 @@ instance Inject InstallerConfig where
     injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
       where
         options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+
+instance Arbitrary InstallerConfig where
+    arbitrary = do
+        icfgInstallDirectory <- arbitrary
+        icfgWalletPort       <- arbitrary
+
+        pure InstallerConfig{..}
 
 -- | Launcher configuration
 data Launcher = Launcher
@@ -268,5 +354,37 @@ instance Inject Launcher where
       where
         options = opts {fieldModifier = lowerHead . T.drop 1}
 
+instance Arbitrary Launcher where
+    arbitrary = do
+        lConfiguration     <- arbitrary
+        lNodeDbPath        <- arbitrary
+        lNodeLogConfig     <- arbitrary
+        lUpdaterPath       <- arbitrary
+        lUpdaterArgs       <- arbitrary
+        lUpdateArchive     <- arbitrary
+        lReportServer      <- arbitrary
+        lX509ToolPath      <- arbitrary
+        lLogsPrefix        <- arbitrary
+        lTlsca             <- arbitrary
+        lTlscert           <- arbitrary
+        lTlsKey            <- arbitrary
+        lNoClientAuth      <- arbitrary
+        lLogConsoleOff     <- arbitrary
+        lUpdateServer      <- arbitrary
+        lKeyFile           <- arbitrary
+        lTopology          <- arbitrary
+        lWalletDbPath      <- arbitrary
+        lUpdateLatestPath  <- arbitrary
+        lWalletAddress     <- arbitrary
+        lUpdateWithPackage <- arbitrary
+
+        pure Launcher{..}
+
 lowerHead :: T.Text -> T.Text
 lowerHead str = T.toLower (T.take 1 str) <> T.drop 1 str
+
+instance Arbitrary Natural where
+    arbitrary = fromInteger <$> choose (0,1000000)
+
+instance Arbitrary Text where
+    arbitrary = fromString <$> arbitrary
