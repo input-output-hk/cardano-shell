@@ -15,7 +15,7 @@ import           Configuration.Types (ClusterConfig, InstallerConfig, Launcher,
                                       NodeArgs, Pass, OSConfig)
 
 dhallConfigSpec :: Spec
-dhallConfigSpec = describe "Dhall configurations" $
+dhallConfigSpec = 
     describe "should be able to perform serialization roundtrip on" $ modifyMaxSuccess (const 200) $ do
         prop "NodeArgs" $
             \(nodeArgs :: NodeArgs) -> testRoundTrip nodeArgs
@@ -35,7 +35,7 @@ dhallConfigSpec = describe "Dhall configurations" $
         prop "NodeArgs" $
             \(nodeArgs :: NodeArgs) -> testRoundTrip nodeArgs
 
-        prop "should be able to perform serialization round trip on Pass" $
+        prop "Pass" $
             \(paths :: Pass) -> testRoundTrip paths
 
 testRoundTrip :: (Inject a, Interpret a, Eq a) => a -> Property

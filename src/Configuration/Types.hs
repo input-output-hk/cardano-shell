@@ -23,7 +23,6 @@ import           Cardano.Prelude hiding (evalState)
 
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
-import           Data.String (fromString)
 import qualified Data.Text as T
 import           Dhall (Inject (..), Interpret (..), InterpretOptions (..),
                         auto, defaultInterpretOptions, field, genericAutoWith,
