@@ -2,5 +2,10 @@ module Main where
 
 import           Cardano.Prelude
 
+import           Test.Hspec (hspec, describe)
+
+import           DhallConfigSpec (dhallConfigSpec)
+
 main :: IO ()
-main = putText "Test suite not yet implemented"
+main = hspec $ do
+    describe "Dhall configurations" dhallConfigSpec

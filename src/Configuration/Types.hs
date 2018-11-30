@@ -86,13 +86,13 @@ instance Inject ClusterConfig where
 
 instance Arbitrary ClusterConfig where
     arbitrary = do
-        ccfgName                   <- arbitrary
-        ccfgKeyPrefix              <- arbitrary
-        ccfgRelays                 <- arbitrary
-        ccfgUpdateServer           <- arbitrary
-        ccfgReportServer           <- arbitrary
-        ccfgInstallDirectorySuffix <- arbitrary
-        ccfgMacPackageSuffix       <- arbitrary
+        ccfgName                   <- genSafeText
+        ccfgKeyPrefix              <- genSafeText
+        ccfgRelays                 <- genSafeText
+        ccfgUpdateServer           <- genSafeText
+        ccfgReportServer           <- genSafeText
+        ccfgInstallDirectorySuffix <- genSafeText
+        ccfgMacPackageSuffix       <- genSafeText
         ccfgWalletPort             <- arbitrary
 
         pure ClusterConfig {..}
@@ -119,10 +119,10 @@ instance Inject OSConfig where
 
 instance Arbitrary OSConfig where
     arbitrary = do
-        osName <- arbitrary
-        osConfigurationYaml <- arbitrary
-        osInstallDirectory  <- arbitrary
-        osX509ToolPath      <- arbitrary
+        osName              <- elements ["windows64", "macos64", "linux64"]
+        osConfigurationYaml <- genSafeText
+        osInstallDirectory  <- genSafeText
+        osX509ToolPath      <- genSafeText
         osNodeArgs          <- arbitrary
         osPass              <- arbitrary
 
@@ -150,12 +150,12 @@ instance Inject NodeArgs where
 
 instance Arbitrary NodeArgs where
     arbitrary = do
-        naKeyfile          <- arbitrary
-        naLogsPrefix       <- arbitrary
-        naTopology         <- arbitrary
-        naUpdateLatestPath <- arbitrary
-        naWalletDBPath     <- arbitrary
-        naTlsPath          <- arbitrary
+        naKeyfile          <- genSafeText
+        naLogsPrefix       <- genSafeText
+        naTopology         <- genSafeText
+        naUpdateLatestPath <- genSafeText
+        naWalletDBPath     <- genSafeText
+        naTlsPath          <- genSafeText
 
         pure NodeArgs{..}
 
@@ -189,20 +189,20 @@ instance Inject Pass where
 
 instance Arbitrary Pass where
     arbitrary = do
-        pStatePath           <- arbitrary
-        pNodePath            <- arbitrary
-        pNodeDbPath          <- arbitrary
-        pNodeLogConfig       <- arbitrary
-        pNodeLogPath         <- arbitrary
-        pWalletPath          <- arbitrary
+        pStatePath           <- genSafeText
+        pNodePath            <- genSafeText
+        pNodeDbPath          <- genSafeText
+        pNodeLogConfig       <- genSafeText
+        pNodeLogPath         <- mGenSafeText
+        pWalletPath          <- genSafeText
         pWalletLogging       <- arbitrary
-        pWorkingDir          <- arbitrary
+        pWorkingDir          <- genSafeText
         pFrontendOnlyMode    <- arbitrary
-        pUpdaterPath         <- arbitrary
-        pUpdaterArgs         <- arbitrary
-        pUpdateArchive       <- arbitrary
-        pUpdateWindowsRunner <- arbitrary
-        pLauncherLogsPrefix  <- arbitrary
+        pUpdaterPath         <- genSafeText
+        pUpdaterArgs         <- listOf genSafeText
+        pUpdateArchive       <- mGenSafeText
+        pUpdateWindowsRunner <- mGenSafeText
+        pLauncherLogsPrefix  <- genSafeText
 
         pure Pass{..}
 -- | Launcher configuration
@@ -225,8 +225,8 @@ instance Inject LauncherConfig where
 
 instance Arbitrary LauncherConfig where
     arbitrary = do
-        lcfgFilePath    <- arbitrary
-        lcfgKey         <- arbitrary
+        lcfgFilePath    <- genSafeText
+        lcfgKey         <- genSafeText
         lcfgSystemStart <- arbitrary
         lcfgSeed        <- arbitrary
         
@@ -294,7 +294,7 @@ instance Inject Host where
         replaceWithHost text      = text
 
 instance Arbitrary Host where
-    arbitrary = Host <$> arbitrary
+    arbitrary = Host <$> genSafeText
 
 -- | Installer configuration
 data InstallerConfig = InstallerConfig
@@ -314,7 +314,7 @@ instance Inject InstallerConfig where
 
 instance Arbitrary InstallerConfig where
     arbitrary = do
-        icfgInstallDirectory <- arbitrary
+        icfgInstallDirectory <- genSafeText
         icfgWalletPort       <- arbitrary
 
         pure InstallerConfig{..}
@@ -357,25 +357,25 @@ instance Inject Launcher where
 instance Arbitrary Launcher where
     arbitrary = do
         lConfiguration     <- arbitrary
-        lNodeDbPath        <- arbitrary
-        lNodeLogConfig     <- arbitrary
-        lUpdaterPath       <- arbitrary
-        lUpdaterArgs       <- arbitrary
-        lUpdateArchive     <- arbitrary
-        lReportServer      <- arbitrary
-        lX509ToolPath      <- arbitrary
-        lLogsPrefix        <- arbitrary
-        lTlsca             <- arbitrary
-        lTlscert           <- arbitrary
-        lTlsKey            <- arbitrary
+        lNodeDbPath        <- genSafeText
+        lNodeLogConfig     <- genSafeText
+        lUpdaterPath       <- genSafeText
+        lUpdaterArgs       <- listOf genSafeText
+        lUpdateArchive     <- mGenSafeText
+        lReportServer      <- genSafeText
+        lX509ToolPath      <- genSafeText
+        lLogsPrefix        <- genSafeText
+        lTlsca             <- genSafeText
+        lTlscert           <- genSafeText
+        lTlsKey            <- genSafeText
         lNoClientAuth      <- arbitrary
         lLogConsoleOff     <- arbitrary
-        lUpdateServer      <- arbitrary
-        lKeyFile           <- arbitrary
-        lTopology          <- arbitrary
-        lWalletDbPath      <- arbitrary
-        lUpdateLatestPath  <- arbitrary
-        lWalletAddress     <- arbitrary
+        lUpdateServer      <- genSafeText
+        lKeyFile           <- genSafeText
+        lTopology          <- genSafeText
+        lWalletDbPath      <- genSafeText
+        lUpdateLatestPath  <- genSafeText
+        lWalletAddress     <- genSafeText
         lUpdateWithPackage <- arbitrary
 
         pure Launcher{..}
@@ -386,5 +386,13 @@ lowerHead str = T.toLower (T.take 1 str) <> T.drop 1 str
 instance Arbitrary Natural where
     arbitrary = fromInteger <$> choose (0,1000000)
 
-instance Arbitrary Text where
-    arbitrary = fromString <$> arbitrary
+genSafeText :: Gen Text
+genSafeText = mconcat <$> listOf genSafeChar
+  where
+    genSafeChar :: Gen Text
+    genSafeChar = T.singleton <$> elements ['a'..'z']
+
+mGenSafeText :: Gen (Maybe Text)
+mGenSafeText = do
+    randomString <- genSafeText
+    elements [Nothing, Just randomString]
