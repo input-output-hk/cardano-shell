@@ -30,8 +30,8 @@ import           Dhall (GenericInject, GenericInterpret, Inject (..), InputType,
                         field, genericAutoWith, genericInjectWith, record,
                         strictText)
 import           GHC.Generics (from, to)
-
-import           Test.QuickCheck
+import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
+                                  choose, elements, listOf, listOf1)
 
 -- | Operating system
 data OS
@@ -331,7 +331,7 @@ instance Arbitrary Launcher where
         lNodeLogConfig     <- genSafeText
         lUpdaterPath       <- genSafeText
         lUpdaterArgs       <- listOf genSafeText
-        lUpdateArchive     <- maybeOf genSafeText 
+        lUpdateArchive     <- maybeOf genSafeText
         lReportServer      <- genSafeText
         lX509ToolPath      <- genSafeText
         lLogsPrefix        <- genSafeText
