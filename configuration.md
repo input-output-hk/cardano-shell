@@ -2,26 +2,26 @@
 
     "block"
       - networkDiameter - Estimated time for broadcasting messages
-      Note: Varies between mainnet and dev
+        Note: Varies between mainnet and dev
       - recoveryHeadersMessage - Numbers of headers put in message in recovery mode. Should be greater than k.
-      Note: dev_block = 20, mainnet_base_block = 2200
-      - streamWindow - Number of blocks to have inflight
-      Note: dev_block & mainnet_base_block = 2048
+        Note: dev_block = 20, mainnet_base_block = 2200
+      - streamWindow - Number of blocks to have inflight.
+        Note: dev_block & mainnet_base_block = 2048
       - nonCriticalCQBootstrap - If chain quality in bootstrap era is less than this value, non critical misbehavior will be reported
-      Note: dev_block & mainnet_base_block = 0.95
+        Note: dev_block & mainnet_base_block = 0.95
       - criticalCQBootstrap - If chain quality after bootstrap era is less than this value, critical misbehavior will be reported.
-      Note: dev_block & mainnet_base_block = 0.8888
+        Note: dev_block & mainnet_base_block = 0.8888
       - nonCriticalCQ - If chain quality after bootstrap era is less than this value, non critical misbehavior will be reported.
-      Note: dev_block & mainnet_base_block = 0.8
+        Note: dev_block & mainnet_base_block = 0.8
       - criticalCQ - If chain quality after bootstrap era is less than this value, critical misbehavior will be reported.
-      Note: dev_block & mainnet_base_block = 0.654321
+        Note: dev_block & mainnet_base_block = 0.654321
       - criticalForkThreshold - Number of blocks such that if so many blocks are rolled back, it requires immediate reaction
-      Note: dev_block = 2 mainnet_base_block = 3
+        Note: dev_block = 2 mainnet_base_block = 3
       - fixedTimeCQ - Chain quality will be also calculated for this amount of seconds.
-      Note: dev_block = 10 mainnet_base_block = 3600
+        Note: dev_block = 10 mainnet_base_block = 3600
     "core"
       - Genesis Configuration - specifies which addresses initially have ADA and how much.
-        - avvmDistr - contains AVVM addresses with corresponding balances -  a map from AVVM addresses to balances
+        - avvmDistr - contains AVVM addresses with corresponding balances -  a map from AVVM addresses to balances.
         Note: Appears to be Mainnet AVVM distribution or an empty set. 
         -  initializer - Prefills various values to properly initialize networks, used often in testnet.
         - BlockVersionData - xontains fundamental blockchain-related values
