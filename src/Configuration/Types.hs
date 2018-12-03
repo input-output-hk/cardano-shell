@@ -178,15 +178,15 @@ instance Arbitrary Pass where
         pNodePath            <- genSafeText
         pNodeDbPath          <- genSafeText
         pNodeLogConfig       <- genSafeText
-        pNodeLogPath         <- genMaybe genSafeText
+        pNodeLogPath         <- maybeOf genSafeText
         pWalletPath          <- genSafeText
         pWalletLogging       <- arbitrary
         pWorkingDir          <- genSafeText
         pFrontendOnlyMode    <- arbitrary
         pUpdaterPath         <- genSafeText
         pUpdaterArgs         <- listOf genSafeText
-        pUpdateArchive       <- genMaybe genSafeText
-        pUpdateWindowsRunner <- genMaybe genSafeText
+        pUpdateArchive       <- maybeOf genSafeText
+        pUpdateWindowsRunner <- maybeOf genSafeText
         pLauncherLogsPrefix  <- genSafeText
 
         pure Pass{..}
@@ -331,7 +331,7 @@ instance Arbitrary Launcher where
         lNodeLogConfig     <- genSafeText
         lUpdaterPath       <- genSafeText
         lUpdaterArgs       <- listOf genSafeText
-        lUpdateArchive     <- genMaybe genSafeText 
+        lUpdateArchive     <- maybeOf genSafeText 
         lReportServer      <- genSafeText
         lX509ToolPath      <- genSafeText
         lLogsPrefix        <- genSafeText
@@ -365,8 +365,8 @@ genSafeText = mconcat <$> listOf genSafeChar
     genSafeChar = T.singleton <$> elements (['a'..'z'] <> ['0' .. '9'])
 
 -- | Wrap given generator with 'Maybe'
-genMaybe :: Gen a -> Gen (Maybe a)
-genMaybe generator = do
+maybeOf :: Gen a -> Gen (Maybe a)
+maybeOf generator = do
     random <- generator
     elements [Nothing, Just random]
 
