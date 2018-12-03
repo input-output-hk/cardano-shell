@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
@@ -24,9 +25,10 @@ import           Cardano.Prelude hiding (evalState)
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
 import qualified Data.Text as T
-import           Dhall (Inject (..), Interpret (..), InterpretOptions (..),
-                        auto, defaultInterpretOptions, field, genericAutoWith,
-                        genericInjectWith, record, strictText)
+import           Dhall (GenericInject, GenericInterpret, Inject (..), InputType,
+                        Interpret (..), InterpretOptions (..), Type, auto,
+                        field, genericAutoWith, genericInjectWith, record,
+                        strictText)
 import           GHC.Generics (from, to)
 
 import           Test.QuickCheck
@@ -73,14 +75,10 @@ data ClusterConfig = ClusterConfig
 
 -- Defining each 'Intrepret' instance.
 instance Interpret ClusterConfig where
-    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
 
 instance Inject ClusterConfig where
-    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
 
 
 instance Arbitrary ClusterConfig where
@@ -107,14 +105,10 @@ data OSConfig = OSConfig
     } deriving (Eq, Generic, Show)
 
 instance Interpret OSConfig where
-    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
+    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 2}
 
 instance Inject OSConfig where
-    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
+    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 2}
 
 instance Arbitrary OSConfig where
     arbitrary = do
@@ -138,14 +132,10 @@ data NodeArgs = NodeArgs
     } deriving (Eq, Generic, Show)
 
 instance Interpret NodeArgs where
-    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
+    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 2}
 
 instance Inject NodeArgs where
-    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 2}
+    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 2}
 
 instance Arbitrary NodeArgs where
     arbitrary = do
@@ -177,14 +167,10 @@ data Pass = Pass
     } deriving (Eq, Generic, Show)
 
 instance Interpret Pass where
-    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 1}
+    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
 
 instance Inject Pass where
-    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 1}
+    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
 
 instance Arbitrary Pass where
     arbitrary = do
@@ -192,15 +178,15 @@ instance Arbitrary Pass where
         pNodePath            <- genSafeText
         pNodeDbPath          <- genSafeText
         pNodeLogConfig       <- genSafeText
-        pNodeLogPath         <- mGenSafeText
+        pNodeLogPath         <- genMaybe genSafeText
         pWalletPath          <- genSafeText
         pWalletLogging       <- arbitrary
         pWorkingDir          <- genSafeText
         pFrontendOnlyMode    <- arbitrary
         pUpdaterPath         <- genSafeText
         pUpdaterArgs         <- listOf genSafeText
-        pUpdateArchive       <- mGenSafeText
-        pUpdateWindowsRunner <- mGenSafeText
+        pUpdateArchive       <- genMaybe genSafeText
+        pUpdateWindowsRunner <- genMaybe genSafeText
         pLauncherLogsPrefix  <- genSafeText
 
         pure Pass{..}
@@ -213,14 +199,10 @@ data LauncherConfig = LauncherConfig
     } deriving (Eq, Generic, Show)
 
 instance Interpret LauncherConfig where
-    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
 
 instance Inject LauncherConfig where
-    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
 
 instance Arbitrary LauncherConfig where
     arbitrary = do
@@ -228,7 +210,7 @@ instance Arbitrary LauncherConfig where
         lcfgKey         <- genSafeText
         lcfgSystemStart <- arbitrary
         lcfgSeed        <- arbitrary
-        
+
         pure LauncherConfig{..}
 
 -- | Topology configuration
@@ -241,9 +223,10 @@ instance Interpret TopologyConfig where
         (TopologyConfig <$> field "wallet" auto)
 
 instance Inject TopologyConfig where
-    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+    injectWith opt = injectAutoWithOption $ options
       where
-        options = defaultInterpretOptions {fieldModifier = replaceWithWallet}
+        options :: InterpretOptions
+        options = opt {fieldModifier = replaceWithWallet}
         replaceWithWallet :: Text -> Text
         replaceWithWallet "getWalletConfig" = "wallet"
         replaceWithWallet text              = text
@@ -259,14 +242,10 @@ data WalletConfig = WalletConfig
     } deriving (Eq, Generic, Show)
 
 instance Interpret WalletConfig where
-    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
 
 instance Inject WalletConfig where
-    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
 
 instance Arbitrary WalletConfig where
     arbitrary = do
@@ -285,9 +264,9 @@ instance Interpret Host where
         (Host <$> field "host" strictText)
 
 instance Inject Host where
-    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
+    injectWith opt = injectAutoWithOption $ options
       where
-        options = defaultInterpretOptions {fieldModifier = replaceWithHost}
+        options = opt {fieldModifier = replaceWithHost}
         replaceWithHost :: Text -> Text
         replaceWithHost "getHost" = "host"
         replaceWithHost text      = text
@@ -302,14 +281,10 @@ data InstallerConfig = InstallerConfig
     } deriving (Eq, Generic, Show)
 
 instance Interpret InstallerConfig where
-    autoWith _ = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
 
 instance Inject InstallerConfig where
-    injectWith _ = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
-      where
-        options = defaultInterpretOptions {fieldModifier = lowerHead . T.drop 4}
+    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
 
 instance Arbitrary InstallerConfig where
     arbitrary = do
@@ -344,14 +319,10 @@ data Launcher = Launcher
     } deriving (Eq, Generic, Show)
 
 instance Interpret Launcher where
-    autoWith opts = fmap GHC.Generics.to (evalState (genericAutoWith options) 1)
-      where
-        options = opts {fieldModifier = lowerHead . T.drop 1}
+    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
 
 instance Inject Launcher where
-    injectWith opts = contramap GHC.Generics.from (evalState (genericInjectWith options) 1)
-      where
-        options = opts {fieldModifier = lowerHead . T.drop 1}
+    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
 
 instance Arbitrary Launcher where
     arbitrary = do
@@ -360,7 +331,7 @@ instance Arbitrary Launcher where
         lNodeLogConfig     <- genSafeText
         lUpdaterPath       <- genSafeText
         lUpdaterArgs       <- listOf genSafeText
-        lUpdateArchive     <- mGenSafeText
+        lUpdateArchive     <- genMaybe genSafeText 
         lReportServer      <- genSafeText
         lX509ToolPath      <- genSafeText
         lLogsPrefix        <- genSafeText
@@ -379,19 +350,34 @@ instance Arbitrary Launcher where
 
         pure Launcher{..}
 
+-- | Lowercase given text's first letter
 lowerHead :: T.Text -> T.Text
 lowerHead str = T.toLower (T.take 1 str) <> T.drop 1 str
 
 instance Arbitrary Natural where
     arbitrary = fromInteger <$> choose (0,1000000)
 
+-- | Generate random ascii string
 genSafeText :: Gen Text
 genSafeText = mconcat <$> listOf genSafeChar
   where
     genSafeChar :: Gen Text
-    genSafeChar = T.singleton <$> elements ['a'..'z']
+    genSafeChar = T.singleton <$> elements (['a'..'z'] <> ['0' .. '9'])
 
-mGenSafeText :: Gen (Maybe Text)
-mGenSafeText = do
-    randomString <- genSafeText
-    elements [Nothing, Just randomString]
+-- | Wrap given generator with 'Maybe'
+genMaybe :: Gen a -> Gen (Maybe a)
+genMaybe generator = do
+    random <- generator
+    elements [Nothing, Just random]
+
+-- | Define type class instance of 'Interpret' with given 'InterpretOptions'
+interpretAutoWithOption :: (Generic a, GenericInterpret (Rep a))
+                        => InterpretOptions
+                        -> Dhall.Type a
+interpretAutoWithOption opt = fmap GHC.Generics.to (evalState (genericAutoWith opt) 1)
+
+-- | Define type class instance of 'Inject' with given 'InterpretOptions'
+injectAutoWithOption :: (Generic a, GenericInject (Rep a))
+                     => InterpretOptions
+                     -> InputType a
+injectAutoWithOption opt = contramap GHC.Generics.from (evalState (genericInjectWith opt) 1)
