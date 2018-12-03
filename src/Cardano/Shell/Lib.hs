@@ -92,9 +92,9 @@ runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardano
 
     -- And we are done! Or are we? A simple idea is to restart the application if it's
     -- in production.
-    if applicationProductionMode applicationEnvironment
-       then runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardanoApplication
-       else pure ()
+    when (applicationProductionMode applicationEnvironment) $
+       runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardanoApplication
+
   where
     -- | Util function. Yes, yes, we can import this.
     catchAny :: IO a -> (SomeException -> IO a) -> IO a
