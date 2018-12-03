@@ -7,8 +7,8 @@ mkDerivation {
   version = "0.1.0.0";
   src = fetchgit {
     url = "https://github.com/input-output-hk/cardano-prelude";
-    sha256 = "1vlqhv7iqrjdaa8yd04k34xwqp13mz2nhz4mj923qmrjf9p55sfz";
-    rev = "0a32ec92c461e144f981864c97546db11b52e46a";
+    sha256 = "0kimfl3k60jz7cglk24ls5lhvm8xh0hfjs8azhhymzckvyn3y0wn";
+    rev = "2d6624af423d0a5c7ced6f3ae465eaaeb4ec739e";
     fetchSubmodules = true;
   };
   libraryHaskellDepends = [
