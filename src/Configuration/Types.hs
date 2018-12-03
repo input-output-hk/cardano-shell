@@ -359,10 +359,10 @@ instance Arbitrary Natural where
 
 -- | Generate random ascii string
 genSafeText :: Gen Text
-genSafeText = mconcat <$> listOf genSafeChar
+genSafeText = mconcat <$> listOf1 genSafeChar
   where
     genSafeChar :: Gen Text
-    genSafeChar = T.singleton <$> elements (['a'..'z'] <> ['0' .. '9'])
+    genSafeChar = T.singleton <$> arbitraryASCIIChar
 
 -- | Wrap given generator with 'Maybe'
 maybeOf :: Gen a -> Gen (Maybe a)
