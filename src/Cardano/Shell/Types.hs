@@ -1,9 +1,23 @@
-module Types where
+module Cardano.Shell.Types where
 
 import Cardano.Prelude
 
 --import qualified Katip as Katip
 import qualified System.Metrics as Ekg
+
+-- | The top level module we use to run the key functions.
+newtype CardanoApplication = CardanoApplication { runCardanoApplication :: IO () }
+
+-- | The application environment.
+data ApplicationEnvironment
+    = Development
+    | Production
+    deriving (Eq, Show)
+
+-- | A simple function to inform us.
+applicationProductionMode :: ApplicationEnvironment -> Bool
+applicationProductionMode Production    = True
+applicationProductionMode _             = False
 
 -- | Cardano configuration
 data CardanoConfiguration = CardanoConfiguration
@@ -15,8 +29,8 @@ data CardanoConfiguration = CardanoConfiguration
 -- | The common runtime environment for all features in the server.
 -- All features have access to this environment.
 data CardanoEnvironment = CardanoEnvironment
-    { serverLogEnv      :: Text --Katip.LogEnv
-    , serverEkgStore    :: Ekg.Store
+    { ceLogEnv      :: Text --Katip.LogEnv
+    , ceEkgStore    :: Ekg.Store
      -- ...
     }
 
@@ -25,7 +39,10 @@ initializeCardanoEnvironment :: IO CardanoEnvironment
 initializeCardanoEnvironment = do
   --  logenv   <- Katip.initLogEnv (...) (...)
     ekgStore <- Ekg.newStore
-    return CardanoEnvironment {serverLogEnv = "To implement", serverEkgStore = ekgStore}
+    return CardanoEnvironment
+        { ceLogEnv      = "To implement"
+        , ceEkgStore    = ekgStore
+        }
 
 loadCardanoConfiguration :: IO CardanoConfiguration
 loadCardanoConfiguration = do

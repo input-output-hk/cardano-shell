@@ -1,6 +1,6 @@
 {-# LANGUAGE Rank2Types #-}
 
-module Features.Networking where
+module Cardano.Shell.Features.Networking where
 
 import Cardano.Prelude
 
@@ -9,8 +9,8 @@ import Control.Exception.Safe
 --import Control.Concurrent.Classy
 --import Control.Concurrent.Classy.Async
 
-import Types
-import Features.Logging
+import Cardano.Shell.Types
+import Cardano.Shell.Features.Logging
 
 --------------------------------------------------------------------------------
 -- Networking feature
