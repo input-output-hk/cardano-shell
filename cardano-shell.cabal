@@ -22,10 +22,6 @@ source-repository head
 library
   exposed-modules:
       Cardano.Shell.Lib
-    , Lib
-    , Dhall.Types
-    , Dhall.Config
-    , Configuration.Generator
     , Configuration.Lib
     , Configuration.Types
   other-modules:
