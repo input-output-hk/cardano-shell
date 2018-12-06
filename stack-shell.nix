@@ -11,7 +11,7 @@ let
 
   pkgs = import nixpkgs { inherit config; };
 
-in 
+in
   with pkgs;
 
   haskell.lib.buildStackProject {

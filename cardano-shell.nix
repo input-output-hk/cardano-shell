@@ -1,6 +1,6 @@
 { mkDerivation, aeson, base, cardano-prelude, concurrency, dejafu
-, ekg, ekg-core, hspec, hspec-contrib, hunit-dejafu, QuickCheck
-, safe-exceptions, stdenv
+, ekg, ekg-core, hspec, hspec-contrib, hunit-dejafu
+, iohk-monitoring, QuickCheck, safe-exceptions, stdenv
 }:
 mkDerivation {
   pname = "cardano-shell";
@@ -10,7 +10,7 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     aeson base cardano-prelude concurrency ekg ekg-core
-    safe-exceptions
+    iohk-monitoring safe-exceptions
   ];
   executableHaskellDepends = [ base cardano-prelude ];
   testHaskellDepends = [
