@@ -97,6 +97,7 @@ data CardanoConfiguration = CardanoConfiguration
     , ntp           :: !NTP
     , update        :: !Update
     , txp           :: !TXP
+    , ssc           :: !SSC
     , dlg           :: !DLG
     , block         :: !Block
     , node          :: !Node
@@ -135,13 +136,12 @@ data Spec = Spec
 -- | This data type contains various options presense of which depends
 -- on whether we want genesis for mainnet or testnet.
 data Initializer = Initializer
-    { testBalance       :: !TestBalance
-      -- ^ 
+    { testBalance       :: !TestBalance 
     , fakeAvvmBalance   :: !FakeAvvmBalance
     , avvmBalanceFactor :: !Int
     , useHeavyDlg       :: !Bool
     , seed              :: !Int
-      -- ^ ^ Seed to use to generate secret data. It's used only in
+      -- ^ Seed to use to generate secret data. It's used only in
       -- testnet, shouldn't be used for anything important.
     } deriving (Eq, Show)
 
@@ -206,7 +206,9 @@ data TxSizeLinear = TxSizeLinear
 
 data ProtocolConstants = ProtocolConstants
     { k             :: !Int
+    -- ^ Security parameter from the paper.
     , protocolMagic :: !Int
+    -- ^ Magic constant for separating real/testnet.
     } deriving (Eq, Show)
 
 data NTP = NTP
