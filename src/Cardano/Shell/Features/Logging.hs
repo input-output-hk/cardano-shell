@@ -95,28 +95,24 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration = do
 
 loggingCardanoFeatureInit :: LoggingCardanoFeature
 loggingCardanoFeatureInit = CardanoFeatureInit
-    { featureType                   = "LoggingMonitoringFeature"
-    , featureInit                   = featureInit'
-    , featureCleanup                = featureCleanup'
+    { featureType    = "LoggingMonitoringFeature"
+    , featureInit    = initLogging
+    , featureCleanup = cleanupLogging
     }
   where
-    featureInit' :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
-    featureInit' = actualLoggingFeature
-      where
-        actualLoggingFeature :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
-        actualLoggingFeature _ _ _ _ = do
-            cfg <- defaultConfigStdout
-            (ctx, baseTrace) <- setupTrace (Right cfg) "simple"
-            pure $ LoggingLayer
-                    { trace  = (ctx, natTrace liftIO baseTrace)
-                    , logDebug  = Trace.logDebug
-                    , logInfo   = Trace.logInfo
-                    , subTrace  = Trace.subTrace
-                    , mockNonIO = pure ()
-                    }
-
-    featureCleanup' :: LoggingLayer -> IO ()
-    featureCleanup' _ = pure () --putTextLn "Shutting down logging feature!" -- save a file, for example
+    initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
+    initLogging _ _ _ _ = do
+        cfg <- defaultConfigStdout
+        (ctx, baseTrace) <- setupTrace (Right cfg) "simple"
+        pure $ LoggingLayer
+                { trace     = (ctx, natTrace liftIO baseTrace)
+                , logDebug  = Trace.logDebug
+                , logInfo   = Trace.logInfo
+                , subTrace  = Trace.subTrace
+                , mockNonIO = pure ()
+                }
+    cleanupLogging :: LoggingLayer -> IO ()
+    cleanupLogging _ = pure ()
 
 loggingCardanoFeature :: LoggingCardanoFeature -> LoggingLayer -> CardanoFeature
 loggingCardanoFeature loggingCardanoFeature' loggingLayer = CardanoFeature
