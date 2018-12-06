@@ -1,13 +1,15 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE Rank2Types    #-}
 
-module Cardano.Shell.Features.Logging where
+module Cardano.Shell.Features.Logging
+    ( createLoggingFeature
+    , LoggingLayer (..)
+    )
+where
 
 import           Cardano.Prelude hiding (trace)
 
-import           Cardano.BM.BaseTrace (natTrace)
 import           Cardano.BM.Configuration.Static (defaultConfigStdout)
-import           Cardano.BM.Data.SubTrace (SubTrace)
 import           Cardano.BM.Setup (setupTrace)
 import           Cardano.BM.Trace (Trace)
 import qualified Cardano.BM.Trace as Trace
@@ -24,34 +26,12 @@ import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
 --------------------------------------------------------------------------------
 
 --------------------------------
--- Exceptions
---------------------------------
-
-data LoggingException
-    = MissingLogFileException
-    deriving (Eq, Show)
-
-instance Exception LoggingException
-
---------------------------------
 -- Configuration
 --------------------------------
 
--- Ideas picked up from https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LoggerConfig.hs
-
-data RotationParameters = RotationParameters
-    { _rpLogLimitBytes :: !Word64  -- ^ max size of file in bytes
-    , _rpMaxAgeHours   :: !Word    -- ^ hours
-    , _rpKeepFilesNum  :: !Word    -- ^ number of files to keep
-    } deriving (Generic, Show, Eq)
-
-
-testRotationParameters :: RotationParameters
-testRotationParameters = RotationParameters
-    { _rpLogLimitBytes = 10
-    , _rpMaxAgeHours   = 3
-    , _rpKeepFilesNum  = 5
-    }
+data LoggingParameters = LoggingParameters
+    { configFp :: Text
+    } deriving (Show, Eq)
 
 --------------------------------
 -- Layer
@@ -64,28 +44,35 @@ testRotationParameters = RotationParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { trace     :: forall m. (MonadIO m) => Trace m -- How can we change this in runtime? MVar?
-    , logDebug  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , logInfo   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , subTrace  :: forall m. (MonadIO m) => Text -> Trace m -> m (SubTrace, Trace m)
-    , mockNonIO :: forall m. (MonadThrow m) => m ()
+    { startTrace  :: forall m. (MonadIO m) => Trace m
+    , logDebug    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , logInfo     :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , logNotice   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , logWarning  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , logError    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , appendName  :: forall m. (MonadIO m) => Text -> Trace m -> m (Trace m)
+    , mockNonIO   :: forall m. (MonadThrow m) => m ()
     }
 
 --------------------------------
 -- Feature
 --------------------------------
 
-type LoggingCardanoFeature = CardanoFeatureInit NoDependency RotationParameters LoggingLayer
+type LoggingCardanoFeature = CardanoFeatureInit NoDependency LoggingParameters LoggingLayer
 
 createLoggingFeature :: CardanoEnvironment -> CardanoConfiguration -> IO (LoggingLayer, CardanoFeature)
 createLoggingFeature cardanoEnvironment cardanoConfiguration = do
     -- we parse any additional configuration if there is any
     -- We don't know where the user wants to fetch the additional configuration from, it could be from
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
-    loggingConfiguration    <-  pure testRotationParameters
+    loggingConfiguration    <-  pure $ LoggingParameters "./config/logging.yaml"
 
     -- we construct the layer
-    loggingLayer            <- (featureInit loggingCardanoFeatureInit) cardanoEnvironment NoDependency cardanoConfiguration loggingConfiguration
+    loggingLayer            <- (featureInit loggingCardanoFeatureInit)
+                               cardanoEnvironment
+                               NoDependency
+                               cardanoConfiguration
+                               loggingConfiguration
 
     -- we construct the cardano feature
     let cardanoFeature      = loggingCardanoFeature loggingCardanoFeatureInit loggingLayer
@@ -100,16 +87,19 @@ loggingCardanoFeatureInit = CardanoFeatureInit
     , featureCleanup = cleanupLogging
     }
   where
-    initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
+    initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
     initLogging _ _ _ _ = do
         cfg <- defaultConfigStdout
         (ctx, baseTrace) <- setupTrace (Right cfg) "simple"
         pure $ LoggingLayer
-                { trace     = (ctx, natTrace liftIO baseTrace)
-                , logDebug  = Trace.logDebug
-                , logInfo   = Trace.logInfo
-                , subTrace  = Trace.subTrace
-                , mockNonIO = pure ()
+                { startTrace  = (ctx, Trace.natTrace liftIO baseTrace)
+                , logDebug    = Trace.logDebug
+                , logInfo     = Trace.logInfo
+                , logNotice   = Trace.logNotice
+                , logWarning  = Trace.logWarning
+                , logError    = Trace.logError
+                , appendName  = Trace.appendName
+                , mockNonIO   = pure ()
                 }
     cleanupLogging :: LoggingLayer -> IO ()
     cleanupLogging _ = pure ()
