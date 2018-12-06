@@ -1,14 +1,16 @@
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE Rank2Types    #-}
 
 module Cardano.Shell.Features.Logging where
 
-import Cardano.Prelude
+import           Cardano.Prelude
 
-import Control.Exception.Safe
+import           Control.Exception.Safe (MonadThrow)
 
-import Cardano.Shell.Types
-
+import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
+                                      CardanoFeature (..),
+                                      CardanoFeatureInit (..),
+                                      NoDependency (..))
 
 --------------------------------------------------------------------------------
 -- Loggging feature
@@ -55,9 +57,9 @@ testRotationParameters = RotationParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { iolLogDebug   :: forall m. (MonadIO m) => Text -> m ()
-    , iolLogInfo    :: forall m. (MonadIO m) => Text -> m ()
-    , iolNonIo      :: forall m. (MonadThrow m) => m ()
+    { iolLogDebug :: forall m. (MonadIO m) => Text -> m ()
+    , iolLogInfo  :: forall m. (MonadIO m) => Text -> m ()
+    , iolNonIo    :: forall m. (MonadThrow m) => m ()
     }
 
 testLoggingLayer :: LoggingLayer
@@ -91,7 +93,7 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration = do
 
 loggingCardanoFeatureInit :: LoggingCardanoFeature
 loggingCardanoFeatureInit = CardanoFeatureInit
-    { featureType                   = LoggingMonitoringFeature
+    { featureType                   = "LoggingMonitoringFeature"
     , featureInit                   = featureInit'
     , featureCleanup                = featureCleanup'
     }
@@ -101,20 +103,20 @@ loggingCardanoFeatureInit = CardanoFeatureInit
       where
         actualLoggingFeature :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
         actualLoggingFeature _ _ _ _ = do
-            putTextLn "Starting up logging!"
+            --putTextLn "Starting up logging!"
             pure testLoggingLayer
 
     featureCleanup' :: LoggingLayer -> IO ()
-    featureCleanup' _ = putTextLn "Shutting down logging feature!" -- save a file, for example
+    featureCleanup' _ = pure () --putTextLn "Shutting down logging feature!" -- save a file, for example
 
 loggingCardanoFeature :: LoggingCardanoFeature -> LoggingLayer -> CardanoFeature
 loggingCardanoFeature loggingCardanoFeature' loggingLayer = CardanoFeature
-    { featureName       = show $ featureType loggingCardanoFeature'
-    , featureStart      = do
-        putTextLn "Starting up loggingCardanoFeature!"
+    { featureName       = featureType loggingCardanoFeature'
+    , featureStart      = liftIO $ do
+        --putTextLn "Starting up loggingCardanoFeature!"
         void $ pure loggingLayer -- or whatever it means for YOU (a specific team)
-    , featureShutdown   = do
-        putTextLn "Shutting down loggingCardanoFeature!"
+    , featureShutdown   = liftIO $ do
+        --putTextLn "Shutting down loggingCardanoFeature!"
         (featureCleanup loggingCardanoFeature') loggingLayer
     }
 

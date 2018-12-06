@@ -6,17 +6,27 @@ module Cardano.Shell.Lib
     , CardanoApplication (..)
     , initializeAllFeatures
     , runCardanoApplicationWithFeatures
+    , runApplication
     -- * configuration for running
     , loadCardanoConfiguration
     , initializeCardanoEnvironment
     ) where
 
-import Cardano.Prelude
+import           Cardano.Prelude hiding (async, cancel)
 
-import Cardano.Shell.Types
+import           Control.Concurrent.Classy hiding (catch)
+import           Control.Concurrent.Classy.Async (async, cancel)
 
-import Cardano.Shell.Features.Logging
-import Cardano.Shell.Features.Networking
+import           Cardano.Shell.Types (ApplicationEnvironment (..),
+                                      CardanoApplication (..),
+                                      CardanoConfiguration, CardanoEnvironment,
+                                      CardanoFeature (..),
+                                      applicationProductionMode,
+                                      initializeCardanoEnvironment,
+                                      loadCardanoConfiguration)
+
+import           Cardano.Shell.Features.Logging (createLoggingFeature)
+import           Cardano.Shell.Features.Networking (createNetworkingFeature)
 
 --------------------------------------------------------------------------------
 -- General exceptions
@@ -72,7 +82,12 @@ initializeAllFeatures cardanoConfiguration cardanoEnvironment = do
 -- A general pattern. The dependency is always in a new thread, and we depend on it,
 -- so when that dependency gets shut down all the other features that depend on it get
 -- shut down as well.
-runCardanoApplicationWithFeatures :: ApplicationEnvironment -> [CardanoFeature] -> CardanoApplication -> IO ()
+runCardanoApplicationWithFeatures
+    :: forall m. (MonadIO m, MonadConc m)
+    => ApplicationEnvironment
+    -> [CardanoFeature]
+    -> CardanoApplication
+    -> m ()
 runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardanoApplication = do
 
     -- We start all the new features.
@@ -81,8 +96,9 @@ runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardano
     -- Here we run the actual application.
     -- We presume that the control-flow is now in the hands of that function.
     -- An example of top-level-last-resort-error-handling-strategy.
-    catchAny (runCardanoApplication cardanoApplication) $ \_ -> do
-        putTextLn "Exception occured!"
+    liftIO $ catchAny (runCardanoApplication cardanoApplication) $ \_ -> do
+        --putTextLn "Exception occured!"
+        pure ()
 
     -- When we reach this point, we cancel all the features.
     _ <- mapM cancel (reverse asyncCardanoFeatures)
@@ -99,4 +115,21 @@ runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardano
     -- | Util function. Yes, yes, we can import this.
     catchAny :: IO a -> (SomeException -> IO a) -> IO a
     catchAny = catch
+
+-- | The wrapper for the application providing modules.
+runApplication :: forall m. (MonadIO m, MonadConc m) => IO () -> m ()
+runApplication application = do
+    -- General
+    cardanoConfiguration            <-  liftIO loadCardanoConfiguration
+    cardanoEnvironment              <-  liftIO initializeCardanoEnvironment
+
+    let cardanoApplication :: CardanoApplication
+        cardanoApplication = CardanoApplication application
+
+    -- Here we initialize all the features.
+    cardanoFeatures <- liftIO $ initializeAllFeatures cardanoConfiguration cardanoEnvironment
+
+    -- Here we run them.
+    runCardanoApplicationWithFeatures Development cardanoFeatures cardanoApplication
+
 
