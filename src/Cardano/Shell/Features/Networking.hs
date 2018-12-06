@@ -53,7 +53,7 @@ data NetworkLayer = NetworkLayer
 testNetworkLayer :: LoggingLayer -> NetworkLayer
 testNetworkLayer loggingLayer = NetworkLayer
     { sendToNodes       = \_ -> pure "SEND"
-    , readFromNodes     = \_ -> iolNonIo loggingLayer >> pure "READ"
+    , readFromNodes     = \_ -> mockNonIO loggingLayer >> pure "READ"
     }
 
 --------------------------------

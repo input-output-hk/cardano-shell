@@ -3,13 +3,14 @@
 
 module Cardano.Shell.Features.Logging where
 
-import           Cardano.Prelude
+import           Cardano.Prelude hiding (trace)
 
 import           Cardano.BM.BaseTrace (natTrace)
 import           Cardano.BM.Configuration.Static (defaultConfigStdout)
 import           Cardano.BM.Data.SubTrace (SubTrace)
 import           Cardano.BM.Setup (setupTrace)
-import           Cardano.BM.Trace (Trace, logDebug, logInfo, subTrace)
+import           Cardano.BM.Trace (Trace)
+import qualified Cardano.BM.Trace as Trace
 
 import           Control.Exception.Safe (MonadThrow)
 
@@ -63,11 +64,11 @@ testRotationParameters = RotationParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { iolTrace    :: forall m. (MonadIO m) => Trace m -- How can we change this in runtime? MVar?
-    , iolLogDebug :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , iolLogInfo  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , iolSubTrace :: forall m. (MonadIO m) => Text -> Trace m -> m (SubTrace, Trace m)
-    , iolNonIo    :: forall m. (MonadThrow m) => m ()
+    { trace     :: forall m. (MonadIO m) => Trace m -- How can we change this in runtime? MVar?
+    , logDebug  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , logInfo   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , subTrace  :: forall m. (MonadIO m) => Text -> Trace m -> m (SubTrace, Trace m)
+    , mockNonIO :: forall m. (MonadThrow m) => m ()
     }
 
 --------------------------------
@@ -107,11 +108,11 @@ loggingCardanoFeatureInit = CardanoFeatureInit
             cfg <- defaultConfigStdout
             (ctx, baseTrace) <- setupTrace (Right cfg) "simple"
             pure $ LoggingLayer
-                    { iolTrace    = (ctx, natTrace liftIO baseTrace)
-                    , iolLogDebug = logDebug
-                    , iolLogInfo  = logInfo
-                    , iolSubTrace = subTrace
-                    , iolNonIo    = pure ()
+                    { trace  = (ctx, natTrace liftIO baseTrace)
+                    , logDebug  = Trace.logDebug
+                    , logInfo   = Trace.logInfo
+                    , subTrace  = Trace.subTrace
+                    , mockNonIO = pure ()
                     }
 
     featureCleanup' :: LoggingLayer -> IO ()
