@@ -1,5 +1,5 @@
 { mkDerivation, aeson, Cabal, array, async, auto-update, base, bytestring
-, clock, containers, contravariant, directory, ekg, ekg-core
+, clock, containers, contravariant, directory, ekg, ekg-core, fetchgit
 , filepath, katip, lens, mtl, process, QuickCheck, random
 , safe-exceptions, semigroups, stdenv, stm, tasty, tasty-hunit
 , tasty-quickcheck, template-haskell, text, time, time-units
