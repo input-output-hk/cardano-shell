@@ -2,11 +2,10 @@
 
 module Cardano.Shell.Types where
 
-import Cardano.Prelude
+import           Cardano.Prelude
 
-import Control.Concurrent.Classy (MonadConc)
+import           Control.Concurrent.Classy (MonadConc)
 
---import qualified Katip as Katip
 import qualified System.Metrics as Ekg
 
 -- | The top level module we use to run the key functions.
@@ -20,8 +19,8 @@ data ApplicationEnvironment
 
 -- | A simple function to inform us.
 applicationProductionMode :: ApplicationEnvironment -> Bool
-applicationProductionMode Production    = True
-applicationProductionMode _             = False
+applicationProductionMode Production = True
+applicationProductionMode _          = False
 
 -- | Cardano configuration
 data CardanoConfiguration = CardanoConfiguration
@@ -33,15 +32,14 @@ data CardanoConfiguration = CardanoConfiguration
 -- | The common runtime environment for all features in the server.
 -- All features have access to this environment.
 data CardanoEnvironment = CardanoEnvironment
-    { ceLogEnv      :: Text --Katip.LogEnv
-    , ceEkgStore    :: Ekg.Store
+    { ceLogEnv   :: Text
+    , ceEkgStore :: Ekg.Store
      -- ...
     }
 
 -- | Initalise 'ServerEnv'
 initializeCardanoEnvironment :: IO CardanoEnvironment
 initializeCardanoEnvironment = do
-  --  logenv   <- Katip.initLogEnv (...) (...)
     ekgStore <- Ekg.newStore
     return CardanoEnvironment
         { ceLogEnv      = "To implement"
@@ -76,11 +74,11 @@ data CardanoFeatureInit dependency configuration layer = CardanoFeatureInit
 
 -- | The interface for the running feature, the high-level interface we use for running it.
 data CardanoFeature = CardanoFeature
-    { featureName       :: Text
+    { featureName     :: Text
     -- ^ The name of the feature.
-    , featureStart      :: forall m. (MonadIO m, MonadConc m) => m ()
+    , featureStart    :: forall m. (MonadIO m, MonadConc m) => m ()
     -- ^ What we call when we start the feature.
-    , featureShutdown   :: forall m. (MonadIO m, MonadConc m) => m ()
+    , featureShutdown :: forall m. (MonadIO m, MonadConc m) => m ()
     -- ^ What we call when we shut down the feature.
     }
 
