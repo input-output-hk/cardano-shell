@@ -90,9 +90,9 @@ loggingCardanoFeatureInit = CardanoFeatureInit
     initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
     initLogging _ _ _ _ = do
         cfg <- defaultConfigStdout
-        (ctx, baseTrace) <- setupTrace (Right cfg) "simple"
+        baseTrace <- setupTrace (Right cfg) "simple"
         pure $ LoggingLayer
-                { startTrace  = (ctx, Trace.natTrace liftIO baseTrace)
+                { startTrace  = Trace.natTrace liftIO baseTrace
                 , logDebug    = Trace.logDebug
                 , logInfo     = Trace.logInfo
                 , logNotice   = Trace.logNotice

@@ -10,8 +10,8 @@ mkDerivation {
   version = "0.1.0.0";
   src = fetchgit {
     url = "https://github.com/input-output-hk/iohk-monitoring-framework";
-    sha256 = "19v6nbgc89hjj052qklj3pqigb3n8innmghka03jm6cc52q9j41h";
-    rev = "7a507a9d7b53686886a725c57494e2165043a75a";
+    sha256 = "1qk5zin92bfn635nyi31b8w2nrw8zdcc8p0x2s2xcq9mzc3zdybf";
+    rev = "4dc4d541a645b84a281faa8950a7fd4e61708963";
     fetchSubmodules = false;
   };
   libraryHaskellDepends = [
