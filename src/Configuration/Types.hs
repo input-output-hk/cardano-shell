@@ -12,7 +12,7 @@ module Configuration.Types
     , NodeArgs(..)
     , OS(..)
     , OSConfig(..)
-    , Pass(..)
+    , Param(..)
     , TopologyConfig(..)
     , WalletConfig(..)
     , renderOS
@@ -109,7 +109,7 @@ data OSConfig = OSConfig
     , osInstallDirectory  :: !Text
     , osX509ToolPath      :: !Text
     , osNodeArgs          :: !NodeArgs
-    , osPass              :: !Pass
+    , osPass              :: !Param
     } deriving (Eq, Generic, Show)
 
 instance Interpret OSConfig where
@@ -170,8 +170,8 @@ instance Arbitrary NodeArgs where
             , naTlsPath          = tlsPath
             }
 
--- | Paths
-data Pass = Pass
+-- | Params
+data Param = Param
     { pStatePath           :: !Text
     , pNodePath            :: !Text
     , pNodeDbPath          :: !Text
@@ -188,13 +188,13 @@ data Pass = Pass
     , pLauncherLogsPrefix  :: !Text
     } deriving (Eq, Generic, Show)
 
-instance Interpret Pass where
+instance Interpret Param where
     autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
 
-instance Inject Pass where
+instance Inject Param where
     injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
 
-instance Arbitrary Pass where
+instance Arbitrary Param where
     arbitrary = do
         statePath           <- genSafeText
         nodePath            <- genSafeText
@@ -211,7 +211,7 @@ instance Arbitrary Pass where
         updateWindowsRunner <- maybeOf genSafeText
         launcherLogsPrefix  <- genSafeText
 
-        pure Pass
+        pure Param
             { pStatePath           = statePath
             , pNodePath            = nodePath
             , pNodeDbPath          = nodeDbPath
