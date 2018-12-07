@@ -30,7 +30,7 @@ import           Dhall (GenericInject, GenericInterpret, Inject (..), InputType,
                         strictText)
 import           GHC.Generics (from, to)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
-                                  choose, elements, listOf, listOf1)
+                                  elements, listOf, listOf1)
 
 -- | Operating system
 data OS
@@ -69,7 +69,7 @@ data ClusterConfig = ClusterConfig
     , ccfgReportServer           :: !Text
     , ccfgInstallDirectorySuffix :: !Text
     , ccfgMacPackageSuffix       :: !Text
-    , ccfgWalletPort             :: !Natural
+    , ccfgWalletPort             :: !Integer
     } deriving (Eq, Generic, Show)
 
 -- Defining each 'Intrepret' instance.
@@ -232,8 +232,8 @@ instance Arbitrary Pass where
 data LauncherConfig = LauncherConfig
     { lcfgFilePath    :: !Text
     , lcfgKey         :: !Text
-    , lcfgSystemStart :: !(Maybe Natural)
-    , lcfgSeed        :: !(Maybe Natural)
+    , lcfgSystemStart :: !(Maybe Integer)
+    , lcfgSeed        :: !(Maybe Integer)
     } deriving (Eq, Generic, Show)
 
 instance Interpret LauncherConfig where
@@ -280,8 +280,8 @@ instance Arbitrary TopologyConfig where
 -- | Wallet configuration
 data WalletConfig = WalletConfig
     { wcfgRelays    :: ![[Host]]
-    , wcfgValency   :: !Natural
-    , wcfgFallbacks :: !Natural
+    , wcfgValency   :: !Integer
+    , wcfgFallbacks :: !Integer
     } deriving (Eq, Generic, Show)
 
 instance Interpret WalletConfig where
@@ -325,7 +325,7 @@ instance Arbitrary Host where
 -- | Installer configuration
 data InstallerConfig = InstallerConfig
     { icfgInstallDirectory :: !Text
-    , icfgWalletPort       :: !Natural
+    , icfgWalletPort       :: !Integer
     } deriving (Eq, Generic, Show)
 
 instance Interpret InstallerConfig where
@@ -426,9 +426,6 @@ instance Arbitrary Launcher where
 -- | Lowercase given text's first letter
 lowerHead :: T.Text -> T.Text
 lowerHead str = T.toLower (T.take 1 str) <> T.drop 1 str
-
-instance Arbitrary Natural where
-    arbitrary = fromInteger <$> choose (0,1000000)
 
 -- | Generate random ascii string
 genSafeText :: Gen Text
