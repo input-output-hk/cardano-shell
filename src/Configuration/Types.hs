@@ -38,7 +38,7 @@ data OS
     = Linux64
     | Macos64
     | Win64
-    deriving Eq
+    deriving (Enum, Eq)
 
 -- | Cluster
 data Cluster
@@ -112,7 +112,7 @@ instance Inject OSConfig where
 
 instance Arbitrary OSConfig where
     arbitrary = do
-        osName              <- elements ["windows64", "macos64", "linux64"]
+        osName              <- elements (map renderOS [Linux64 .. Win64])
         osConfigurationYaml <- genSafeText
         osInstallDirectory  <- genSafeText
         osX509ToolPath      <- genSafeText
