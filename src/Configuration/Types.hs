@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 
 module Configuration.Types
     ( Cluster(..)
@@ -38,7 +37,7 @@ data OS
     = Linux64
     | Macos64
     | Win64
-    deriving (Enum, Eq)
+    deriving ( Eq, Read, Show)
 
 -- | Cluster
 data Cluster
@@ -46,7 +45,7 @@ data Cluster
     | Staging
     | Testnet
     | Demo
-    deriving Eq
+    deriving (Bounded, Enum, Eq, Read, Show)
 
 -- | Convert 'OS' into 'Text'
 renderOS :: OS -> Text
@@ -83,16 +82,25 @@ instance Inject ClusterConfig where
 
 instance Arbitrary ClusterConfig where
     arbitrary = do
-        ccfgName                   <- genSafeText
-        ccfgKeyPrefix              <- genSafeText
-        ccfgRelays                 <- genSafeText
-        ccfgUpdateServer           <- genSafeText
-        ccfgReportServer           <- genSafeText
-        ccfgInstallDirectorySuffix <- genSafeText
-        ccfgMacPackageSuffix       <- genSafeText
-        ccfgWalletPort             <- arbitrary
+        name                   <- genSafeText
+        keyPrefix              <- genSafeText
+        relays                 <- genSafeText
+        updateServer           <- genSafeText
+        reportServer           <- genSafeText
+        installDirectorySuffix <- genSafeText
+        macPackageSuffix       <- genSafeText
+        walletPort             <- arbitrary
 
-        pure ClusterConfig {..}
+        pure $ ClusterConfig
+            { ccfgName                   = name
+            , ccfgKeyPrefix              = keyPrefix
+            , ccfgRelays                 = relays
+            , ccfgUpdateServer           = updateServer
+            , ccfgReportServer           = reportServer
+            , ccfgInstallDirectorySuffix = installDirectorySuffix
+            , ccfgMacPackageSuffix       = macPackageSuffix
+            , ccfgWalletPort             = walletPort
+            }
 
 -- | OS configuration
 data OSConfig = OSConfig
@@ -112,14 +120,21 @@ instance Inject OSConfig where
 
 instance Arbitrary OSConfig where
     arbitrary = do
-        osName              <- elements (map renderOS [Linux64 .. Win64])
-        osConfigurationYaml <- genSafeText
-        osInstallDirectory  <- genSafeText
-        osX509ToolPath      <- genSafeText
-        osNodeArgs          <- arbitrary
-        osPass              <- arbitrary
+        name              <- elements ["windows64", "macos64", "linux64"]
+        configurationYaml <- genSafeText
+        installDirectory  <- genSafeText
+        x509ToolPath      <- genSafeText
+        nodeArgs          <- arbitrary
+        paths             <- arbitrary
 
-        pure OSConfig{..}
+        pure $ OSConfig
+            { osName              = name
+            , osConfigurationYaml = configurationYaml
+            , osInstallDirectory  = installDirectory
+            , osX509ToolPath      = x509ToolPath
+            , osNodeArgs          = nodeArgs
+            , osPass              = paths
+            }
 
 -- | Node arguments
 data NodeArgs = NodeArgs
@@ -139,14 +154,21 @@ instance Inject NodeArgs where
 
 instance Arbitrary NodeArgs where
     arbitrary = do
-        naKeyfile          <- genSafeText
-        naLogsPrefix       <- genSafeText
-        naTopology         <- genSafeText
-        naUpdateLatestPath <- genSafeText
-        naWalletDBPath     <- genSafeText
-        naTlsPath          <- genSafeText
+        keyfile          <- genSafeText
+        logsPrefix       <- genSafeText
+        topology         <- genSafeText
+        updateLatestPath <- genSafeText
+        walletDBPath     <- genSafeText
+        tlsPath          <- genSafeText
 
-        pure NodeArgs{..}
+        pure NodeArgs
+            { naKeyfile          = keyfile
+            , naLogsPrefix       = logsPrefix
+            , naTopology         = topology
+            , naUpdateLatestPath = updateLatestPath
+            , naWalletDBPath     = walletDBPath
+            , naTlsPath          = tlsPath
+            }
 
 -- | Paths
 data Pass = Pass
@@ -174,22 +196,38 @@ instance Inject Pass where
 
 instance Arbitrary Pass where
     arbitrary = do
-        pStatePath           <- genSafeText
-        pNodePath            <- genSafeText
-        pNodeDbPath          <- genSafeText
-        pNodeLogConfig       <- genSafeText
-        pNodeLogPath         <- maybeOf genSafeText
-        pWalletPath          <- genSafeText
-        pWalletLogging       <- arbitrary
-        pWorkingDir          <- genSafeText
-        pFrontendOnlyMode    <- arbitrary
-        pUpdaterPath         <- genSafeText
-        pUpdaterArgs         <- listOf genSafeText
-        pUpdateArchive       <- maybeOf genSafeText
-        pUpdateWindowsRunner <- maybeOf genSafeText
-        pLauncherLogsPrefix  <- genSafeText
+        statePath           <- genSafeText
+        nodePath            <- genSafeText
+        nodeDbPath          <- genSafeText
+        nodeLogConfig       <- genSafeText
+        nodeLogPath         <- maybeOf genSafeText
+        walletPath          <- genSafeText
+        walletLogging       <- arbitrary
+        workingDir          <- genSafeText
+        frontendOnlyMode    <- arbitrary
+        updaterPath         <- genSafeText
+        updaterArgs         <- listOf genSafeText
+        updateArchive       <- maybeOf genSafeText
+        updateWindowsRunner <- maybeOf genSafeText
+        launcherLogsPrefix  <- genSafeText
 
-        pure Pass{..}
+        pure Pass
+            { pStatePath           = statePath
+            , pNodePath            = nodePath
+            , pNodeDbPath          = nodeDbPath
+            , pNodeLogConfig       = nodeLogConfig
+            , pNodeLogPath         = nodeLogPath
+            , pWalletPath          = walletPath
+            , pWalletLogging       = walletLogging
+            , pWorkingDir          = workingDir
+            , pFrontendOnlyMode    = frontendOnlyMode
+            , pUpdaterPath         = updaterPath
+            , pUpdaterArgs         = updaterArgs
+            , pUpdateArchive       = updateArchive
+            , pUpdateWindowsRunner = updateWindowsRunner
+            , pLauncherLogsPrefix  = launcherLogsPrefix
+            }
+
 -- | Launcher configuration
 data LauncherConfig = LauncherConfig
     { lcfgFilePath    :: !Text
@@ -206,12 +244,17 @@ instance Inject LauncherConfig where
 
 instance Arbitrary LauncherConfig where
     arbitrary = do
-        lcfgFilePath    <- genSafeText
-        lcfgKey         <- genSafeText
-        lcfgSystemStart <- arbitrary
-        lcfgSeed        <- arbitrary
+        filePath    <- genSafeText
+        key         <- genSafeText
+        systemStart <- arbitrary
+        seed        <- arbitrary
 
-        pure LauncherConfig{..}
+        pure LauncherConfig
+            { lcfgFilePath    = filePath
+            , lcfgKey         = key
+            , lcfgSystemStart = systemStart
+            , lcfgSeed        = seed
+            }
 
 -- | Topology configuration
 newtype TopologyConfig = TopologyConfig {
@@ -249,11 +292,16 @@ instance Inject WalletConfig where
 
 instance Arbitrary WalletConfig where
     arbitrary = do
-        wcfgRelays    <- arbitrary
-        wcfgValency   <- arbitrary
-        wcfgFallbacks <- arbitrary
+        relays    <- arbitrary
+        valency   <- arbitrary
+        fallbacks <- arbitrary
 
-        pure WalletConfig{..}
+        pure WalletConfig
+            { wcfgRelays    = relays
+            , wcfgValency   = valency
+            , wcfgFallbacks = fallbacks
+            }
+
 -- | Host
 newtype Host = Host {
     getHost :: Text
@@ -288,10 +336,13 @@ instance Inject InstallerConfig where
 
 instance Arbitrary InstallerConfig where
     arbitrary = do
-        icfgInstallDirectory <- genSafeText
-        icfgWalletPort       <- arbitrary
+        installDirectory <- genSafeText
+        walletPort       <- arbitrary
 
-        pure InstallerConfig{..}
+        pure InstallerConfig
+            { icfgInstallDirectory = installDirectory
+            , icfgWalletPort       = walletPort
+            }
 
 -- | Launcher configuration
 data Launcher = Launcher
@@ -326,29 +377,51 @@ instance Inject Launcher where
 
 instance Arbitrary Launcher where
     arbitrary = do
-        lConfiguration     <- arbitrary
-        lNodeDbPath        <- genSafeText
-        lNodeLogConfig     <- genSafeText
-        lUpdaterPath       <- genSafeText
-        lUpdaterArgs       <- listOf genSafeText
-        lUpdateArchive     <- maybeOf genSafeText
-        lReportServer      <- genSafeText
-        lX509ToolPath      <- genSafeText
-        lLogsPrefix        <- genSafeText
-        lTlsca             <- genSafeText
-        lTlscert           <- genSafeText
-        lTlsKey            <- genSafeText
-        lNoClientAuth      <- arbitrary
-        lLogConsoleOff     <- arbitrary
-        lUpdateServer      <- genSafeText
-        lKeyFile           <- genSafeText
-        lTopology          <- genSafeText
-        lWalletDbPath      <- genSafeText
-        lUpdateLatestPath  <- genSafeText
-        lWalletAddress     <- genSafeText
-        lUpdateWithPackage <- arbitrary
+        configuration     <- arbitrary
+        nodeDbPath        <- genSafeText
+        nodeLogConfig     <- genSafeText
+        updaterPath       <- genSafeText
+        updaterArgs       <- listOf genSafeText
+        updateArchive     <- maybeOf genSafeText
+        reportServer      <- genSafeText
+        x509ToolPath      <- genSafeText
+        logsPrefix        <- genSafeText
+        tlsca             <- genSafeText
+        tlscert           <- genSafeText
+        tlsKey            <- genSafeText
+        noClientAuth      <- arbitrary
+        logConsoleOff     <- arbitrary
+        updateServer      <- genSafeText
+        keyFile           <- genSafeText
+        topology          <- genSafeText
+        walletDbPath      <- genSafeText
+        updateLatestPath  <- genSafeText
+        walletAddress     <- genSafeText
+        updateWithPackage <- arbitrary
 
-        pure Launcher{..}
+        pure Launcher
+            { lConfiguration     = configuration
+            , lNodeDbPath        = nodeDbPath
+            , lNodeLogConfig     = nodeLogConfig
+            , lUpdaterPath       = updaterPath
+            , lUpdaterArgs       = updaterArgs
+            , lUpdateArchive     = updateArchive
+            , lReportServer      = reportServer
+            , lX509ToolPath      = x509ToolPath
+            , lLogsPrefix        = logsPrefix
+            , lTlsca             = tlsca
+            , lTlscert           = tlscert
+            , lTlsKey            = tlsKey
+            , lNoClientAuth      = noClientAuth
+            , lLogConsoleOff     = logConsoleOff
+            , lUpdateServer      = updateServer
+            , lKeyFile           = keyFile
+            , lTopology          = topology
+            , lWalletDbPath      = walletDbPath
+            , lUpdateLatestPath  = updateLatestPath
+            , lWalletAddress     = walletAddress
+            , lUpdateWithPackage = updateWithPackage
+            }
 
 -- | Lowercase given text's first letter
 lowerHead :: T.Text -> T.Text
