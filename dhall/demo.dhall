@@ -5,5 +5,5 @@
 , reportServer = "http://staging-report-server.awstest.iohkdev.io:8080"
 , installDirectorySuffix = " Demo"
 , macPackageSuffix       = "Demo"
-, walletPort             = 8092
+, walletPort             = +8092
 }

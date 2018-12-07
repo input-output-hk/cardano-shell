@@ -1,6 +1,10 @@
+{-# LANGUAGE Rank2Types #-}
+
 module Cardano.Shell.Types where
 
 import Cardano.Prelude
+
+import Control.Concurrent.Classy (MonadConc)
 
 --import qualified Katip as Katip
 import qualified System.Metrics as Ekg
@@ -48,16 +52,6 @@ loadCardanoConfiguration :: IO CardanoConfiguration
 loadCardanoConfiguration = do
     pure $ CardanoConfiguration mempty mempty 0
 
-
--- | The feature types we can have in the project.
-data FeatureType
-    = LoggingMonitoringFeature
-    | NetworkingFeature
-    | BlockchainFeature
-    | LedgerFeature
-    | WalletFeature
-    deriving (Eq, Show)
-
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency
     deriving (Eq, Show)
@@ -69,7 +63,7 @@ data NoConfiguration = NoConfiguration
 -- | Cardano feature initialization.
 -- We are saying "you have the responsibility to make sure you use the right context!".
 data CardanoFeatureInit dependency configuration layer = CardanoFeatureInit
-    { featureType                   :: !FeatureType
+    { featureType                   :: !Text
     -- ^ The type of the feature that we use.
     , featureInit                   :: CardanoEnvironment -> dependency -> CardanoConfiguration -> configuration -> IO layer
     -- ^ Again, we are not sure how is the user going to run the actual feature,
@@ -84,9 +78,9 @@ data CardanoFeatureInit dependency configuration layer = CardanoFeatureInit
 data CardanoFeature = CardanoFeature
     { featureName       :: Text
     -- ^ The name of the feature.
-    , featureStart      :: IO ()
+    , featureStart      :: forall m. (MonadIO m, MonadConc m) => m ()
     -- ^ What we call when we start the feature.
-    , featureShutdown   :: IO ()
+    , featureShutdown   :: forall m. (MonadIO m, MonadConc m) => m ()
     -- ^ What we call when we shut down the feature.
     }
 

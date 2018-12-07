@@ -3,8 +3,8 @@
 { configuration         =
     { filePath          = os.configurationYaml
     , key               = "${cluster.keyPrefix}_${os.name}"
-    , systemStart       = [] : Optional Natural
-    , seed              = [] : Optional Natural
+    , systemStart       = [] : Optional Integer
+    , seed              = [] : Optional Integer
     }
 , nodeDbPath            = os.pass.nodeDbPath
 , nodeLogConfig         = os.pass.nodeLogConfig
