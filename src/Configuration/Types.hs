@@ -38,7 +38,7 @@ data OS
     = Linux64
     | Macos64
     | Win64
-    deriving (Bounded, Enum, Eq, Read, Show)
+    deriving Eq
 
 -- | Cluster
 data Cluster
@@ -46,7 +46,7 @@ data Cluster
     | Staging
     | Testnet
     | Demo
-    deriving (Bounded, Enum, Eq, Read, Show)
+    deriving Eq
 
 -- | Convert 'OS' into 'Text'
 renderOS :: OS -> Text
