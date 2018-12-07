@@ -12,7 +12,7 @@ import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import           Configuration.Types (ClusterConfig, InstallerConfig, Launcher,
-                                      NodeArgs, Pass, OSConfig)
+                                      NodeArgs, Param, OSConfig)
 
 dhallConfigSpec :: Spec
 dhallConfigSpec = 
@@ -35,8 +35,8 @@ dhallConfigSpec =
         prop "NodeArgs" $
             \(nodeArgs :: NodeArgs) -> testRoundTrip nodeArgs
 
-        prop "Pass" $
-            \(paths :: Pass) -> testRoundTrip paths
+        prop "Param" $
+            \(paths :: Param) -> testRoundTrip paths
 
 testRoundTrip :: (Inject a, Interpret a, Eq a) => a -> Property
 testRoundTrip dhallConfig = monadicIO $ do
