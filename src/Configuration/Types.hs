@@ -120,7 +120,7 @@ instance Inject OSConfig where
 
 instance Arbitrary OSConfig where
     arbitrary = do
-        name              <- elements ["windows64", "macos64", "linux64"]
+        name              <- elements $ map renderOS [Linux64, Macos64, Win64]
         configurationYaml <- genSafeText
         installDirectory  <- genSafeText
         x509ToolPath      <- genSafeText
