@@ -11,6 +11,9 @@ main = do
     cardanoConfiguration            <-  loadCardanoConfiguration
     cardanoEnvironment              <-  initializeCardanoEnvironment
 
+    -- We check that the application is not already running.
+    -- _ <- checkIfApplicationIsRunning cardanoConfiguration
+
     -- And example of an application that goes haywire.
     let application :: IO ()
         application = do
