@@ -1,7 +1,7 @@
 \(cluster : ./cluster.type) ->
 { wallet = {
-      relays    = [[{ host = cluster.relays }]]
-    , valency   = +1
-    , fallbacks = +7
+      wcfgRelays    = [[{ host = cluster.ccfgRelays }]]
+    , wcfgValency   = +1
+    , wcfgFallbacks = +7
   }
 }

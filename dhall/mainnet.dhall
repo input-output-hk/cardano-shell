@@ -1,9 +1,9 @@
-{ name         = "mainnet"
-, keyPrefix    = "mainnet_wallet"
-, relays       = "relays.cardano-mainnet.iohk.io"
-, updateServer = "https://update-cardano-mainnet.iohk.io"
-, reportServer = "http://report-server.cardano-mainnet.iohk.io:8080"
-, installDirectorySuffix = ""
-, macPackageSuffix       = ""
-, walletPort             = +8090
+{ ccfgName         = "mainnet"
+, ccfgKeyPrefix    = "mainnet_wallet"
+, ccfgRelays       = "relays.cardano-mainnet.iohk.io"
+, ccfgUpdateServer = "https://update-cardano-mainnet.iohk.io"
+, ccfgReportServer = "http://report-server.cardano-mainnet.iohk.io:8080"
+, ccfgInstallDirectorySuffix = ""
+, ccfgMacPackageSuffix       = ""
+, ccfgWalletPort             = +8090
 }

@@ -24,11 +24,11 @@ import           Cardano.Prelude hiding (evalState)
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
 import qualified Data.Text as T
-import           Dhall (GenericInject, GenericInterpret, Inject (..), InputType,
-                        Interpret (..), InterpretOptions (..), Type, auto,
-                        field, genericAutoWith, genericInjectWith, record,
+import           Dhall (GenericInject, Inject (..), InputType,
+                        Interpret (..), InterpretOptions (..), auto,
+                        field, genericInjectWith, record,
                         strictText)
-import           GHC.Generics (from, to)
+import           GHC.Generics (from)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
                                   elements, listOf, listOf1)
 
@@ -73,11 +73,9 @@ data ClusterConfig = ClusterConfig
     } deriving (Eq, Generic, Show)
 
 -- Defining each 'Intrepret' instance.
-instance Interpret ClusterConfig where
-    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
+instance Interpret ClusterConfig
 
-instance Inject ClusterConfig where
-    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
+instance Inject ClusterConfig
 
 
 instance Arbitrary ClusterConfig where
@@ -112,11 +110,9 @@ data OSConfig = OSConfig
     , osPass              :: !Param
     } deriving (Eq, Generic, Show)
 
-instance Interpret OSConfig where
-    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 2}
+instance Interpret OSConfig
 
-instance Inject OSConfig where
-    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 2}
+instance Inject OSConfig
 
 instance Arbitrary OSConfig where
     arbitrary = do
@@ -146,11 +142,9 @@ data NodeArgs = NodeArgs
     , naTlsPath          :: !Text
     } deriving (Eq, Generic, Show)
 
-instance Interpret NodeArgs where
-    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 2}
+instance Interpret NodeArgs
 
-instance Inject NodeArgs where
-    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 2}
+instance Inject NodeArgs
 
 instance Arbitrary NodeArgs where
     arbitrary = do
@@ -188,11 +182,9 @@ data Param = Param
     , pLauncherLogsPrefix  :: !Text
     } deriving (Eq, Generic, Show)
 
-instance Interpret Param where
-    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
+instance Interpret Param
 
-instance Inject Param where
-    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
+instance Inject Param
 
 instance Arbitrary Param where
     arbitrary = do
@@ -236,11 +228,9 @@ data LauncherConfig = LauncherConfig
     , lcfgSeed        :: !(Maybe Integer)
     } deriving (Eq, Generic, Show)
 
-instance Interpret LauncherConfig where
-    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
+instance Interpret LauncherConfig
 
-instance Inject LauncherConfig where
-    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
+instance Inject LauncherConfig
 
 instance Arbitrary LauncherConfig where
     arbitrary = do
@@ -284,11 +274,9 @@ data WalletConfig = WalletConfig
     , wcfgFallbacks :: !Integer
     } deriving (Eq, Generic, Show)
 
-instance Interpret WalletConfig where
-    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
+instance Interpret WalletConfig
 
-instance Inject WalletConfig where
-    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
+instance Inject WalletConfig
 
 instance Arbitrary WalletConfig where
     arbitrary = do
@@ -328,11 +316,9 @@ data InstallerConfig = InstallerConfig
     , icfgWalletPort       :: !Integer
     } deriving (Eq, Generic, Show)
 
-instance Interpret InstallerConfig where
-    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
+instance Interpret InstallerConfig 
 
-instance Inject InstallerConfig where
-    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 4}
+instance Inject InstallerConfig
 
 instance Arbitrary InstallerConfig where
     arbitrary = do
@@ -369,11 +355,9 @@ data Launcher = Launcher
     , lUpdateWithPackage :: !Bool
     } deriving (Eq, Generic, Show)
 
-instance Interpret Launcher where
-    autoWith opt = interpretAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
+instance Interpret Launcher
 
-instance Inject Launcher where
-    injectWith opt = injectAutoWithOption $ opt {fieldModifier = lowerHead . T.drop 1}
+instance Inject Launcher
 
 instance Arbitrary Launcher where
     arbitrary = do
@@ -423,10 +407,6 @@ instance Arbitrary Launcher where
             , lUpdateWithPackage = updateWithPackage
             }
 
--- | Lowercase given text's first letter
-lowerHead :: T.Text -> T.Text
-lowerHead str = T.toLower (T.take 1 str) <> T.drop 1 str
-
 -- | Generate random ascii string
 genSafeText :: Gen Text
 genSafeText = mconcat <$> listOf1 genSafeChar
@@ -439,12 +419,6 @@ maybeOf :: Gen a -> Gen (Maybe a)
 maybeOf generator = do
     random <- generator
     elements [Nothing, Just random]
-
--- | Define type class instance of 'Interpret' with given 'InterpretOptions'
-interpretAutoWithOption :: (Generic a, GenericInterpret (Rep a))
-                        => InterpretOptions
-                        -> Dhall.Type a
-interpretAutoWithOption opt = fmap GHC.Generics.to (evalState (genericAutoWith opt) 1)
 
 -- | Define type class instance of 'Inject' with given 'InterpretOptions'
 injectAutoWithOption :: (Generic a, GenericInject (Rep a))

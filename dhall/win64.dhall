@@ -1,38 +1,37 @@
 \(cluster : ./cluster.type)      ->
-   let installDir = "Daedalus${cluster.installDirectorySuffix}"
+   let installDir = "Daedalus${cluster.ccfgInstallDirectorySuffix}"
 in let dataDir = "\${APPDATA}\\${installDir}"
     --
     --
 in
-{ name      = "win64"
-, configurationYaml  = "\${DAEDALUS_INSTALL_DIRECTORY}\\configuration.yaml"
-, installDirectory   = installDir
-, x509ToolPath       = "\${DAEDALUS_DIR}\\cardano-x509-certificates.exe"
-, nodeArgs           =
-  { keyfile          = "Secrets-1.0\\secret.key"
-  , logsPrefix       = "Logs"
-  , topology         = "\${DAEDALUS_DIR}\\wallet-topology.yaml"
-  , updateLatestPath = "Installer.exe"
-  , walletDBPath     = "Wallet-1.0"
-  , tlsPath          = "tls"
+{ osName      = "win64"
+, osConfigurationYaml  = "\${DAEDALUS_INSTALL_DIRECTORY}\\configuration.yaml"
+, osInstallDirectory   = installDir
+, osX509ToolPath       = "\${DAEDALUS_DIR}\\cardano-x509-certificates.exe"
+, osNodeArgs           =
+  { naKeyfile          = "Secrets-1.0\\secret.key"
+  , naLogsPrefix       = "Logs"
+  , naTopology         = "\${DAEDALUS_DIR}\\wallet-topology.yaml"
+  , naUpdateLatestPath = "Installer.exe"
+  , naWalletDBPath     = "Wallet-1.0"
+  , naTlsPath          = "tls"
   }
-, pass      =
-  { statePath           = dataDir
-  , workingDir          = dataDir
-  , nodePath            = "\${DAEDALUS_DIR}\\cardano-node.exe"
-  , nodeDbPath          = "DB-1.0"
-  , nodeLogConfig       = "\${DAEDALUS_INSTALL_DIRECTORY}\\log-config-prod.yaml"
-  , nodeLogPath         = [] : Optional Text
+, osPass      =
+  { pStatePath           = dataDir
+  , pWorkingDir          = dataDir
+  , pNodePath            = "\${DAEDALUS_DIR}\\cardano-node.exe"
+  , pNodeDbPath          = "DB-1.0"
+  , pNodeLogConfig       = "\${DAEDALUS_INSTALL_DIRECTORY}\\log-config-prod.yaml"
+  , pNodeLogPath         = [] : Optional Text
+  , pWalletPath          = "\${DAEDALUS_DIR}\\Daedalus.exe"
+  , pWalletLogging       = True
+  , pFrontendOnlyMode    = True
 
-  , walletPath          = "\${DAEDALUS_DIR}\\Daedalus.exe"
-  , walletLogging       = True
-  , frontendOnlyMode    = True
+  , pUpdaterPath         = "Installer.exe"
+  , pUpdaterArgs         = [] : List Text
+  , pUpdateArchive       = [] : Optional Text
+  , pUpdateWindowsRunner = ["Installer.bat"] : Optional Text
 
-  , updaterPath         = "Installer.exe"
-  , updaterArgs         = [] : List Text
-  , updateArchive       = [] : Optional Text
-  , updateWindowsRunner = ["Installer.bat"] : Optional Text
-
-  , launcherLogsPrefix  = "Logs\\pub"
+  , pLauncherLogsPrefix  = "Logs\\pub"
   }
 }

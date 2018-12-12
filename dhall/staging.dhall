@@ -1,9 +1,9 @@
-{ name         = "staging"
-, keyPrefix    = "mainnet_dryrun_wallet"
-, relays       = "relays.awstest.iohkdev.io"
-, updateServer = "https://update-awstest.iohkdev.io"
-, reportServer = "http://staging-report-server.awstest.iohkdev.io:8080"
-, installDirectorySuffix = " Staging"
-, macPackageSuffix       = "Staging"
-, walletPort             = +8092
+{ ccfgName         = "staging"
+, ccfgKeyPrefix    = "mainnet_dryrun_wallet"
+, ccfgRelays       = "relays.awstest.iohkdev.io"
+, ccfgUpdateServer = "https://update-awstest.iohkdev.io"
+, ccfgReportServer = "http://staging-report-server.awstest.iohkdev.io:8080"
+, ccfgInstallDirectorySuffix = " Staging"
+, ccfgMacPackageSuffix       = "Staging"
+, ccfgWalletPort             = +8092
 }

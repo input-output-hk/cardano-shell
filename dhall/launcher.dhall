@@ -1,35 +1,35 @@
 \(cluster : ./cluster.type) ->
 \(os      : ./os.type)      ->
-{ configuration         =
-    { filePath          = os.configurationYaml
-    , key               = "${cluster.keyPrefix}_${os.name}"
-    , systemStart       = [] : Optional Integer
-    , seed              = [] : Optional Integer
+{ lConfiguration         =
+    { lcfgFilePath          = os.osConfigurationYaml
+    , lcfgKey               = "${cluster.ccfgKeyPrefix}_${os.osName}"
+    , lcfgSystemStart       = [] : Optional Integer
+    , lcfgSeed              = [] : Optional Integer
     }
-, nodeDbPath            = os.pass.nodeDbPath
-, nodeLogConfig         = os.pass.nodeLogConfig
-, updaterPath           = os.pass.updaterPath
-, updaterArgs           = os.pass.updaterArgs
-, updateArchive         = os.pass.updateArchive
-, logsPrefix            = os.nodeArgs.logsPrefix
-, reportServer          = cluster.reportServer
+, lNodeDbPath            = os.osPass.pNodeDbPath
+, lNodeLogConfig         = os.osPass.pNodeLogConfig
+, lUpdaterPath           = os.osPass.pUpdaterPath
+, lUpdaterArgs           = os.osPass.pUpdaterArgs
+, lUpdateArchive         = os.osPass.pUpdateArchive
+, lLogsPrefix            = os.osNodeArgs.naLogsPrefix
+, lReportServer          = cluster.ccfgReportServer
 
 -- Remove this field once x509tool is introduced in Cardano
-, x509ToolPath          = os.x509ToolPath
+, lX509ToolPath          = os.osX509ToolPath
 
 -- XXX: NodeArgs
-, tlsca                 = "${os.nodeArgs.tlsPath}/server/ca.crt"
-, tlscert               = "${os.nodeArgs.tlsPath}/server/server.crt"
-, tlsKey                = "${os.nodeArgs.tlsPath}/server/server.key"
-, noClientAuth          = True
-, logConsoleOff         = True
-, updateServer          = cluster.updateServer
-, keyFile               = os.nodeArgs.keyfile
-, topology              = os.nodeArgs.topology
-, walletDbPath          = os.nodeArgs.walletDBPath
-, updateLatestPath      = os.nodeArgs.updateLatestPath
-, walletAddress         = "127.0.0.1:0"
+, lTlsca                 = "${os.osNodeArgs.naTlsPath}/server/ca.crt"
+, lTlscert               = "${os.osNodeArgs.naTlsPath}/server/server.crt"
+, lTlsKey                = "${os.osNodeArgs.naTlsPath}/server/server.key"
+, lNoClientAuth          = True
+, lLogConsoleOff         = True
+, lUpdateServer          = cluster.ccfgUpdateServer
+, lKeyFile               = os.osNodeArgs.naKeyfile
+, lTopology              = os.osNodeArgs.naTopology
+, lWalletDbPath          = os.osNodeArgs.naWalletDBPath
+, lUpdateLatestPath      = os.osNodeArgs.naUpdateLatestPath
+, lWalletAddress         = "127.0.0.1:0"
 
 -- XXX: this is a workaround for Linux
-, updateWithPackage     = True
+, lUpdateWithPackage     = True
 }

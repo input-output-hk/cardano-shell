@@ -1,35 +1,35 @@
 \(cluster : ./cluster.type)      ->
-let dataDir = "\${XDG_DATA_HOME}/Daedalus/${cluster.name}"
+let dataDir = "\${XDG_DATA_HOME}/Daedalus/${cluster.ccfgName}"
 in
-{ name      = "linux64"
-, configurationYaml  = "\${DAEDALUS_CONFIG}/configuration.yaml"
-, installDirectory   = ""
-, x509ToolPath       = "cardano-x509-certificates"
-, nodeArgs           =
-  { keyfile          = "${dataDir}/Secrets/secret.key"
-  , logsPrefix       = "${dataDir}/Logs"
-  , topology         = "\${DAEDALUS_CONFIG}/wallet-topology.yaml"
-  , updateLatestPath = "${dataDir}/installer.sh"
-  , walletDBPath     = "${dataDir}/Wallet"
-  , tlsPath          = "${dataDir}/tls"
+{ osName      = "linux64"
+, osConfigurationYaml  = "\${DAEDALUS_CONFIG}/configuration.yaml"
+, osInstallDirectory   = ""
+, osX509ToolPath       = "cardano-x509-certificates"
+, osNodeArgs           =
+  { naKeyfile          = "${dataDir}/Secrets/secret.key"
+  , naLogsPrefix       = "${dataDir}/Logs"
+  , naTopology         = "\${DAEDALUS_CONFIG}/wallet-topology.yaml"
+  , naUpdateLatestPath = "${dataDir}/installer.sh"
+  , naWalletDBPath     = "${dataDir}/Wallet"
+  , naTlsPath          = "${dataDir}/tls"
   }
-, pass      =
-  { statePath           = dataDir
-  , workingDir          = dataDir
-  , nodePath            = "cardano-node"
-  , nodeDbPath          = "${dataDir}/DB/"
-  , nodeLogConfig       = "\${DAEDALUS_CONFIG}/log-config-prod.yaml"
-  , nodeLogPath         = [] : Optional Text
-  , walletPath          = "daedalus-frontend"
-  , walletLogging       = False
-  , frontendOnlyMode    = True
+, osPass      =
+  { pStatePath           = dataDir
+  , pWorkingDir          = dataDir
+  , pNodePath            = "cardano-node"
+  , pNodeDbPath          = "${dataDir}/DB/"
+  , pNodeLogConfig       = "\${DAEDALUS_CONFIG}/log-config-prod.yaml"
+  , pNodeLogPath         = [] : Optional Text
+  , pWalletPath          = "daedalus-frontend"
+  , pWalletLogging       = False
+  , pFrontendOnlyMode    = True
 
   -- todo, find some way to disable updates when unsandboxed?
-  , updaterPath         = "/bin/update-runner"
-  , updaterArgs         = [] : List Text
-  , updateArchive       = [ "${dataDir}/installer.sh" ] : Optional Text
-  , updateWindowsRunner = [] : Optional Text
+  , pUpdaterPath         = "/bin/update-runner"
+  , pUpdaterArgs         = [] : List Text
+  , pUpdateArchive       = [ "${dataDir}/installer.sh" ] : Optional Text
+  , pUpdateWindowsRunner = [] : Optional Text
 
-  , launcherLogsPrefix  = "${dataDir}/Logs/"
+  , pLauncherLogsPrefix  = "${dataDir}/Logs/"
   }
 }

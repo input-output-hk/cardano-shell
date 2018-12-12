@@ -1,37 +1,37 @@
 \(cluster : ./cluster.type)      ->
-let dataDir = "\${HOME}/Library/Application Support/Daedalus${cluster.installDirectorySuffix}"
+let dataDir = "\${HOME}/Library/Application Support/Daedalus${cluster.ccfgInstallDirectorySuffix}"
     --
     --
 in
-{ name      = "macos64"
-, configurationYaml  = "\${DAEDALUS_INSTALL_DIRECTORY}/configuration.yaml"
-, installDirectory = "Daedalus${cluster.installDirectorySuffix}"
-, x509ToolPath       = "\${DAEDALUS_INSTALL_DIRECTORY}/cardano-x509-certificates"
-, nodeArgs           =
-  { keyfile          = "${dataDir}/Secrets-1.0/secret.key"
-  , logsPrefix       = "${dataDir}/Logs"
-  , topology         = "\${DAEDALUS_INSTALL_DIRECTORY}/wallet-topology.yaml"
-  , updateLatestPath = "${dataDir}/installer.pkg"
-  , walletDBPath     = "${dataDir}/Wallet-1.0"
-  , tlsPath          = "${dataDir}/tls"
+{ osName      = "macos64"
+, osConfigurationYaml  = "\${DAEDALUS_INSTALL_DIRECTORY}/configuration.yaml"
+, osInstallDirectory   = "Daedalus${cluster.ccfgInstallDirectorySuffix}"
+, osX509ToolPath       = "\${DAEDALUS_INSTALL_DIRECTORY}/cardano-x509-certificates"
+, osNodeArgs           =
+  { naKeyfile          = "${dataDir}/Secrets-1.0/secret.key"
+  , naLogsPrefix       = "${dataDir}/Logs"
+  , naTopology         = "\${DAEDALUS_INSTALL_DIRECTORY}/wallet-topology.yaml"
+  , naUpdateLatestPath = "${dataDir}/installer.pkg"
+  , naWalletDBPath     = "${dataDir}/Wallet-1.0"
+  , naTlsPath          = "${dataDir}/tls"
   }
-, pass      =
-  { statePath           = dataDir
-  , workingDir          = dataDir
-  , nodePath            = "\${DAEDALUS_INSTALL_DIRECTORY}/cardano-node"
-  , nodeDbPath          = "${dataDir}/DB-1.0"
-  , nodeLogConfig       = "\${DAEDALUS_INSTALL_DIRECTORY}/log-config-prod.yaml"
-  , nodeLogPath         = [] : Optional Text
+, osPass      =
+  { pStatePath           = dataDir
+  , pWorkingDir          = dataDir
+  , pNodePath            = "\${DAEDALUS_INSTALL_DIRECTORY}/cardano-node"
+  , pNodeDbPath          = "${dataDir}/DB-1.0"
+  , pNodeLogConfig       = "\${DAEDALUS_INSTALL_DIRECTORY}/log-config-prod.yaml"
+  , pNodeLogPath         = [] : Optional Text
 
-  , walletPath          = "\${DAEDALUS_INSTALL_DIRECTORY}/Frontend"
-  , walletLogging       = True
-  , frontendOnlyMode    = True
+  , pWalletPath          = "\${DAEDALUS_INSTALL_DIRECTORY}/Frontend"
+  , pWalletLogging       = True
+  , pFrontendOnlyMode    = True
 
-  , updaterPath         = "/usr/bin/open"
-  , updaterArgs         = ["-FW"]
-  , updateArchive       = ["${dataDir}/installer.pkg"] : Optional Text
-  , updateWindowsRunner = [] : Optional Text
+  , pUpdaterPath         = "/usr/bin/open"
+  , pUpdaterArgs         = ["-FW"]
+  , pUpdateArchive       = ["${dataDir}/installer.pkg"] : Optional Text
+  , pUpdateWindowsRunner = [] : Optional Text
 
-  , launcherLogsPrefix  = "${dataDir}/Logs/pub/"
+  , pLauncherLogsPrefix  = "${dataDir}/Logs/pub/"
   }
 }

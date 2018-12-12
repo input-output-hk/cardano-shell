@@ -1,29 +1,29 @@
-{ name       : Text
-, configurationYaml  : Text
-, installDirectory   : Text
-, x509ToolPath       : Text
-, nodeArgs           :
-  { keyfile          : Text
-  , logsPrefix       : Text
-  , topology         : Text
-  , updateLatestPath : Text
-  , walletDBPath     : Text
-  , tlsPath          : Text
+{ osName       : Text
+, osConfigurationYaml  : Text
+, osInstallDirectory   : Text
+, osX509ToolPath       : Text
+, osNodeArgs           :
+  { naKeyfile          : Text
+  , naLogsPrefix       : Text
+  , naTopology         : Text
+  , naUpdateLatestPath : Text
+  , naWalletDBPath     : Text
+  , naTlsPath          : Text
   }
-, pass :
-  { statePath           : Text
-  , nodePath            : Text
-  , nodeDbPath          : Text
-  , nodeLogConfig       : Text
-  , nodeLogPath         : Optional Text
-  , walletPath          : Text
-  , walletLogging       : Bool
-  , workingDir          : Text
-  , frontendOnlyMode    : Bool
-  , updaterPath         : Text
-  , updaterArgs         : List Text
-  , updateArchive       : Optional Text
-  , updateWindowsRunner : Optional Text
-  , launcherLogsPrefix  : Text
+, osPass :
+  { pStatePath           : Text
+  , pNodePath            : Text
+  , pNodeDbPath          : Text
+  , pNodeLogConfig       : Text
+  , pNodeLogPath         : Optional Text
+  , pWalletPath          : Text
+  , pWalletLogging       : Bool
+  , pWorkingDir          : Text
+  , pFrontendOnlyMode    : Bool
+  , pUpdaterPath         : Text
+  , pUpdaterArgs         : List Text
+  , pUpdateArchive       : Optional Text
+  , pUpdateWindowsRunner : Optional Text
+  , pLauncherLogsPrefix  : Text
   }
 }
