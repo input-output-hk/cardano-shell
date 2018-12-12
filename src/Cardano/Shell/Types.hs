@@ -27,7 +27,7 @@ data CardanoEnvironment = CardanoEnvironment
      -- ...
     }
 
--- | Initalise 'ServerEnv'
+-- | Initialise 'ServerEnv'
 initializeCardanoEnvironment :: IO CardanoEnvironment
 initializeCardanoEnvironment = do
   --  logenv   <- Katip.initLogEnv (...) (...)
@@ -84,7 +84,37 @@ data CardanoFeature = CardanoFeature
     }
 
 --------------------------------------------------------------------------------
--- Cardano Configuration
+-- Cardano Mainnet Configuration
+--------------------------------------------------------------------------------
+
+mainnetConfiguration :: CardanoConfiguration
+mainnetConfiguration = do
+
+let mainnetGenesis = GenesisExternal { src  = "mainnet-genesis.json"
+                                     , fileHash = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
+                                     }
+
+let 
+let mainnetCore = Core { genesis              = mainnetGenesis
+                       , requiresNetworkMagic = Text
+                       , dbSerializeVersion   = Integer
+                       }
+
+CardanoConfiguration   { scfgLogPath  = "./logs/"
+                       , scfgDBPath   = "./db/"
+                       , core         = mainnetCore
+                       , ntp          = NTP
+                       , update       = Update
+                       , txp          = TXP
+                       , ssc          = SSC
+                       , dlg          = DLG
+                       , block        = Block
+                       , node         = Node
+                       , tls          = TLS
+                       , wallet       = Wallet
+                       } deriving (Eq, Show)
+--------------------------------------------------------------------------------
+-- Cardano Configuration Data Structures
 --------------------------------------------------------------------------------
 -- | The basic configuration structure. It should contain all the required
 -- configuration parameters for the modules to work.
@@ -92,7 +122,6 @@ data CardanoFeature = CardanoFeature
 data CardanoConfiguration = CardanoConfiguration
     { scfgLogPath   :: !FilePath
     , scfgDBPath    :: !FilePath
-    , scfgSomeParam :: !Int
     , core          :: !Core
     , ntp           :: !NTP
     , update        :: !Update
@@ -114,8 +143,10 @@ data Core = Core
       -- ^ Versioning for values in node's DB
     } deriving (Eq, Show)
 
-data Genesis = GenesisInternal { spec :: !Spec }
-             | GenesisExternal { src  :: !FilePath }
+data Genesis = GenesisInternal { spec     :: !Spec }
+             | GenesisExternal { src      :: !FilePath
+                               , fileHash :: !Text 
+                               }
              deriving (Eq, Show)
 
 data Spec = Spec
