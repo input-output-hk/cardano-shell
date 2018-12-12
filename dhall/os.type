@@ -1,0 +1,29 @@
+{ osName       : Text
+, osConfigurationYaml  : Text
+, osInstallDirectory   : Text
+, osX509ToolPath       : Text
+, osNodeArgs           :
+  { naKeyfile          : Text
+  , naLogsPrefix       : Text
+  , naTopology         : Text
+  , naUpdateLatestPath : Text
+  , naWalletDBPath     : Text
+  , naTlsPath          : Text
+  }
+, osPass :
+  { pStatePath           : Text
+  , pNodePath            : Text
+  , pNodeDbPath          : Text
+  , pNodeLogConfig       : Text
+  , pNodeLogPath         : Optional Text
+  , pWalletPath          : Text
+  , pWalletLogging       : Bool
+  , pWorkingDir          : Text
+  , pFrontendOnlyMode    : Bool
+  , pUpdaterPath         : Text
+  , pUpdaterArgs         : List Text
+  , pUpdateArchive       : Optional Text
+  , pUpdateWindowsRunner : Optional Text
+  , pLauncherLogsPrefix  : Text
+  }
+}

@@ -1,0 +1,9 @@
+{ ccfgName                   : Text
+, ccfgKeyPrefix              : Text
+, ccfgRelays                 : Text
+, ccfgUpdateServer           : Text
+, ccfgReportServer           : Text
+, ccfgInstallDirectorySuffix : Text
+, ccfgMacPackageSuffix       : Text
+, ccfgWalletPort             : Integer
+}

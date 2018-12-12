@@ -22,6 +22,8 @@ source-repository head
 library
   exposed-modules:
       Cardano.Shell.Lib
+    , Configuration.Lib
+    , Configuration.Types
   other-modules:
       Paths_cardano_shell
     , Cardano.Shell.Types
@@ -32,13 +34,19 @@ library
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
+    , contravariant
+    , dhall
     , aeson
     , katip
     , ekg
     , ekg-core
     --, async
-    , concurrency
+    --, concurrency
+    , QuickCheck
     , safe-exceptions
+    , text
+    , transformers
+    , concurrency
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
@@ -78,6 +86,7 @@ test-suite cardano-shell-test
   main-is: Spec.hs
   other-modules:
       Paths_cardano_shell
+      DhallConfigSpec
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -85,6 +94,7 @@ test-suite cardano-shell-test
       base >=4.7 && <5
     , cardano-shell
     , cardano-prelude
+    , dhall
     -- quickcheck
     , QuickCheck
     , hspec
