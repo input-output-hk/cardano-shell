@@ -1,0 +1,11 @@
+https://github.com/input-output-hk/cardano-prelude 2d6624af423d0a5c7ced6f3ae465eaaeb4ec739e . 0kimfl3k60jz7cglk24ls5lhvm8xh0hfjs8azhhymzckvyn3y0wn cardano-prelude .stack.nix/cardano-prelude.nix
+https://github.com/input-output-hk/cardano-prelude 2d6624af423d0a5c7ced6f3ae465eaaeb4ec739e test 0kimfl3k60jz7cglk24ls5lhvm8xh0hfjs8azhhymzckvyn3y0wn cardano-prelude-test .stack.nix/cardano-prelude-test.nix
+https://github.com/input-output-hk/iohk-monitoring-framework 4dc4d541a645b84a281faa8950a7fd4e61708963 . 1qk5zin92bfn635nyi31b8w2nrw8zdcc8p0x2s2xcq9mzc3zdybf iohk-monitoring .stack.nix/iohk-monitoring.nix
+https://github.com/well-typed/cborg 80fbe0ee5e67a5622e2cb9eaa9d8594a2214322d cborg 1khd1v9yh6jdkcvzvknvhxpc1qvxvww0pp7c43w4hbvdyhs1q8wh cborg .stack.nix/cborg.nix
+https://github.com/nc6/cardano-crypto d46e8a44d85a71f5da03fb6b176e9427c684144b . 0g8ln8k8wx4csdv92bz09pr7v9dp4lcyv1334b09c9rgwdwhqg1b cardano-crypto .stack.nix/cardano-crypto.nix
+https://github.com/avieth/plutus-prototype d094be301195fcd8ab864d793f114970426a4478 . 1s932rghn4zn441waansp408b5bwk20rc1wsa5693a2nwnp4dijw plutus-prototype .stack.nix/plutus-prototype.nix
+https://github.com/input-output-hk/haskell-hedgehog.git 2e741bb53afb085741807018948ae17d956c53af hedgehog 0l0d1n2b68m0628j4yi214q5fy6pz777qfj1bc1lrra8scs5gcxh hedgehog .stack.nix/hedgehog.nix
+http://github.com/nc6/canonical-json a9dc9b893649bc2e2a770ab22d278a780f7e3a3c . 0alwbi9xqaj6fmwzs6lr2drqrnhlnp13d9k2qkl5ga7h4grz9zcr canonical-json .stack.nix/canonical-json.nix
+https://github.com/input-output-hk/cardano-crypto 3c707936ba0a665375acf5bd240dc4b6eaa6c0bc . 0g8ln8k8wx4csdv92bz09pr7v9dp4lcyv1334b09c9rgwdwhqg1b cardano-crypto .stack.nix/cardano-crypto.nix
+https://github.com/input-output-hk/cardano-prelude 7f8544ae9e162b6664f07093227edb148f1c8a5b . 0yywq1m77k2f95pi59pdsk7rq7zlq140d1lsk6gl5qsjrxvyzkb5 cardano-prelude .stack.nix/cardano-prelude.nix
+https://github.com/input-output-hk/cardano-prelude 7f8544ae9e162b6664f07093227edb148f1c8a5b test 0yywq1m77k2f95pi59pdsk7rq7zlq140d1lsk6gl5qsjrxvyzkb5 cardano-prelude-test .stack.nix/cardano-prelude-test.nix
