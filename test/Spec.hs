@@ -4,10 +4,10 @@ module Main where
 
 import           Cardano.Prelude
 
+import           DhallConfigSpec (dhallConfigSpec)
 import           Control.Concurrent.Classy (MonadConc)
 
 import           Test.Hspec (Spec, hspec, describe)
-
 import           Test.DejaFu (deadlocksNever, exceptionsNever, abortsNever)
 import           Test.Hspec.Contrib.HUnit (fromHUnitTest)
 import           Test.HUnit.DejaFu (testDejafu)
@@ -16,7 +16,9 @@ import           Cardano.Shell.Lib (GeneralException (..), runApplication)
 
 -- | Entry point for tests.
 main :: IO ()
-main = hspec spec
+main = hspec $ do
+    spec
+    describe "Dhall configurations" dhallConfigSpec
 
 -- | Specification.
 spec :: Spec

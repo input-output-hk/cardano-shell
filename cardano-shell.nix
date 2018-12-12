@@ -1,6 +1,7 @@
-{ mkDerivation, aeson, base, cardano-prelude, concurrency, dejafu
-, directory, ekg, ekg-core, formatting, hspec, hspec-contrib
-, hunit-dejafu, katip, QuickCheck, safe-exceptions, stdenv
+{ mkDerivation, aeson, base, cardano-prelude, concurrency
+, contravariant, dejafu, dhall, directory, ekg, ekg-core
+, formatting, hspec, hspec-contrib, hunit-dejafu, katip, QuickCheck
+, safe-exceptions, stdenv, text, transformers
 }:
 mkDerivation {
   pname = "cardano-shell";
@@ -9,12 +10,13 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson base cardano-prelude concurrency directory ekg ekg-core
-    formatting katip safe-exceptions
+    aeson base cardano-prelude concurrency contravariant dhall
+    directory ekg ekg-core formatting katip QuickCheck safe-exceptions
+    text transformers
   ];
   executableHaskellDepends = [ base cardano-prelude ];
   testHaskellDepends = [
-    base cardano-prelude concurrency dejafu hspec hspec-contrib
+    base cardano-prelude concurrency dejafu dhall hspec hspec-contrib
     hunit-dejafu QuickCheck
   ];
   homepage = "https://github.com/input-output-hk/cardano-shell#readme";
