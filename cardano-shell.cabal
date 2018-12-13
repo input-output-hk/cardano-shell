@@ -34,19 +34,24 @@ library
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
-    , contravariant
-    , dhall
-    , aeson
-    , katip
-    , ekg
-    , ekg-core
-    --, async
-    --, concurrency
-    , QuickCheck
+    -- general util
+    , directory
+    , formatting     
     , safe-exceptions
     , text
     , transformers
+    -- json & config
+    , contravariant
+    , dhall
+    , aeson
+    -- logging/monitoring
+    , katip
+    , ekg
+    , ekg-core
+    -- concurrency
     , concurrency
+    , QuickCheck
+
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings

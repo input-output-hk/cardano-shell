@@ -25,9 +25,14 @@ applicationProductionMode _             = False
 
 -- | Cardano configuration
 data CardanoConfiguration = CardanoConfiguration
-    { scfgLogPath   :: !FilePath
-    , scfgDBPath    :: !FilePath
-    , scfgSomeParam :: !Int
+    { ccLogPath                 :: !FilePath
+    -- ^ The location of the log files on the filesystem.
+    , ccDBPath                  :: !FilePath
+    -- ^ The location of the DB on the filesystem.
+    , ccApplicationLockFile     :: !FilePath
+    -- ^ The location of the application lock file that is used
+    -- as a semaphore se we can run just one application
+    -- instance at a time.
     }
 
 -- | The common runtime environment for all features in the server.
@@ -50,7 +55,7 @@ initializeCardanoEnvironment = do
 
 loadCardanoConfiguration :: IO CardanoConfiguration
 loadCardanoConfiguration = do
-    pure $ CardanoConfiguration mempty mempty 0
+    pure $ CardanoConfiguration mempty mempty mempty
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency
