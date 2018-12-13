@@ -1,4 +1,4 @@
-module Configuration.Lib
+module Cardano.Shell.Configuration.Lib
     ( mkLauncher
     , mkTopology
     , mkOSConfig
@@ -7,11 +7,13 @@ module Configuration.Lib
 
 import           Cardano.Prelude
 
-import           Dhall               (auto, input)
+import           Dhall (auto, input)
 
-import           Configuration.Types (Cluster (..), InstallerConfig, Launcher,
-                                      Launcher, OS (..), OSConfig,
-                                      TopologyConfig, renderCluster, renderOS)
+import           Cardano.Shell.Configuration.Types (Cluster (..),
+                                                    InstallerConfig, Launcher,
+                                                    Launcher, OS (..), OSConfig,
+                                                    TopologyConfig,
+                                                    renderCluster, renderOS)
 
 -- | Generate 'TopologyConfig' with given 'Cluster'
 mkTopology :: Cluster -> IO TopologyConfig
