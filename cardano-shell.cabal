@@ -29,6 +29,13 @@ library
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
+    -- general util
+    , directory
+    , formatting     
+    , safe-exceptions
+    , text
+    , transformers
+    -- json & config
     , contravariant
     , dhall
     , ekg-core
@@ -38,6 +45,8 @@ library
     , text
     , transformers
     , concurrency
+    , QuickCheck
+
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
