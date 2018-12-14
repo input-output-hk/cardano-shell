@@ -15,9 +15,8 @@ import           Cardano.BM.Trace (Trace)
 import qualified Cardano.BM.Trace as Trace
 
 import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
-                                      CardanoFeature (..),
-                                      CardanoFeatureInit (..),
-                                      NoDependency (..))
+                     CardanoFeature (..), CardanoFeatureInit (..),
+                     NoDependency (..), ccLogConfig, ccLogPath)
 
 --------------------------------------------------------------------------------
 -- Loggging feature
@@ -28,7 +27,8 @@ import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
 --------------------------------
 
 data LoggingParameters = LoggingParameters
-    { configFp :: Text
+    { configFp :: FilePath
+    , prefixFp :: FilePath
     } deriving (Show, Eq)
 
 --------------------------------
@@ -62,7 +62,9 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration = do
     -- we parse any additional configuration if there is any
     -- We don't know where the user wants to fetch the additional configuration from, it could be from
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
-    loggingConfiguration    <-  pure $ LoggingParameters "./config/logging.yaml"
+    loggingConfiguration    <-  pure $ LoggingParameters
+                                    (ccLogConfig cardanoConfiguration)
+                                    (ccLogPath cardanoConfiguration)
 
     -- we construct the layer
     loggingLayer            <- (featureInit loggingCardanoFeatureInit)
@@ -85,8 +87,8 @@ loggingCardanoFeatureInit = CardanoFeatureInit
     }
   where
     initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
-    initLogging _ _ _ _ = do
-        cfg <- defaultConfigStdout
+    initLogging _ _ _ _logparams = do
+        cfg <- defaultConfigStdout  -- TODO initialize from 'configFp logparams'
         baseTrace <- setupTrace (Right cfg) "simple"
         pure $ LoggingLayer
                 { llStartTrace  = Trace.natTrace liftIO baseTrace
@@ -98,15 +100,13 @@ loggingCardanoFeatureInit = CardanoFeatureInit
                 , llAppendName  = Trace.appendName
                 }
     cleanupLogging :: LoggingLayer -> IO ()
-    cleanupLogging _ = pure ()
+    cleanupLogging _ = pure ()  -- TODO
 
 loggingCardanoFeature :: LoggingCardanoFeature -> LoggingLayer -> CardanoFeature
 loggingCardanoFeature loggingCardanoFeature' loggingLayer = CardanoFeature
     { featureName       = featureType loggingCardanoFeature'
     , featureStart      = liftIO $ do
-        --putTextLn "Starting up loggingCardanoFeature!"
-        void $ pure loggingLayer -- or whatever it means for YOU (a specific team)
+        void $ pure loggingLayer
     , featureShutdown   = liftIO $ do
-        --putTextLn "Shutting down loggingCardanoFeature!"
         (featureCleanup loggingCardanoFeature') loggingLayer
     }

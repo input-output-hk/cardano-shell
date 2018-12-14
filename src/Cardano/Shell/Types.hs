@@ -26,6 +26,8 @@ applicationProductionMode _          = False
 data CardanoConfiguration = CardanoConfiguration
     { ccLogPath                 :: !FilePath
     -- ^ The location of the log files on the filesystem.
+    , ccLogConfig               :: !FilePath
+    -- ^ The path to the log configuration.
     , ccDBPath                  :: !FilePath
     -- ^ The location of the DB on the filesystem.
     , ccApplicationLockFile     :: !FilePath
@@ -53,7 +55,7 @@ initializeCardanoEnvironment = do
 
 loadCardanoConfiguration :: IO CardanoConfiguration
 loadCardanoConfiguration = do
-    pure $ CardanoConfiguration mempty mempty mempty
+    pure $ CardanoConfiguration mempty mempty mempty mempty
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency
