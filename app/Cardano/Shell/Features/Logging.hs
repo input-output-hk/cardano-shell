@@ -50,7 +50,6 @@ data LoggingLayer = LoggingLayer
     , logWarning  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
     , logError    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
     , appendName  :: forall m. (MonadIO m) => Text -> Trace m -> m (Trace m)
-    , mockNonIO   :: forall m. (MonadThrow m) => m ()
     }
 
 --------------------------------
@@ -98,7 +97,6 @@ loggingCardanoFeatureInit = CardanoFeatureInit
                 , logWarning  = Trace.logWarning
                 , logError    = Trace.logError
                 , appendName  = Trace.appendName
-                , mockNonIO   = pure ()
                 }
     cleanupLogging :: LoggingLayer -> IO ()
     cleanupLogging _ = pure ()

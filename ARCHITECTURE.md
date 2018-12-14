@@ -114,9 +114,9 @@ Well, we can fix this. The price is hard-to-read type errors if you miss somethi
 So we can simply use `Rank2Types` extension and use a layer that has the constraints defined *per function*:
 ```
 data LoggingLayer = LoggingLayer
-    { logDebug   :: forall m. (MonadIO m) => Text -> m ()
-    , logInfo    :: forall m. (MonadIO m) => Text -> m ()
-    , mockNonIO  :: forall m. (MonadThrow m) => m ()
+    { llLogDebug   :: forall m. (MonadIO m) => Text -> m ()
+    , llLogInfo    :: forall m. (MonadIO m) => Text -> m ()
+    , llLockNonIO  :: forall m. (MonadThrow m) => m ()
     }
 ```
 

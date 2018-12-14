@@ -5,9 +5,10 @@ let
         overrides = haskellPackagesNew: haskellPackagesOld: rec {
           cardano-prelude   = haskellPackagesNew.callPackage ./cardano-prelude.nix {
             #canonical-json = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callHackage "canonical-json" "0.5.0.1" {});
-            canonical-json = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./canonical-json.nix {});
+            canonical-json    = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./canonical-json.nix {});
           };
-          iohk-monitoring = haskellPackagesNew.callPackage ./iohk-monitoring.nix { };
+
+          iohk-monitoring   = haskellPackagesNew.callPackage ./iohk-monitoring.nix { };
           cardano-shell     = haskellPackagesNew.callPackage ./cardano-shell.nix { };
         };
       };
