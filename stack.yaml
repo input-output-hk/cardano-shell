@@ -80,4 +80,5 @@ extra-deps:
 # compiler-check: newer-minor
 
 nix:
+  enable: true
   shell-file: stack-shell.nix

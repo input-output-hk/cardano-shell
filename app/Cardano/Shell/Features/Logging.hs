@@ -2,10 +2,9 @@
 {-# LANGUAGE Rank2Types    #-}
 
 module Cardano.Shell.Features.Logging
-    ( createLoggingFeature
-    , LoggingLayer (..)
-    )
-where
+    ( LoggingLayer (..)
+    , createLoggingFeature
+    ) where
 
 import           Cardano.Prelude hiding (trace)
 
