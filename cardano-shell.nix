@@ -1,5 +1,7 @@
-{ mkDerivation, aeson, base, cardano-prelude, ekg, ekg-core, katip
-, safe-exceptions, stdenv
+{ mkDerivation, base, cardano-prelude, concurrency, contravariant
+, dejafu, dhall, directory, ekg-core, formatting, hspec
+, hspec-contrib, hunit-dejafu, QuickCheck, safe-exceptions, stdenv
+, text, transformers
 }:
 mkDerivation {
   pname = "cardano-shell";
@@ -8,10 +10,16 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson base cardano-prelude ekg ekg-core katip safe-exceptions
+    base cardano-prelude concurrency contravariant dhall directory
+    ekg-core formatting QuickCheck safe-exceptions text transformers
   ];
-  executableHaskellDepends = [ base cardano-prelude ];
-  testHaskellDepends = [ base cardano-prelude ];
+  executableHaskellDepends = [
+    base cardano-prelude safe-exceptions
+  ];
+  testHaskellDepends = [
+    base cardano-prelude concurrency dejafu dhall hspec hspec-contrib
+    hunit-dejafu QuickCheck
+  ];
   homepage = "https://github.com/input-output-hk/cardano-shell#readme";
   license = stdenv.lib.licenses.mit;
 }

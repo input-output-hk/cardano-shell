@@ -1,6 +1,10 @@
+{-# LANGUAGE Rank2Types #-}
+
 module Cardano.Shell.Types where
 
 import Cardano.Prelude
+
+import Control.Concurrent.Classy (MonadConc)
 
 --import qualified Katip as Katip
 import qualified System.Metrics as Ekg
@@ -18,6 +22,18 @@ data ApplicationEnvironment
 applicationProductionMode :: ApplicationEnvironment -> Bool
 applicationProductionMode Production    = True
 applicationProductionMode _             = False
+
+-- | Cardano configuration
+data CardanoConfiguration = CardanoConfiguration
+    { ccLogPath                 :: !FilePath
+    -- ^ The location of the log files on the filesystem.
+    , ccDBPath                  :: !FilePath
+    -- ^ The location of the DB on the filesystem.
+    , ccApplicationLockFile     :: !FilePath
+    -- ^ The location of the application lock file that is used
+    -- as a semaphore se we can run just one application
+    -- instance at a time.
+    }
 
 -- | The common runtime environment for all features in the server.
 -- All features have access to this environment.
@@ -39,17 +55,7 @@ initializeCardanoEnvironment = do
 
 loadCardanoConfiguration :: IO CardanoConfiguration
 loadCardanoConfiguration = do
-    pure $ CardanoConfiguration mempty mempty 0
-
-
--- | The feature types we can have in the project.
-data FeatureType
-    = LoggingMonitoringFeature
-    | NetworkingFeature
-    | BlockchainFeature
-    | LedgerFeature
-    | WalletFeature
-    deriving (Eq, Show)
+    pure $ CardanoConfiguration mempty mempty mempty
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency
@@ -62,7 +68,7 @@ data NoConfiguration = NoConfiguration
 -- | Cardano feature initialization.
 -- We are saying "you have the responsibility to make sure you use the right context!".
 data CardanoFeatureInit dependency configuration layer = CardanoFeatureInit
-    { featureType                   :: !FeatureType
+    { featureType                   :: !Text
     -- ^ The type of the feature that we use.
     , featureInit                   :: CardanoEnvironment -> dependency -> CardanoConfiguration -> configuration -> IO layer
     -- ^ Again, we are not sure how is the user going to run the actual feature,
@@ -77,9 +83,9 @@ data CardanoFeatureInit dependency configuration layer = CardanoFeatureInit
 data CardanoFeature = CardanoFeature
     { featureName       :: Text
     -- ^ The name of the feature.
-    , featureStart      :: IO ()
+    , featureStart      :: forall m. (MonadIO m, MonadConc m) => m ()
     -- ^ What we call when we start the feature.
-    , featureShutdown   :: IO ()
+    , featureShutdown   :: forall m. (MonadIO m, MonadConc m) => m ()
     -- ^ What we call when we shut down the feature.
     }
 
@@ -120,18 +126,24 @@ CardanoConfiguration   { scfgLogPath  = "./logs/"
 -- configuration parameters for the modules to work.
 
 data CardanoConfiguration = CardanoConfiguration
-    { scfgLogPath   :: !FilePath
-    , scfgDBPath    :: !FilePath
-    , core          :: !Core
-    , ntp           :: !NTP
-    , update        :: !Update
-    , txp           :: !TXP
-    , ssc           :: !SSC
-    , dlg           :: !DLG
-    , block         :: !Block
-    , node          :: !Node
-    , tls           :: !TLS
-    , wallet        :: !Wallet
+    { ccLogPath                 :: !FilePath
+    -- ^ The location of the log files on the filesystem.
+    , ccDBPath                  :: !FilePath
+    -- ^ The location of the DB on the filesystem.
+    , ccApplicationLockFile     :: !FilePath
+    -- ^ The location of the application lock file that is used
+    -- as a semaphore se we can run just one application
+    -- instance at a time.
+    , ccCore          :: !Core
+    , ccNTP           :: !NTP
+    , ccUpdate        :: !Update
+    , ccTXP           :: !TXP
+    , ccSSC           :: !SSC
+    , ccDLG           :: !DLG
+    , ccBlock         :: !Block
+    , ccNode          :: !Node
+    , ccTLS           :: !TLS
+    , ccWallet        :: !Wallet
     } deriving (Eq, Show)
 
 data Core = Core
