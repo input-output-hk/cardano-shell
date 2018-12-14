@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Configuration.Types
+module Cardano.Shell.Configuration.Types
     ( Cluster(..)
     , ClusterConfig(..)
     , Host(..)
@@ -24,10 +24,9 @@ import           Cardano.Prelude hiding (evalState)
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
 import qualified Data.Text as T
-import           Dhall (GenericInject, Inject (..), InputType,
-                        Interpret (..), InterpretOptions (..), auto,
-                        field, genericInjectWith, record,
-                        strictText)
+import           Dhall (GenericInject, Inject (..), InputType, Interpret (..),
+                        InterpretOptions (..), auto, field, genericInjectWith,
+                        record, strictText)
 import           GHC.Generics (from)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
                                   elements, listOf, listOf1)
@@ -316,7 +315,7 @@ data InstallerConfig = InstallerConfig
     , icfgWalletPort       :: !Integer
     } deriving (Eq, Generic, Show)
 
-instance Interpret InstallerConfig 
+instance Interpret InstallerConfig
 
 instance Inject InstallerConfig
 

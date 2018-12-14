@@ -1,6 +1,8 @@
 {-# LANGUAGE Rank2Types #-}
 
-module Cardano.Shell.Features.Networking where
+module Cardano.Shell.Features.Networking
+    ( createNetworkingFeature
+    ) where
 
 import           Cardano.Prelude
 

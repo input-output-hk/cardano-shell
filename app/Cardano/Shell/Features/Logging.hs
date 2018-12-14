@@ -1,7 +1,10 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE Rank2Types    #-}
 
-module Cardano.Shell.Features.Logging where
+module Cardano.Shell.Features.Logging
+    ( LoggingLayer (..)
+    , createLoggingFeature
+    ) where
 
 import           Cardano.Prelude
 

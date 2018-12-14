@@ -1,6 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module DhallConfigSpec where
+module DhallConfigSpec
+    ( dhallConfigSpec
+    ) where
 
 import           Cardano.Prelude
 
@@ -11,11 +13,12 @@ import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           Configuration.Types (ClusterConfig, InstallerConfig, Launcher,
-                                      NodeArgs, Param, OSConfig)
+import           Cardano.Shell.Configuration.Types (ClusterConfig,
+                                                    InstallerConfig, Launcher,
+                                                    NodeArgs, OSConfig, Param)
 
 dhallConfigSpec :: Spec
-dhallConfigSpec = 
+dhallConfigSpec =
     describe "should be able to perform serialization roundtrip on" $ modifyMaxSuccess (const 200) $ do
         prop "NodeArgs" $
             \(nodeArgs :: NodeArgs) -> testRoundTrip nodeArgs
@@ -37,14 +40,14 @@ dhallConfigSpec =
 
         prop "Param" $
             \(paths :: Param) -> testRoundTrip paths
-
-testRoundTrip :: (Inject a, Interpret a, Eq a) => a -> Property
-testRoundTrip dhallConfig = monadicIO $ do
-    isSameData <- run $ runRoundTrip dhallConfig
-
-    assert isSameData
   where
-    runRoundTrip :: (Inject a, Interpret a, Eq a) => a -> IO Bool
-    runRoundTrip someData = do
-        roundTrippedData <- input auto $ pretty $ embed inject someData
-        return $ someData == roundTrippedData
+    testRoundTrip :: (Inject a, Interpret a, Eq a) => a -> Property
+    testRoundTrip dhallConfig = monadicIO $ do
+        isSameData <- run $ runRoundTrip dhallConfig
+
+        assert isSameData
+      where
+        runRoundTrip :: (Inject a, Interpret a, Eq a) => a -> IO Bool
+        runRoundTrip someData = do
+            roundTrippedData <- input auto $ pretty $ embed inject someData
+            return $ someData == roundTrippedData
