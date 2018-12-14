@@ -42,13 +42,13 @@ data LoggingParameters = LoggingParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { lLstartTrace  :: forall m. (MonadIO m) => Trace m
-    , lLlogDebug    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , lLlogInfo     :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , lLlogNotice   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , lLlogWarning  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , lLlogError    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , lLappendName  :: forall m. (MonadIO m) => Text -> Trace m -> m (Trace m)
+    { llStartTrace  :: forall m. (MonadIO m) => Trace m
+    , llLogDebug    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogInfo     :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogNotice   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogWarning  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogError    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llAppendName  :: forall m. (MonadIO m) => Text -> Trace m -> m (Trace m)
     }
 
 --------------------------------
@@ -89,13 +89,13 @@ loggingCardanoFeatureInit = CardanoFeatureInit
         cfg <- defaultConfigStdout
         baseTrace <- setupTrace (Right cfg) "simple"
         pure $ LoggingLayer
-                { lLstartTrace  = Trace.natTrace liftIO baseTrace
-                , lLlogDebug    = Trace.logDebug
-                , lLlogInfo     = Trace.logInfo
-                , lLlogNotice   = Trace.logNotice
-                , lLlogWarning  = Trace.logWarning
-                , lLlogError    = Trace.logError
-                , lLappendName  = Trace.appendName
+                { llStartTrace  = Trace.natTrace liftIO baseTrace
+                , llLogDebug    = Trace.logDebug
+                , llLogInfo     = Trace.logInfo
+                , llLogNotice   = Trace.logNotice
+                , llLogWarning  = Trace.logWarning
+                , llLogError    = Trace.logError
+                , llAppendName  = Trace.appendName
                 }
     cleanupLogging :: LoggingLayer -> IO ()
     cleanupLogging _ = pure ()
