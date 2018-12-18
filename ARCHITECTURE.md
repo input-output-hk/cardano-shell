@@ -23,7 +23,7 @@ For example, let's suppose we want to create a very simple logging/monitoring _f
 We see that the _feature_ requires a specific *configuration and has some global exception handling*.
 The specific configuration can be something really specific to logging, for example. We may need to read the default log level, whether it's info, debug, warn or something else - we need to define the level of information we want to save in the logs. For that, we require a specific configuration. That configuration is not part of the default configuration we usually parse when we start the _cardano-shell_ - when we parse the initial key configuration, we parse what *every feature requires*, not
 something specific for each _feature_.
-Then we have the _feature_ ready for usage and we can use the functions it contains. We will restrict this a bit later, but for now, let's suppose we can use all the functions in the module export. 
+Then we have the _feature_ ready for usage and we can use the functions it contains. We will restrict this a bit later, but for now, let's suppose we can use all the functions in the module export.
 And so, all is well. We are done! But wait! What about the other _features_? Ok, so I lied, we are not done. We need to able to communicate with the other nodes. What do we need for that? Networking! So we need to construct the _networking feature_. And what does networking use? It uses loggging! How does that look like?
 
 ![networking_deps](https://user-images.githubusercontent.com/6264437/48932488-84ae8800-eefc-11e8-89ff-5c8d45dc0f46.jpg)
@@ -50,7 +50,7 @@ So let's draw some pictures here and make this a bit more clear. Let's simplify 
 
 ![feature_layer_1](https://user-images.githubusercontent.com/6264437/48933434-89753b00-ef00-11e8-9edf-5f424caaba07.jpg)
 
-When we complete the construction of this logging/monitoring _feature_, we get the initialized _layer_, which is the interface toward the _feature_. It's essentially a record of functions. 
+When we complete the construction of this logging/monitoring _feature_, we get the initialized _layer_, which is the interface toward the _feature_. It's essentially a record of functions.
 Let's make this a bit more concrete. Let's say we have an extremely simple interface for _logging_ and all we want our users (developers) to use is this:
 ```
 logInfo     :: Text -> IO ()
@@ -87,7 +87,7 @@ I lied again. I simplified it a bit. If you take a look at the actual _layer_ ex
 ![feature_layer_abstract_effect](https://user-images.githubusercontent.com/6264437/48934055-db1ec500-ef02-11e8-910a-a11885661bb2.jpg)
 
 In the example, we suppose that the interface is abstract (the `m` type is abstract) and we later on define it to be `forall m. (MonadIO m, MonadLog m) => m`, so an _mtl style effect_ which has two constraints on it - it can log and do IO, which sounds good. But there is nothing perfect and there are trade-offs everywhere. Even in our nice little example. How?
-Let me show you. The abstract type is now constrained by two types - `MonadIO` and `MonadLog`. 
+Let me show you. The abstract type is now constrained by two types - `MonadIO` and `MonadLog`.
 
 ![feature_layer_effect_escape_1](https://user-images.githubusercontent.com/6264437/48934364-fdfda900-ef03-11e8-8631-bcdb2f283eab.jpg)
 
@@ -97,7 +97,7 @@ isn't that one of the reasons we use Haskell in the first place? Even worse, see
 ![feature_layer_effect_escape_2](https://user-images.githubusercontent.com/6264437/48934561-d65b1080-ef04-11e8-808a-b83bee9a188b.jpg)
 
 But that's not the worst part! The worst part is yet to come!
-What happens when we use _logging layer_ in our _networking feature_ function? 
+What happens when we use _logging layer_ in our _networking feature_ function?
 
 ![feature_layer_effect_escape_3](https://user-images.githubusercontent.com/6264437/48934599-fdb1dd80-ef04-11e8-984b-4d2f4cc2eef2.jpg)
 
@@ -114,9 +114,9 @@ Well, we can fix this. The price is hard-to-read type errors if you miss somethi
 So we can simply use `Rank2Types` extension and use a layer that has the constraints defined *per function*:
 ```
 data LoggingLayer = LoggingLayer
-    { iolLogDebug   :: forall m. (MonadIO m) => Text -> m ()
-    , iolLogInfo    :: forall m. (MonadIO m) => Text -> m ()
-    , iolNonIo      :: forall m. (MonadThrow m) => m ()
+    { llLogDebug   :: forall m. (MonadIO m) => Text -> m ()
+    , llLogInfo    :: forall m. (MonadIO m) => Text -> m ()
+    , llLockNonIO  :: forall m. (MonadThrow m) => m ()
     }
 ```
 

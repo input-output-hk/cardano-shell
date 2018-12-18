@@ -46,7 +46,14 @@ extra-deps:
       - .
       - test
 
-  - katip-0.6.3.0@sha256:55de9e007352cf3fb9de8de8b9ac17c1070824e07e6f6d5b676f9f3cff44d23c
+  - git: https://github.com/input-output-hk/iohk-monitoring-framework
+    commit: 4dc4d541a645b84a281faa8950a7fd4e61708963
+    subdirs:
+      - .
+
+  - katip-0.7.0.0@sha256:4b30d0643e18d01a3fd264d3d75921b49b2f464336a52fa46fa049107ebbfe04
+
+  - time-units-1.0.0@sha256:27cf54091c4a0ca73d504fc11d5c31ab4041d17404fe3499945e2055697746c1
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
@@ -75,4 +82,3 @@ extra-deps:
 nix:
   enable: true
   shell-file: stack-shell.nix
-

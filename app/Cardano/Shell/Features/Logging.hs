@@ -4,50 +4,32 @@
 module Cardano.Shell.Features.Logging
     ( LoggingLayer (..)
     , createLoggingFeature
+    , Trace
     ) where
 
-import           Cardano.Prelude
+import           Cardano.Prelude hiding (trace)
 
-import           Control.Exception.Safe (MonadThrow)
+import           Cardano.BM.Configuration.Static (defaultConfigStdout)
+import           Cardano.BM.Setup (setupTrace)
+import           Cardano.BM.Trace (Trace)
+import qualified Cardano.BM.Trace as Trace
 
 import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
-                                      CardanoFeature (..),
-                                      CardanoFeatureInit (..),
-                                      NoDependency (..))
+                     CardanoFeature (..), CardanoFeatureInit (..),
+                     NoDependency (..), ccLogConfig, ccLogPath)
 
 --------------------------------------------------------------------------------
 -- Loggging feature
 --------------------------------------------------------------------------------
 
 --------------------------------
--- Exceptions
---------------------------------
-
-data LoggingException
-    = MissingLogFileException
-    deriving (Eq, Show)
-
-instance Exception LoggingException
-
---------------------------------
 -- Configuration
 --------------------------------
 
--- Ideas picked up from https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LoggerConfig.hs
-
-data RotationParameters = RotationParameters
-    { _rpLogLimitBytes :: !Word64  -- ^ max size of file in bytes
-    , _rpMaxAgeHours   :: !Word    -- ^ hours
-    , _rpKeepFilesNum  :: !Word    -- ^ number of files to keep
-    } deriving (Generic, Show, Eq)
-
-
-testRotationParameters :: RotationParameters
-testRotationParameters = RotationParameters
-    { _rpLogLimitBytes = 10
-    , _rpMaxAgeHours   = 3
-    , _rpKeepFilesNum  = 5
-    }
+data LoggingParameters = LoggingParameters
+    { configFp :: FilePath
+    , prefixFp :: FilePath
+    } deriving (Show, Eq)
 
 --------------------------------
 -- Layer
@@ -60,33 +42,36 @@ testRotationParameters = RotationParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { iolLogDebug :: forall m. (MonadIO m) => Text -> m ()
-    , iolLogInfo  :: forall m. (MonadIO m) => Text -> m ()
-    , iolNonIo    :: forall m. (MonadThrow m) => m ()
-    }
-
-testLoggingLayer :: LoggingLayer
-testLoggingLayer = LoggingLayer
-    { iolLogDebug               = liftIO . putTextLn
-    , iolLogInfo                = liftIO . putTextLn
-    , iolNonIo                  = pure ()
+    { llStartTrace  :: forall m. (MonadIO m) => Trace m
+    , llLogDebug    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogInfo     :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogNotice   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogWarning  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogError    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llAppendName  :: forall m. (MonadIO m) => Text -> Trace m -> m (Trace m)
     }
 
 --------------------------------
 -- Feature
 --------------------------------
 
-type LoggingCardanoFeature = CardanoFeatureInit NoDependency RotationParameters LoggingLayer
+type LoggingCardanoFeature = CardanoFeatureInit NoDependency LoggingParameters LoggingLayer
 
 createLoggingFeature :: CardanoEnvironment -> CardanoConfiguration -> IO (LoggingLayer, CardanoFeature)
 createLoggingFeature cardanoEnvironment cardanoConfiguration = do
     -- we parse any additional configuration if there is any
     -- We don't know where the user wants to fetch the additional configuration from, it could be from
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
-    loggingConfiguration    <-  pure testRotationParameters
+    loggingConfiguration    <-  pure $ LoggingParameters
+                                    (ccLogConfig cardanoConfiguration)
+                                    (ccLogPath cardanoConfiguration)
 
     -- we construct the layer
-    loggingLayer            <- (featureInit loggingCardanoFeatureInit) cardanoEnvironment NoDependency cardanoConfiguration loggingConfiguration
+    loggingLayer            <- (featureInit loggingCardanoFeatureInit)
+                               cardanoEnvironment
+                               NoDependency
+                               cardanoConfiguration
+                               loggingConfiguration
 
     -- we construct the cardano feature
     let cardanoFeature      = loggingCardanoFeature loggingCardanoFeatureInit loggingLayer
@@ -96,30 +81,32 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration = do
 
 loggingCardanoFeatureInit :: LoggingCardanoFeature
 loggingCardanoFeatureInit = CardanoFeatureInit
-    { featureType                   = "LoggingMonitoringFeature"
-    , featureInit                   = featureInit'
-    , featureCleanup                = featureCleanup'
+    { featureType    = "LoggingMonitoringFeature"
+    , featureInit    = initLogging
+    , featureCleanup = cleanupLogging
     }
   where
-    featureInit' :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
-    featureInit' = actualLoggingFeature
-      where
-        actualLoggingFeature :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> RotationParameters -> IO LoggingLayer
-        actualLoggingFeature _ _ _ _ = do
-            --putTextLn "Starting up logging!"
-            pure testLoggingLayer
-
-    featureCleanup' :: LoggingLayer -> IO ()
-    featureCleanup' _ = pure () --putTextLn "Shutting down logging feature!" -- save a file, for example
+    initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
+    initLogging _ _ _ _logparams = do
+        cfg <- defaultConfigStdout  -- TODO initialize from 'configFp logparams'
+        baseTrace <- setupTrace (Right cfg) "simple"
+        pure $ LoggingLayer
+                { llStartTrace  = Trace.natTrace liftIO baseTrace
+                , llLogDebug    = Trace.logDebug
+                , llLogInfo     = Trace.logInfo
+                , llLogNotice   = Trace.logNotice
+                , llLogWarning  = Trace.logWarning
+                , llLogError    = Trace.logError
+                , llAppendName  = Trace.appendName
+                }
+    cleanupLogging :: LoggingLayer -> IO ()
+    cleanupLogging _ = pure ()  -- TODO
 
 loggingCardanoFeature :: LoggingCardanoFeature -> LoggingLayer -> CardanoFeature
 loggingCardanoFeature loggingCardanoFeature' loggingLayer = CardanoFeature
     { featureName       = featureType loggingCardanoFeature'
     , featureStart      = liftIO $ do
-        --putTextLn "Starting up loggingCardanoFeature!"
-        void $ pure loggingLayer -- or whatever it means for YOU (a specific team)
+        void $ pure loggingLayer
     , featureShutdown   = liftIO $ do
-        --putTextLn "Shutting down loggingCardanoFeature!"
         (featureCleanup loggingCardanoFeature') loggingLayer
     }
-
