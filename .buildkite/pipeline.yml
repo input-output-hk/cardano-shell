@@ -1,6 +1,8 @@
 steps:
   - label: 'nix build'
     command: 'nix-build release.nix'
+    agents:
+      system: x86_64-linux
   - label: 'stack rebuild'
     env:
       AWS_REGION: us-west-1

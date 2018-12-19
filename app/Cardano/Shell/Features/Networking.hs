@@ -55,7 +55,10 @@ data NetworkLayer = NetworkLayer
 testNetworkLayer :: LoggingLayer -> NetworkLayer
 testNetworkLayer loggingLayer = NetworkLayer
     { sendToNodes       = \_ -> pure "SEND"
-    , readFromNodes     = \_ -> iolNonIo loggingLayer >> pure "READ"
+    , readFromNodes     = \_ -> do
+                                let m = "READ"
+                                llLogInfo loggingLayer (llStartTrace loggingLayer) m
+                                pure m
     }
 
 --------------------------------
