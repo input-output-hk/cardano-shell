@@ -94,31 +94,86 @@ data CardanoFeature = CardanoFeature
 --------------------------------------------------------------------------------
 
 mainnetConfiguration :: CardanoConfiguration
-mainnetConfiguration = do
-
-let mainnetGenesis = GenesisExternal { src  = "mainnet-genesis.json"
-                                     , fileHash = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
-                                     }
-
-let 
-let mainnetCore = Core { genesis              = mainnetGenesis
-                       , requiresNetworkMagic = Text
-                       , dbSerializeVersion   = Integer
-                       }
-
-CardanoConfiguration   { scfgLogPath  = "./logs/"
+mainnetConfiguration = CardanoConfiguration
+                       { scfgLogPath  = "./logs/"
                        , scfgDBPath   = "./db/"
-                       , core         = mainnetCore
-                       , ntp          = NTP
-                       , update       = Update
-                       , txp          = TXP
-                       , ssc          = SSC
-                       , dlg          = DLG
-                       , block        = Block
-                       , node         = Node
-                       , tls          = TLS
-                       , wallet       = Wallet
+                       , core         = Core { genesis              =
+                                                 GenesisExternal { src      = "mainnet-genesis.json"
+                                                                 , fileHash = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
+                                                                 }
+                                             , requiresNetworkMagic = "NetworkMainOrStage"
+                                             , dbSerializeVersion   = 0
+                                             }
+                       , ntp          = NTP { responseTimeout = 30000000
+                                            , pollDelay       = 1800000000
+                                            , servers         = [ "0.pool.ntp.org"
+                                                                , "2.pool.ntp.org"
+                                                                , "3.pool.ntp.org"
+                                                                ]
+                                            }
+                       , update       = Update { applicationName       = "cardano-sl"
+                                               , applicationVersion    = 1
+                                               , lastKnownBlockVersion =
+                                                   LastKnownBlockVersion { bvMajor = 0
+                                                                         , bvMinor = 2
+                                                                         , bvAlt   = 0
+                                                                         }
+                                               }
+                       , txp          = TXP { memPoolLimitTx = 200
+                                            , assetLockedSrcAddress = []
+                                             }
+                       , ssc          = SSC { mpcSendInterval               = 100
+                                            , mdNoCommitmentsEpochThreshold = 3
+                                            , noReportNoSecretsForEpoch1    = True
+                                            }
+                       , dlg          = DLG { dlgCacheParam       = 500
+                                            , messageCacheTimeout = 30
+                                            }
+                       , block        = Block { networkDiameter        = 18
+                                              , recoveryHeadersMessage = 2200
+                                              , streamWindow           = 2048
+                                              , nonCriticalCQBootstrap = 0.95
+                                              , nonCriticalCQ          = 0.8
+                                              , criticalCQBootstrap    = 0.8888
+                                              , criticalCQ             = 0.654321
+                                              , criticalForkThreshold  = 3
+                                              , fixedTimeCQ            = 3600
+                                              }
+                       , node         = Node { networkConnectionTimeout     = 15000
+                                             , conversationEstablishTimeout = 30000
+                                             , blockRetrievalQueueSize      = 100
+                                             , pendingTxResubmissionPeriod  = 7
+                                             , walletProductionApi          = True
+                                             , walletTxCreationDisabled     = False
+                                             , explorerExtendedApi          = False
+                                             }
+                       , tls          = TLS { ca      = Certificate
+                                                            { organization = "Input Output HK"
+                                                            , commonName   = "Cardano SL Self-Signed Root CA"
+                                                            , expiryDays   = 3600
+                                                            , altDNS       :: []
+                                                            }
+    
+                                            , server  = Certificate
+                                                            { organization = "Input Output HK"
+                                                            , commonName   = "Cardano SL Server Node"
+                                                            , expiryDays   = 3600
+                                                            , altDNS       = [ "localhost"
+                                                                             , "localhost.localdomain"
+                                                                             , "127.0.0.1"
+                                                                             , "::1" ]
+                                                            }
+                                            , clients = Certificate
+                                                            { organization = "Input Output HK"
+                                                            , commonName   = "Daedalus Wallet"
+                                                            , expiryDays   = 3600
+                                                            , altDNS       :: []
+                                                            }
+                                            }
+                                                            
+                       , wallet       = Wallet { throttle = NoThrottle }
                        } deriving (Eq, Show)
+
 --------------------------------------------------------------------------------
 -- Cardano Configuration Data Structures
 --------------------------------------------------------------------------------
@@ -310,6 +365,8 @@ data Block = Block
       -- ^ If chain quality after bootstrap era is less than this value, non critical misbehavior will be reported.
     , criticalCQ             :: !Double
       -- ^ If chain quality after bootstrap era is less than this value, critical misbehavior will be reported.
+    , criticalCQBootstrap    :: !Double
+      -- ^ If chain quality in bootstrap era is less than this value, critical misbehavior will be reported.
     , criticalForkThreshold  :: !Int
       -- ^ Number of blocks such that if so many blocks are rolled back, it requires immediate reaction.
     , fixedTimeCQ            :: !Second
@@ -354,7 +411,7 @@ data Wallet = Wallet
     } deriving (Eq, Show)
 
 -- | Rate-limiting/throttling parameters
-data Throttle = Throttle
+data Throttle = NoThrottle | Throttle
     { enabled :: !Bool
     , rate    :: !Int
     , period  :: !Text
