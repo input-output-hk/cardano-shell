@@ -1,0 +1,7 @@
+{ wallet :
+  {
+      wcfgRelays    : List (List { host : Text})
+    , wcfgValency   : Integer
+    , wcfgFallbacks : Integer
+  }
+}

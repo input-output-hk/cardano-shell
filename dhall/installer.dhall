@@ -1,4 +1,4 @@
-\(cluster : ./cluster.type) ->
+\(cluster : ./types/cluster.type) ->
 \( os : ./os.type) ->
 { icfgInstallDirectory = os.osInstallDirectory
 , icfgWalletPort       = cluster.ccfgWalletPort

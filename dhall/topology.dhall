@@ -1,4 +1,4 @@
-\(cluster : ./cluster.type) ->
+\(cluster : ./types/cluster.type) ->
 { wallet = {
       wcfgRelays    = [[{ host = cluster.ccfgRelays }]]
     , wcfgValency   = +1
