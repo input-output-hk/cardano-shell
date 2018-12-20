@@ -1,6 +1,9 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Rank2Types        #-}
 
-module Cardano.Shell.Types where
+module Cardano.Shell.Types
+    ( ccLogConfig
+    ) where
 
 import           Cardano.Prelude
 
@@ -22,20 +25,6 @@ applicationProductionMode :: ApplicationEnvironment -> Bool
 applicationProductionMode Production = True
 applicationProductionMode _          = False
 
--- | Cardano configuration
-data CardanoConfiguration = CardanoConfiguration
-    { ccLogPath                 :: !FilePath
-    -- ^ The location of the log files on the filesystem.
-    , ccLogConfig               :: !FilePath
-    -- ^ The path to the log configuration.
-    , ccDBPath                  :: !FilePath
-    -- ^ The location of the DB on the filesystem.
-    , ccApplicationLockFile     :: !FilePath
-    -- ^ The location of the application lock file that is used
-    -- as a semaphore se we can run just one application
-    -- instance at a time.
-    }
-
 -- | The common runtime environment for all features in the server.
 -- All features have access to this environment.
 data CardanoEnvironment = CardanoEnvironment
@@ -55,7 +44,7 @@ initializeCardanoEnvironment = do
 
 loadCardanoConfiguration :: IO CardanoConfiguration
 loadCardanoConfiguration = do
-    pure $ CardanoConfiguration mempty mempty mempty mempty
+    pure $ mainnetConfiguration
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency
@@ -97,8 +86,9 @@ mainnetConfiguration :: CardanoConfiguration
 mainnetConfiguration = CardanoConfiguration
                        { ccLogPath  = "./logs/"
                        , ccDBPath   = "./db/"
+                       , ccApplicationLockFile = ""
                        , ccCore       = Core { genesis =
-                                          GenesisInternal { src      = "mainnet-genesis.json"
+                                          GenesisExternal { src      = "mainnet-genesis.json"
                                                           , fileHash = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
                                                           }
                                              , requiresNetworkMagic = "NetworkMainOrStage"
@@ -151,7 +141,7 @@ mainnetConfiguration = CardanoConfiguration
                                                             { organization = "Input Output HK"
                                                             , commonName   = "Cardano SL Self-Signed Root CA"
                                                             , expiryDays   = 3600
-                                                            , altDNS       :: []
+                                                            , altDNS       = []
                                                             }
                                             , server  = Certificate
                                                             { organization = "Input Output HK"
@@ -166,11 +156,11 @@ mainnetConfiguration = CardanoConfiguration
                                                             { organization = "Input Output HK"
                                                             , commonName   = "Daedalus Wallet"
                                                             , expiryDays   = 3600
-                                                            , altDNS       :: []
+                                                            , altDNS       = []
                                                             }
-                                            }    
+                                            }
                        , ccWallet    = Wallet { throttle = NoThrottle }
-                       } deriving (Eq, Show)
+                       }
 
 --------------------------------------------------------------------------------
 -- Cardano Dev Configuration
@@ -178,8 +168,9 @@ mainnetConfiguration = CardanoConfiguration
 
 devConfiguration :: CardanoConfiguration
 devConfiguration = CardanoConfiguration
-                       { ccLogPath    = "./logs/"
-                       , ccDBPath     = "./db/",
+                       { ccLogPath  = "./logs/"
+                       , ccDBPath   = "./db/"
+                       , ccApplicationLockFile = ""
                        , ccCore     = Core { genesis  =
                                         GenesisInternal { spec =
                                           Spec { initializer =
@@ -198,7 +189,7 @@ devConfiguration = CardanoConfiguration
                                                         , useHeavyDlg       = True
                                                         , seed              = 0
                                                         }
-    
+
                                                , blockVersionData  =
                                                    BlockVersionData { scriptVersion = 0
                                                                     , slotDuration  = 7000
@@ -217,25 +208,26 @@ devConfiguration = CardanoConfiguration
                                                                                      , thdDecrement = 0.05
                                                                                      }
                                                                     , txFeePolicy =
-                                                                        TxFeePolicy { txSizeLinear = 
+                                                                        TxFeePolicy { txSizeLinear =
                                                                           TxSizeLinear { a = 155381
                                                                                        , b = 43.946
                                                                                        }
-    
+                                                                                    }
                                                                     , unlockStakeEpoch = 18446744073709551615
                                                                     }
+
                                                , protocolConstants =
                                                    ProtocolConstants { k             = 2
                                                                      , protocolMagic = 55550001
                                                                      }
-                                               , ftsSeed           = "c2tvdm9yb2RhIEdndXJkYSBib3JvZGEgcHJvdm9kYSA=
+                                               , ftsSeed           = "c2tvdm9yb2RhIEdndXJkYSBib3JvZGEgcHJvdm9kYSA="
                                                , heavyDelegation   = ""
                                                , avvmDistr         = ""
                                                }
+                                                        }
                                           , requiresNetworkMagic = "RequiresNoMagic"
                                           , dbSerializeVersion   = 0
                                           }
-                                                        }
                        , ccNTP        = NTP { responseTimeout = 30000000
                                             , pollDelay       = 1800000000
                                             , servers         = [ "0.pool.ntp.org"
@@ -283,7 +275,7 @@ devConfiguration = CardanoConfiguration
                                                             { organization = "Input Output HK"
                                                             , commonName   = "Cardano SL Self-Signed Root CA"
                                                             , expiryDays   = 3650
-                                                            , altDNS       :: []
+                                                            , altDNS       = []
                                                             }
                                             , server  = Certificate
                                                             { organization = "Input Output HK"
@@ -298,13 +290,12 @@ devConfiguration = CardanoConfiguration
                                                             { organization = "Input Output HK"
                                                             , commonName   = "Daedalus Wallet"
                                                             , expiryDays   = 365
-                                                            , altDNS       :: []
+                                                            , altDNS       = []
                                                             }
                                             }
                        , ccWallet     =
                            Wallet { throttle = NoThrottle }
-                       } deriving (Eq, Show)
-
+                       }
 --------------------------------------------------------------------------------
 -- Cardano Configuration Data Structures
 --------------------------------------------------------------------------------
@@ -312,24 +303,24 @@ devConfiguration = CardanoConfiguration
 -- configuration parameters for the modules to work.
 
 data CardanoConfiguration = CardanoConfiguration
-    { ccLogPath                 :: !FilePath
+    { ccLogPath             :: !FilePath
     -- ^ The location of the log files on the filesystem.
-    , ccDBPath                  :: !FilePath
+    , ccDBPath              :: !FilePath
     -- ^ The location of the DB on the filesystem.
-    , ccApplicationLockFile     :: !FilePath
+    , ccApplicationLockFile :: !FilePath
     -- ^ The location of the application lock file that is used
     -- as a semaphore se we can run just one application
     -- instance at a time.
-    , ccCore          :: !Core
-    , ccNTP           :: !NTP
-    , ccUpdate        :: !Update
-    , ccTXP           :: !TXP
-    , ccSSC           :: !SSC
-    , ccDLG           :: !DLG
-    , ccBlock         :: !Block
-    , ccNode          :: !Node
-    , ccTLS           :: !TLS
-    , ccWallet        :: !Wallet
+    , ccCore                :: !Core
+    , ccNTP                 :: !NTP
+    , ccUpdate              :: !Update
+    , ccTXP                 :: !TXP
+    , ccSSC                 :: !SSC
+    , ccDLG                 :: !DLG
+    , ccBlock               :: !Block
+    , ccNode                :: !Node
+    , ccTLS                 :: !TLS
+    , ccWallet              :: !Wallet
     } deriving (Eq, Show)
 
 data Core = Core
@@ -343,7 +334,7 @@ data Core = Core
 
 data Genesis = GenesisInternal { spec     :: !Spec }
              | GenesisExternal { src      :: !FilePath
-                               , fileHash :: !Text 
+                               , fileHash :: !Text
                                }
              deriving (Eq, Show)
 
@@ -365,7 +356,7 @@ data Spec = Spec
 -- | This data type contains various options presense of which depends
 -- on whether we want genesis for mainnet or testnet.
 data Initializer = Initializer
-    { testBalance       :: !TestBalance 
+    { testBalance       :: !TestBalance
     , fakeAvvmBalance   :: !FakeAvvmBalance
     , avvmBalanceFactor :: !Int
     , useHeavyDlg       :: !Bool
@@ -415,7 +406,7 @@ data BlockVersionData = BlockVersionData
     , updateImplicit    :: !Int
     , softforkRule      :: !SoftForkRule
     , txFeePolicy       :: !TxFeePolicy
-    , unlockStakeEpoch  :: !Int
+    , unlockStakeEpoch  :: !Integer
     } deriving (Eq, Show)
 
 data SoftForkRule = SoftForkRule
@@ -447,28 +438,28 @@ data NTP = NTP
     } deriving (Eq, Show)
 
 data Update = Update
-    { applicationName :: !Text
-    , applicationVersion :: !Int
+    { applicationName       :: !Text
+    , applicationVersion    :: !Int
     , lastKnownBlockVersion :: !LastKnownBlockVersion
     } deriving (Eq, Show)
 
 data LastKnownBlockVersion = LastKnownBlockVersion
     { bvMajor :: !Int
     , bvMinor :: !Int
-    , bvAlt   :: !Int 
+    , bvAlt   :: !Int
     } deriving (Eq, Show)
 
 data SSC = SSC
-    { mpcSendInterval :: !Word
+    { mpcSendInterval               :: !Word
       -- ^ Length of interval for sending MPC message
     , mdNoCommitmentsEpochThreshold :: !Int
       -- ^ Threshold of epochs for malicious activity detection
-    , noReportNoSecretsForEpoch1 :: !Bool
+    , noReportNoSecretsForEpoch1    :: !Bool
       -- ^ Don't print “SSC couldn't compute seed” for the first epoch.
     } deriving (Eq, Show)
 
 data TXP = TXP
-    { memPoolLimitTx :: !Int
+    { memPoolLimitTx        :: !Int
       -- ^ Limit on the number of transactions that can be stored in the mem pool.
     , assetLockedSrcAddress :: ![Text]
       -- ^ Set of source address which are asset-locked. Transactions which
@@ -487,7 +478,7 @@ data Block = Block
     { networkDiameter        :: !Int
       -- ^Estimated time needed to broadcast message from one node to all other nodes
     , recoveryHeadersMessage :: !Int
-      -- ^Maximum amount of headers node can put into headers message while in "after offline" or "recovery" mode. 
+      -- ^Maximum amount of headers node can put into headers message while in "after offline" or "recovery" mode.
     , streamWindow           :: !Int
       -- ^ Number of blocks to have inflight
     , nonCriticalCQBootstrap :: !Double
@@ -500,7 +491,7 @@ data Block = Block
       -- ^ If chain quality in bootstrap era is less than this value, critical misbehavior will be reported.
     , criticalForkThreshold  :: !Int
       -- ^ Number of blocks such that if so many blocks are rolled back, it requires immediate reaction.
-    , fixedTimeCQ            :: !Second
+    , fixedTimeCQ            :: !Int
       -- ^ Chain quality will be also calculated for this amount of seconds.
     } deriving (Eq, Show)
 
