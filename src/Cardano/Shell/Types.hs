@@ -2,7 +2,16 @@
 {-# LANGUAGE Rank2Types        #-}
 
 module Cardano.Shell.Types
-    ( ccLogConfig
+    ( CardanoConfiguration (..)
+    , CardanoEnvironment (..)
+    , CardanoFeature (..)
+    , CardanoFeatureInit (..)
+    , NoDependency
+    , ApplicationEnvironment (..)
+    , CardanoApplication (..)
+    , initializeCardanoEnvironment
+    , loadCardanoConfiguration
+    , applicationProductionMode
     ) where
 
 import           Cardano.Prelude
@@ -85,6 +94,7 @@ data CardanoFeature = CardanoFeature
 mainnetConfiguration :: CardanoConfiguration
 mainnetConfiguration = CardanoConfiguration
                        { ccLogPath  = "./logs/"
+                       , ccLogConfig = "./log-config.yaml"
                        , ccDBPath   = "./db/"
                        , ccApplicationLockFile = ""
                        , ccCore       = Core { genesis =
@@ -170,6 +180,7 @@ devConfiguration :: CardanoConfiguration
 devConfiguration = CardanoConfiguration
                        { ccLogPath  = "./logs/"
                        , ccDBPath   = "./db/"
+                       , ccLogConfig = "./log-config.yaml"
                        , ccApplicationLockFile = ""
                        , ccCore     = Core { genesis  =
                                         GenesisInternal { spec =
@@ -305,6 +316,8 @@ devConfiguration = CardanoConfiguration
 data CardanoConfiguration = CardanoConfiguration
     { ccLogPath             :: !FilePath
     -- ^ The location of the log files on the filesystem.
+    , ccLogConfig           :: !FilePath
+    -- ^ The location of the log configuration on the filesystem
     , ccDBPath              :: !FilePath
     -- ^ The location of the DB on the filesystem.
     , ccApplicationLockFile :: !FilePath
