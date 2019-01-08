@@ -6,7 +6,7 @@ module Cardano.Shell.Types
     , CardanoEnvironment (..)
     , CardanoFeature (..)
     , CardanoFeatureInit (..)
-    , NoDependency
+    , NoDependency (..)
     , ApplicationEnvironment (..)
     , CardanoApplication (..)
     , initializeCardanoEnvironment
@@ -546,7 +546,7 @@ data Wallet = Wallet
     } deriving (Eq, Show)
 
 -- | Rate-limiting/throttling parameters
-data Throttle = NoThrottle | Throttle
+data Throttle = NoThrottle | SetThrottle
     { enabled :: !Bool
     , rate    :: !Int
     , period  :: !Text
