@@ -15,7 +15,10 @@ import           Cardano.BM.Setup (setupTrace)
 import           Cardano.BM.Trace (Trace)
 import qualified Cardano.BM.Trace as Trace
 
-import           Cardano.Shell.Types (NoDependency (..), CardanoConfiguration (..), CardanoEnvironment, CardanoFeature (..), CardanoFeatureInit (..))
+import           Cardano.Shell.Types (CardanoConfiguration (..),
+                                      CardanoEnvironment, CardanoFeature (..),
+                                      CardanoFeatureInit (..),
+                                      NoDependency (..))
 
 --------------------------------------------------------------------------------
 -- Loggging feature
