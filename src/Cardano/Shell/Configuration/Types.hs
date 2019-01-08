@@ -406,6 +406,60 @@ instance Arbitrary Launcher where
             , lUpdateWithPackage = updateWithPackage
             }
 
+--------------------------------------------------------------------------------
+-- Modules/features
+--------------------------------------------------------------------------------
+
+-- | Configuration fro Blockchain module
+data BlockchainConfig = BlockchainConfig {
+      bcfgConfigurationYaml :: !Text
+    , bcfgKeyFile           :: !Text
+    , bcfgWalletDBpath      :: !Text
+    , bcfgStatePath         :: !Text
+    , bcfgNodePath          :: !Text
+    , bcfgNodeDbPath        :: !Text
+    } deriving (Eq, Generic, Show)
+
+instance Interpret BlockchainConfig
+instance Inject BlockchainConfig
+
+-- | Configuration for Logging module
+data LoggingConfig = LoggingConfig {
+      lcfgConfigurationYaml  :: !Text
+    , lcfgLogPrefix          :: !Text
+    , lcfgNodeLogConfig      :: !Text
+    , lcfgNodeLogPath        :: !Text
+    , lcfgWorkingDir         :: !Text
+    , lcfgWalletLogging      :: !Bool
+    , lcfgLauncherLogsPrefix :: !Text
+    , lcfgLogConsoleOff      :: !Bool
+    } deriving (Eq, Generic, Show)
+
+instance Interpret LoggingConfig
+instance Inject LoggingConfig
+
+-- | Configuration for Network module
+data NetworkConfig = NetworkConfig
+    { ncfgConfigurationYaml :: !Text
+    , ncfgTopology          :: !Text
+    , ncfgX509ToolPath      :: !Text
+    , ncfgTlsPath           :: !Text
+    , ncfgWalletPort        :: !Integer
+    , ncfgHost              :: !Text
+    , ncfgValency           :: !Integer
+    , ncfgFallback          :: !Integer
+    , ncfgTlsca             :: !Text
+    , ncfgTlscert           :: !Text
+    , ncfgTlskey            :: !Text
+    } deriving (Eq, Generic, Show)
+
+instance Interpret NetworkConfig
+instance Inject NetworkConfig
+
+--------------------------------------------------------------------------------
+-- Auxiliary function
+--------------------------------------------------------------------------------
+
 -- | Generate random ascii string
 genSafeText :: Gen Text
 genSafeText = mconcat <$> listOf1 genSafeChar
