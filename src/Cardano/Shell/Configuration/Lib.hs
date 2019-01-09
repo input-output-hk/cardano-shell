@@ -69,7 +69,6 @@ mkLoggingConfig os cluster = input auto loggingPath
         <> "(" <> toPath "launcher" <> " " <> toPath "mainnet" <> " " <>
         "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ")" <>")"
 
--- echo './dhall/features/network.dhall ./dhall/mainnet.dhall (./dhall/macos64.dhall ./dhall/mainnet.dhall) (./dhall/launcher.dhall ./dhall/mainnet.dhall (./dhall/macos64.dhall ./dhall/mainnet.dhall)) (./dhall/topology.dhall ./dhall/mainnet.dhall)' | dhall-to-json --pretty
 mkNetworkConfig :: OS -> Cluster -> IO NetworkConfig
 mkNetworkConfig os cluster = input auto networkPath
   where
