@@ -2,15 +2,14 @@
 \(os: ../types/os.type) ->
 \(launcher : ../types/launcher.type) ->
 \(topology : ../types/topology.type) ->
-{ configurationYaml = os.osConfigurationYaml
-, topology          = os.osNodeArgs.naTopology
-, x509ToolPath      = os.osX509ToolPath
-, tlsPath           = os.osNodeArgs.naTlsPath
-, walletPort        = cluster.ccfgWalletPort
-, host              = cluster.ccfgRelays
-, valency           = topology.wallet.wcfgValency
-, fallback          = topology.wallet.wcfgFallbacks
-, tlsca             = launcher.lTlsca
-, tlscert           = launcher.lTlscert
-, tlsKey            = launcher.lTlsKey
+{ networkConfigurationYaml = os.osConfigurationYaml
+, networkTopology          = os.osNodeArgs.naTopology
+, networkX509ToolPath      = os.osX509ToolPath
+, networkTlsPath           = os.osNodeArgs.naTlsPath
+, networkHost              = cluster.ccfgRelays
+, networkValency           = topology.wallet.wcfgValency
+, networkFallback          = topology.wallet.wcfgFallbacks
+, networkTlsca             = launcher.lTlsca
+, networkTlscert           = launcher.lTlscert
+, networkTlskey            = launcher.lTlsKey
 }

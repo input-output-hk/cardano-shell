@@ -1,11 +1,10 @@
 \(os: ../types/os.type) ->
 \(launcher: ../types/launcher.type) ->
-{ configurationYaml  = os.osConfigurationYaml
-, logPrefix          = os.osNodeArgs.naLogsPrefix
-, nodeLogConfig      = os.osPass.pNodeLogConfig
-, nodeLogPath        = os.osPass.pNodeLogPath
-, workingDir         = os.osPass.pWorkingDir
-, walletLogging      = os.osPass.pWalletLogging
-, launcherLogsPrefix = os.osPass.pLauncherLogsPrefix
-, logConsoleOff      = launcher.lLogConsoleOff
+{ loggingConfigurationYaml  = os.osConfigurationYaml
+, loggingLogPrefix          = os.osNodeArgs.naLogsPrefix
+, loggingNodeLogConfig      = os.osPass.pNodeLogConfig
+, loggingNodeLogPath        = os.osPass.pNodeLogPath
+, loggingWorkingDir         = os.osPass.pWorkingDir
+, loggingLauncherLogsPrefix = os.osPass.pLauncherLogsPrefix
+, loggingLogConsoleOff      = launcher.lLogConsoleOff
 }

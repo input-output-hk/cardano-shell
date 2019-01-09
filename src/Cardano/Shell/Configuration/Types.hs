@@ -14,9 +14,14 @@ module Cardano.Shell.Configuration.Types
     , OSConfig(..)
     , Param(..)
     , TopologyConfig(..)
-    , WalletConfig(..)
+    , WalletTopologyConfig(..)
     , renderOS
     , renderCluster
+    -- * Feature configs
+    , LoggingConfig(..)
+    , BlockchainConfig(..)
+    , NetworkConfig(..)
+    , WalletConfig(..)
     ) where
 
 import           Cardano.Prelude hiding (evalState)
@@ -86,7 +91,7 @@ instance Arbitrary ClusterConfig where
         reportServer           <- genSafeText
         installDirectorySuffix <- genSafeText
         macPackageSuffix       <- genSafeText
-        walletPort             <- arbitrary
+        walletport             <- arbitrary
 
         pure $ ClusterConfig
             { ccfgName                   = name
@@ -96,7 +101,7 @@ instance Arbitrary ClusterConfig where
             , ccfgReportServer           = reportServer
             , ccfgInstallDirectorySuffix = installDirectorySuffix
             , ccfgMacPackageSuffix       = macPackageSuffix
-            , ccfgWalletPort             = walletPort
+            , ccfgWalletPort             = walletport
             }
 
 -- | OS configuration
@@ -192,8 +197,8 @@ instance Arbitrary Param where
         nodeDbPath          <- genSafeText
         nodeLogConfig       <- genSafeText
         nodeLogPath         <- maybeOf genSafeText
-        walletPath          <- genSafeText
-        walletLogging       <- arbitrary
+        walletpath          <- genSafeText
+        walletlogging       <- arbitrary
         workingDir          <- genSafeText
         frontendOnlyMode    <- arbitrary
         updaterPath         <- genSafeText
@@ -208,8 +213,8 @@ instance Arbitrary Param where
             , pNodeDbPath          = nodeDbPath
             , pNodeLogConfig       = nodeLogConfig
             , pNodeLogPath         = nodeLogPath
-            , pWalletPath          = walletPath
-            , pWalletLogging       = walletLogging
+            , pWalletPath          = walletpath
+            , pWalletLogging       = walletlogging
             , pWorkingDir          = workingDir
             , pFrontendOnlyMode    = frontendOnlyMode
             , pUpdaterPath         = updaterPath
@@ -247,7 +252,7 @@ instance Arbitrary LauncherConfig where
 
 -- | Topology configuration
 newtype TopologyConfig = TopologyConfig {
-      getWalletConfig :: WalletConfig
+      getWalletTopologyConfig :: WalletTopologyConfig
     } deriving (Eq, Generic, Show)
 
 instance Interpret TopologyConfig where
@@ -260,33 +265,33 @@ instance Inject TopologyConfig where
         options :: InterpretOptions
         options = opt {fieldModifier = replaceWithWallet}
         replaceWithWallet :: Text -> Text
-        replaceWithWallet "getWalletConfig" = "wallet"
+        replaceWithWallet "getWalletTopologyConfig" = "wallet"
         replaceWithWallet text              = text
 
 instance Arbitrary TopologyConfig where
     arbitrary = TopologyConfig <$> arbitrary
 
 -- | Wallet configuration
-data WalletConfig = WalletConfig
-    { wcfgRelays    :: ![[Host]]
-    , wcfgValency   :: !Integer
-    , wcfgFallbacks :: !Integer
+data WalletTopologyConfig = WalletTopologyConfig
+    { wtcfgRelays    :: ![[Host]]
+    , wtcfgValency   :: !Integer
+    , wtcfgFallbacks :: !Integer
     } deriving (Eq, Generic, Show)
 
-instance Interpret WalletConfig
+instance Interpret WalletTopologyConfig
 
-instance Inject WalletConfig
+instance Inject WalletTopologyConfig
 
-instance Arbitrary WalletConfig where
+instance Arbitrary WalletTopologyConfig where
     arbitrary = do
         relays    <- arbitrary
         valency   <- arbitrary
         fallbacks <- arbitrary
 
-        pure WalletConfig
-            { wcfgRelays    = relays
-            , wcfgValency   = valency
-            , wcfgFallbacks = fallbacks
+        pure WalletTopologyConfig
+            { wtcfgRelays    = relays
+            , wtcfgValency   = valency
+            , wtcfgFallbacks = fallbacks
             }
 
 -- | Host
@@ -322,11 +327,11 @@ instance Inject InstallerConfig
 instance Arbitrary InstallerConfig where
     arbitrary = do
         installDirectory <- genSafeText
-        walletPort       <- arbitrary
+        walletport       <- arbitrary
 
         pure InstallerConfig
             { icfgInstallDirectory = installDirectory
-            , icfgWalletPort       = walletPort
+            , icfgWalletPort       = walletport
             }
 
 -- | Launcher configuration
@@ -377,9 +382,9 @@ instance Arbitrary Launcher where
         updateServer      <- genSafeText
         keyFile           <- genSafeText
         topology          <- genSafeText
-        walletDbPath      <- genSafeText
+        walletdbPath      <- genSafeText
         updateLatestPath  <- genSafeText
-        walletAddress     <- genSafeText
+        walletaddress     <- genSafeText
         updateWithPackage <- arbitrary
 
         pure Launcher
@@ -400,9 +405,9 @@ instance Arbitrary Launcher where
             , lUpdateServer      = updateServer
             , lKeyFile           = keyFile
             , lTopology          = topology
-            , lWalletDbPath      = walletDbPath
+            , lWalletDbPath      = walletdbPath
             , lUpdateLatestPath  = updateLatestPath
-            , lWalletAddress     = walletAddress
+            , lWalletAddress     = walletaddress
             , lUpdateWithPackage = updateWithPackage
             }
 
@@ -412,12 +417,11 @@ instance Arbitrary Launcher where
 
 -- | Configuration fro Blockchain module
 data BlockchainConfig = BlockchainConfig {
-      bcfgConfigurationYaml :: !Text
-    , bcfgKeyFile           :: !Text
-    , bcfgWalletDBpath      :: !Text
-    , bcfgStatePath         :: !Text
-    , bcfgNodePath          :: !Text
-    , bcfgNodeDbPath        :: !Text
+      blockchainConfigurationYaml :: !Text
+    , blockchainKeyFile           :: !Text
+    , blockchainStatePath         :: !Text
+    , blockchainNodePath          :: !Text
+    , blockchainNodeDbPath        :: !Text
     } deriving (Eq, Generic, Show)
 
 instance Interpret BlockchainConfig
@@ -425,14 +429,13 @@ instance Inject BlockchainConfig
 
 -- | Configuration for Logging module
 data LoggingConfig = LoggingConfig {
-      lcfgConfigurationYaml  :: !Text
-    , lcfgLogPrefix          :: !Text
-    , lcfgNodeLogConfig      :: !Text
-    , lcfgNodeLogPath        :: !Text
-    , lcfgWorkingDir         :: !Text
-    , lcfgWalletLogging      :: !Bool
-    , lcfgLauncherLogsPrefix :: !Text
-    , lcfgLogConsoleOff      :: !Bool
+      loggingConfigurationYaml  :: !Text
+    , loggingLogPrefix          :: !Text
+    , loggingNodeLogConfig      :: !Text
+    , loggingNodeLogPath        :: !(Maybe Text)
+    , loggingWorkingDir         :: !Text
+    , loggingLauncherLogsPrefix :: !Text
+    , loggingLogConsoleOff      :: !Bool
     } deriving (Eq, Generic, Show)
 
 instance Interpret LoggingConfig
@@ -440,21 +443,34 @@ instance Inject LoggingConfig
 
 -- | Configuration for Network module
 data NetworkConfig = NetworkConfig
-    { ncfgConfigurationYaml :: !Text
-    , ncfgTopology          :: !Text
-    , ncfgX509ToolPath      :: !Text
-    , ncfgTlsPath           :: !Text
-    , ncfgWalletPort        :: !Integer
-    , ncfgHost              :: !Text
-    , ncfgValency           :: !Integer
-    , ncfgFallback          :: !Integer
-    , ncfgTlsca             :: !Text
-    , ncfgTlscert           :: !Text
-    , ncfgTlskey            :: !Text
+    { networkConfigurationYaml :: !Text
+    , networkTopology          :: !Text
+    , networkX509ToolPath      :: !Text
+    , networkTlsPath           :: !Text
+    , networkHost              :: !Text
+    , networkValency           :: !Integer
+    , networkFallback          :: !Integer
+    , networkTlsca             :: !Text
+    , networkTlscert           :: !Text
+    , networkTlskey            :: !Text
     } deriving (Eq, Generic, Show)
 
 instance Interpret NetworkConfig
 instance Inject NetworkConfig
+
+data WalletConfig = WalletConfig
+    { walletDbPath   :: !Text
+    , walletPath     :: !Text
+    , walletLogging  :: !Bool
+    , walletPort     :: !Integer
+    , walletAddress  :: !Text
+    , walletRelays   :: ![[Host]]
+    , walletFallback :: !Integer
+    , walletValency  :: !Integer
+    } deriving (Eq, Generic, Show)
+
+instance Interpret WalletConfig
+instance Inject WalletConfig
 
 --------------------------------------------------------------------------------
 -- Auxiliary function

@@ -24,6 +24,7 @@ library
       Cardano.Shell.Lib
     , Cardano.Shell.Types
     , Cardano.Shell.Configuration.Types
+    , Cardano.Shell.Configuration.Lib
   hs-source-dirs:
       src
   build-depends:

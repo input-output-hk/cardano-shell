@@ -1,8 +1,7 @@
 \(os: ../types/os.type) ->
-{ configurationYaml = os.osConfigurationYaml
-, keyFile           = os.osNodeArgs.naKeyfile
-, walletDBpath      = os.osNodeArgs.naWalletDBPath
-, statePath         = os.osPass.pStatePath
-, nodePath          = os.osPass.pNodePath
-, nodeDbPath        = os.osPass.pNodeDbPath
+{ blockchainConfigurationYaml = os.osConfigurationYaml
+, blockchainKeyFile           = os.osNodeArgs.naKeyfile
+, blockchainStatePath         = os.osPass.pStatePath
+, blockchainNodePath          = os.osPass.pNodePath
+, blockchainNodeDbPath        = os.osPass.pNodeDbPath
 }
