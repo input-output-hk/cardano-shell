@@ -266,7 +266,7 @@ instance Inject TopologyConfig where
         options = opt {fieldModifier = replaceWithWallet}
         replaceWithWallet :: Text -> Text
         replaceWithWallet "getWalletTopologyConfig" = "wallet"
-        replaceWithWallet text              = text
+        replaceWithWallet text                      = text
 
 instance Arbitrary TopologyConfig where
     arbitrary = TopologyConfig <$> arbitrary
@@ -427,6 +427,22 @@ data BlockchainConfig = BlockchainConfig {
 instance Interpret BlockchainConfig
 instance Inject BlockchainConfig
 
+instance Arbitrary BlockchainConfig where
+    arbitrary = do
+        yaml       <- genSafeText
+        keyfile    <- genSafeText
+        statePath  <- genSafeText
+        nodepath   <- genSafeText
+        nodedbpath <- genSafeText
+
+        pure $ BlockchainConfig
+            { blockchainConfigurationYaml = yaml
+            , blockchainKeyFile           = keyfile
+            , blockchainStatePath         = statePath
+            , blockchainNodePath          = nodepath
+            , blockchainNodeDbPath        = nodedbpath
+            }
+
 -- | Configuration for Logging module
 data LoggingConfig = LoggingConfig {
       loggingConfigurationYaml  :: !Text
@@ -441,6 +457,25 @@ data LoggingConfig = LoggingConfig {
 instance Interpret LoggingConfig
 instance Inject LoggingConfig
 
+instance Arbitrary LoggingConfig where
+    arbitrary = do
+        yaml          <- genSafeText
+        prefix        <- genSafeText
+        logConfig     <- genSafeText
+        mlogPath      <- maybeOf genSafeText
+        workingDir    <- genSafeText
+        logsPrefix    <- genSafeText
+        logconsoleOff <- arbitrary
+
+        pure $ LoggingConfig
+            { loggingConfigurationYaml  = yaml
+            , loggingLogPrefix          = prefix
+            , loggingNodeLogConfig      = logConfig
+            , loggingNodeLogPath        = mlogPath
+            , loggingWorkingDir         = workingDir
+            , loggingLauncherLogsPrefix = logsPrefix
+            , loggingLogConsoleOff      = logconsoleOff
+            }
 -- | Configuration for Network module
 data NetworkConfig = NetworkConfig
     { networkConfigurationYaml :: !Text
@@ -458,6 +493,32 @@ data NetworkConfig = NetworkConfig
 instance Interpret NetworkConfig
 instance Inject NetworkConfig
 
+instance Arbitrary NetworkConfig where
+    arbitrary = do
+        yaml <- genSafeText
+        topology <- genSafeText
+        x509path <- genSafeText
+        tlspath  <- genSafeText
+        host     <- genSafeText
+        valency  <- arbitrary
+        fallback <- arbitrary
+        tlsca    <- genSafeText
+        tlscert  <- genSafeText
+        tlskey   <- genSafeText
+
+        pure $ NetworkConfig
+            { networkConfigurationYaml = yaml
+            , networkTopology          = topology
+            , networkX509ToolPath      = x509path
+            , networkTlsPath           = tlspath
+            , networkHost              = host
+            , networkValency           = valency
+            , networkFallback          = fallback
+            , networkTlsca             = tlsca
+            , networkTlscert           = tlscert
+            , networkTlskey            = tlskey
+            }
+
 data WalletConfig = WalletConfig
     { walletDbPath   :: !Text
     , walletPath     :: !Text
@@ -471,6 +532,28 @@ data WalletConfig = WalletConfig
 
 instance Interpret WalletConfig
 instance Inject WalletConfig
+
+instance Arbitrary WalletConfig where
+    arbitrary = do
+        dbpath   <- genSafeText
+        path     <- genSafeText
+        logging  <- arbitrary
+        port     <- arbitrary
+        address  <- genSafeText
+        relays   <- arbitrary
+        fallback <- arbitrary
+        valency  <- arbitrary
+
+        pure $ WalletConfig
+            { walletDbPath   = dbpath
+            , walletPath     = path
+            , walletLogging  = logging
+            , walletPort     = port
+            , walletAddress  = address
+            , walletRelays   = [[relays]]
+            , walletFallback = fallback
+            , walletValency  = valency
+            }
 
 --------------------------------------------------------------------------------
 -- Auxiliary function

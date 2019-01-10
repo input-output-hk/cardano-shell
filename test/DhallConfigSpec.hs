@@ -13,9 +13,13 @@ import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           Cardano.Shell.Configuration.Types (ClusterConfig,
+import           Cardano.Shell.Configuration.Types (BlockchainConfig,
+                                                    ClusterConfig,
                                                     InstallerConfig, Launcher,
-                                                    NodeArgs, OSConfig, Param)
+                                                    LoggingConfig,
+                                                    NetworkConfig, NodeArgs,
+                                                    OSConfig, Param,
+                                                    WalletConfig)
 
 dhallConfigSpec :: Spec
 dhallConfigSpec =
@@ -40,6 +44,18 @@ dhallConfigSpec =
 
         prop "Param" $
             \(paths :: Param) -> testRoundTrip paths
+
+        prop "BlockchainConfig" $
+           \(blockchainConfig :: BlockchainConfig) -> testRoundTrip blockchainConfig
+
+        prop "LoggingConfig" $
+            \(loggingConfig :: LoggingConfig) -> testRoundTrip loggingConfig
+
+        prop "NetworkConfig" $
+            \(networkConfig :: NetworkConfig) -> testRoundTrip networkConfig
+
+        prop "WalletConfig" $
+            \(walletConfig :: WalletConfig) -> testRoundTrip walletConfig
   where
     testRoundTrip :: (Inject a, Interpret a, Eq a) => a -> Property
     testRoundTrip dhallConfig = monadicIO $ do
