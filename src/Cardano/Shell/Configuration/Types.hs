@@ -24,14 +24,14 @@ module Cardano.Shell.Configuration.Types
     , WalletConfig(..)
     ) where
 
-import           Cardano.Prelude hiding (evalState)
+import           Cardano.Prelude hiding (bool, evalState, maybe)
 
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
 import qualified Data.Text as T
 import           Dhall (GenericInject, Inject (..), InputType, Interpret (..),
-                        InterpretOptions (..), auto, field, genericInjectWith,
-                        record, strictText)
+                        InterpretOptions (..), auto, bool, field,
+                        genericInjectWith, integer, record, strictText)
 import           GHC.Generics (from)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
                                   elements, listOf, listOf1)
@@ -360,7 +360,6 @@ data Launcher = Launcher
     } deriving (Eq, Generic, Show)
 
 instance Interpret Launcher
-
 instance Inject Launcher
 
 instance Arbitrary Launcher where
@@ -412,28 +411,296 @@ instance Arbitrary Launcher where
             }
 
 --------------------------------------------------------------------------------
+-- Newtypes
+--------------------------------------------------------------------------------
+
+newtype ConfigurationYamlPath = ConfigurationYamlPath {
+    getConfigurationYamlPath :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject ConfigurationYamlPath
+
+instance Arbitrary ConfigurationYamlPath where
+    arbitrary = ConfigurationYamlPath <$> genSafeText
+
+newtype KeyFile = KeyFile {
+    getKeyFile :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject KeyFile
+
+instance Arbitrary KeyFile where
+    arbitrary = KeyFile <$> genSafeText
+
+newtype StatePath = StatePath {
+    getStatePath :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject StatePath
+
+instance Arbitrary StatePath where
+    arbitrary = StatePath <$> genSafeText
+
+newtype NodePath = NodePath {
+    getNodePath :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject NodePath
+
+instance Arbitrary NodePath where
+    arbitrary = NodePath <$> genSafeText
+
+newtype NodeDbPath = NodeDbPath {
+    getNodeDbPath :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject NodeDbPath
+
+instance Arbitrary NodeDbPath where
+    arbitrary = NodeDbPath <$> genSafeText
+
+newtype LogPrefix = LogPrefix {
+    getLogPrefix :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject LogPrefix
+
+instance Arbitrary LogPrefix where
+    arbitrary = LogPrefix <$> genSafeText
+
+newtype NodeLogConfig = NodeLogConfig {
+    getNodeLogConfig :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject NodeLogConfig
+
+instance Arbitrary NodeLogConfig where
+    arbitrary = NodeLogConfig <$> genSafeText
+
+newtype NodeLogPath = NodeLogPath {
+    getNodeLogPath :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject NodeLogPath
+
+instance Arbitrary NodeLogPath where
+    arbitrary = NodeLogPath <$> genSafeText
+
+newtype WorkingDir = WorkingDir {
+    getWorkingDir :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject WorkingDir
+
+instance Arbitrary WorkingDir where
+    arbitrary = WorkingDir <$> genSafeText
+
+newtype LauncherLogsPrefix = LauncherLogsPrefix {
+    getLauncherLogsPrefix :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject LauncherLogsPrefix
+
+instance Arbitrary LauncherLogsPrefix where
+    arbitrary = LauncherLogsPrefix <$> genSafeText
+
+newtype LogConsoleOff = LogConsoleOff {
+    getLogConsoleOff :: Bool
+    } deriving (Eq, Show, Generic)
+
+instance Inject LogConsoleOff
+
+instance Arbitrary LogConsoleOff where
+    arbitrary = LogConsoleOff <$> arbitrary
+
+newtype Topology = Topology {
+    getTopology :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject Topology
+
+instance Arbitrary Topology where
+    arbitrary = Topology <$> genSafeText
+
+newtype X509ToolPath = X509ToolPath {
+    getX509ToolPath :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject X509ToolPath
+
+instance Arbitrary X509ToolPath where
+    arbitrary = X509ToolPath <$> genSafeText
+
+newtype TlsPath = TlsPath {
+    getTlsPath :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject TlsPath
+
+instance Arbitrary TlsPath where
+    arbitrary = TlsPath <$> genSafeText
+
+newtype Valency = Valency {
+    getValency :: Integer
+    } deriving (Eq, Show, Generic)
+
+instance Inject Valency
+
+instance Arbitrary Valency where
+    arbitrary = Valency <$> arbitrary
+
+newtype Fallback = Fallback {
+    getFallback :: Integer
+    } deriving (Eq, Show, Generic)
+
+instance Inject Fallback
+
+instance Arbitrary Fallback where
+    arbitrary = Fallback <$> arbitrary
+
+newtype Tlsca = Tlsca {
+    getTlsca :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject Tlsca
+
+instance Arbitrary Tlsca where
+    arbitrary = Tlsca <$> genSafeText
+
+newtype Tlscert = Tlscert {
+    getTlscert :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject Tlscert
+
+instance Arbitrary Tlscert where
+    arbitrary = Tlscert <$> genSafeText
+
+newtype Tlskey = Tlskey {
+    getTlskey :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject Tlskey
+
+instance Arbitrary Tlskey where
+    arbitrary = Tlskey <$> genSafeText
+
+newtype WalletDbPath = WalletDbPath {
+    getDbPath :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject WalletDbPath
+
+instance Arbitrary WalletDbPath where
+    arbitrary = WalletDbPath <$> genSafeText
+
+newtype WalletPath = WalletPath {
+    getWalletPath :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject WalletPath
+
+instance Arbitrary WalletPath where
+    arbitrary = WalletPath <$> genSafeText
+
+newtype WalletLogging = WalletLogging {
+    getWalletLogging :: Bool
+    } deriving (Eq, Show, Generic)
+
+instance Inject WalletLogging
+
+instance Arbitrary WalletLogging where
+    arbitrary = WalletLogging <$> arbitrary
+
+newtype WalletPort = WalletPort {
+    getWalletPort :: Integer
+    } deriving (Eq, Show, Generic)
+
+instance Inject WalletPort
+
+instance Arbitrary WalletPort where
+    arbitrary = WalletPort <$> arbitrary
+
+newtype WalletAddress = WalletAddress {
+    getWalletAddress :: Text
+    } deriving (Eq, Show, Generic)
+
+instance Inject WalletAddress
+
+instance Arbitrary WalletAddress where
+    arbitrary = WalletAddress <$> genSafeText
+
+newtype WalletRelays = WalletRelays {
+    getWalletRelays :: [[Host]]
+    } deriving (Eq, Show, Generic)
+
+instance Inject WalletRelays
+
+instance Arbitrary WalletRelays where
+    arbitrary = do
+        someHost <- arbitrary
+        return $ WalletRelays [[someHost]]
+
+newtype WalletFallback = WalletFallback {
+    getWalletFallback :: Integer
+    } deriving (Eq, Show, Generic)
+
+instance Inject WalletFallback
+
+instance Arbitrary WalletFallback where
+    arbitrary = WalletFallback <$> arbitrary
+
+newtype WalletValency = WalletValency {
+    getWalletValency :: Integer
+    } deriving (Eq, Show, Generic)
+
+instance Inject WalletValency
+
+instance Arbitrary WalletValency where
+    arbitrary = WalletValency <$> arbitrary
+
+--------------------------------------------------------------------------------
 -- Modules/features
 --------------------------------------------------------------------------------
 
 -- | Configuration fro Blockchain module
 data BlockchainConfig = BlockchainConfig {
-      blockchainConfigurationYaml :: !Text
-    , blockchainKeyFile           :: !Text
-    , blockchainStatePath         :: !Text
-    , blockchainNodePath          :: !Text
-    , blockchainNodeDbPath        :: !Text
+      blockchainConfigurationYaml :: !ConfigurationYamlPath
+    , blockchainKeyFile           :: !KeyFile
+    , blockchainStatePath         :: !StatePath
+    , blockchainNodePath          :: !NodePath
+    , blockchainNodeDbPath        :: !NodeDbPath
     } deriving (Eq, Generic, Show)
 
-instance Interpret BlockchainConfig
-instance Inject BlockchainConfig
+instance Interpret BlockchainConfig where
+    autoWith _ = record
+        ( BlockchainConfig
+            <$> (ConfigurationYamlPath <$> field "blockchainConfigurationYaml" strictText)
+            <*> (KeyFile <$> field "blockchainKeyFile" strictText)
+            <*> (StatePath <$> field "blockchainStatePath" strictText)
+            <*> (NodePath <$> field "blockchainNodePath" strictText)
+            <*> (NodeDbPath <$> field "blockchainNodeDbPath" strictText)
+        )
+
+instance Inject BlockchainConfig where
+    injectWith opt = injectAutoWithOption $ options
+      where
+        options = opt {fieldModifier = replaceWith}
+        replaceWith :: Text -> Text
+        replaceWith "getConfigurationYamlPath" = "blockchainConfigurationYaml"
+        replaceWith "getKeyFile"               = "blockchainKeyFile"
+        replaceWith "getStatePath"             = "blockchainStatePath"
+        replaceWith "getNodePath"              = "blockchainNodePath"
+        replaceWith "getNodeDbPath"            = "blockchainNodeDbPath"
+        replaceWith text                       = text
 
 instance Arbitrary BlockchainConfig where
     arbitrary = do
-        yaml       <- genSafeText
-        keyfile    <- genSafeText
-        statePath  <- genSafeText
-        nodepath   <- genSafeText
-        nodedbpath <- genSafeText
+        yaml       <- arbitrary
+        keyfile    <- arbitrary
+        statePath  <- arbitrary
+        nodepath   <- arbitrary
+        nodedbpath <- arbitrary
 
         pure $ BlockchainConfig
             { blockchainConfigurationYaml = yaml
@@ -445,26 +712,37 @@ instance Arbitrary BlockchainConfig where
 
 -- | Configuration for Logging module
 data LoggingConfig = LoggingConfig {
-      loggingConfigurationYaml  :: !Text
-    , loggingLogPrefix          :: !Text
-    , loggingNodeLogConfig      :: !Text
-    , loggingNodeLogPath        :: !(Maybe Text)
-    , loggingWorkingDir         :: !Text
-    , loggingLauncherLogsPrefix :: !Text
-    , loggingLogConsoleOff      :: !Bool
+      loggingConfigurationYaml  :: !ConfigurationYamlPath
+    , loggingLogPrefix          :: !LogPrefix
+    , loggingNodeLogConfig      :: !NodeLogConfig
+    , loggingNodeLogPath        :: !(Maybe NodeLogPath)
+    , loggingWorkingDir         :: !WorkingDir
+    , loggingLauncherLogsPrefix :: !LauncherLogsPrefix
+    , loggingLogConsoleOff      :: !LogConsoleOff
     } deriving (Eq, Generic, Show)
 
-instance Interpret LoggingConfig
+instance Interpret LoggingConfig where
+    autoWith _ = record
+        ( LoggingConfig
+            <$> (ConfigurationYamlPath <$> field "loggingConfigurationYaml" strictText)
+            <*> (LogPrefix <$> field "loggingLogPrefix" strictText)
+            <*> (NodeLogConfig <$> field "loggingNodeLogConfig" strictText)
+            <*> ((Just . NodeLogPath) <$> field "loggingNodeLogConfig" strictText)
+            <*> (WorkingDir <$> field "loggingWorkingDir" strictText)
+            <*> (LauncherLogsPrefix <$> field "loggingLauncherLogsPrefix" strictText)
+            <*> (LogConsoleOff <$> field "loggingLogConsoleOfff" Dhall.bool)
+        )
+
 instance Inject LoggingConfig
 
 instance Arbitrary LoggingConfig where
     arbitrary = do
-        yaml          <- genSafeText
-        prefix        <- genSafeText
-        logConfig     <- genSafeText
-        mlogPath      <- maybeOf genSafeText
-        workingDir    <- genSafeText
-        logsPrefix    <- genSafeText
+        yaml          <- arbitrary
+        prefix        <- arbitrary
+        logConfig     <- arbitrary
+        mlogPath      <- maybeOf arbitrary
+        workingDir    <- arbitrary
+        logsPrefix    <- arbitrary
         logconsoleOff <- arbitrary
 
         pure $ LoggingConfig
@@ -476,35 +754,50 @@ instance Arbitrary LoggingConfig where
             , loggingLauncherLogsPrefix = logsPrefix
             , loggingLogConsoleOff      = logconsoleOff
             }
+
 -- | Configuration for Network module
 data NetworkConfig = NetworkConfig
-    { networkConfigurationYaml :: !Text
-    , networkTopology          :: !Text
-    , networkX509ToolPath      :: !Text
-    , networkTlsPath           :: !Text
-    , networkHost              :: !Text
-    , networkValency           :: !Integer
-    , networkFallback          :: !Integer
-    , networkTlsca             :: !Text
-    , networkTlscert           :: !Text
-    , networkTlskey            :: !Text
+    { networkConfigurationYaml :: !ConfigurationYamlPath
+    , networkTopology          :: !Topology
+    , networkX509ToolPath      :: !X509ToolPath
+    , networkHost              :: !Host
+    , networkValency           :: !Valency
+    , networkFallback          :: !Fallback
+    , networkTlsPath           :: !TlsPath
+    , networkTlsca             :: !Tlsca
+    , networkTlscert           :: !Tlscert
+    , networkTlskey            :: !Tlskey
     } deriving (Eq, Generic, Show)
 
-instance Interpret NetworkConfig
+instance Interpret NetworkConfig where
+    autoWith _ = record
+        ( NetworkConfig
+            <$> (ConfigurationYamlPath <$> field "networkConfigurationYaml" strictText)
+            <*> (Topology <$> field "networkTopology" strictText)
+            <*> (X509ToolPath <$> field "networkX509ToolPath" strictText)
+            <*> (Host <$> field "networkHost" strictText)
+            <*> (Valency <$> field "networkValency" integer)
+            <*> (Fallback <$> field "networkFallback" integer)
+            <*> (TlsPath <$> field "networkTlsPath" strictText)
+            <*> (Tlsca <$> field "networkTlsca" strictText)
+            <*> (Tlscert <$> field "networkTlscert" strictText)
+            <*> (Tlskey <$> field "networkTlskey" strictText)
+        )
+
 instance Inject NetworkConfig
 
 instance Arbitrary NetworkConfig where
     arbitrary = do
-        yaml <- genSafeText
-        topology <- genSafeText
-        x509path <- genSafeText
-        tlspath  <- genSafeText
-        host     <- genSafeText
+        yaml     <- arbitrary
+        topology <- arbitrary
+        x509path <- arbitrary
+        tlspath  <- arbitrary
+        host     <- arbitrary
         valency  <- arbitrary
         fallback <- arbitrary
-        tlsca    <- genSafeText
-        tlscert  <- genSafeText
-        tlskey   <- genSafeText
+        tlsca    <- arbitrary
+        tlscert  <- arbitrary
+        tlskey   <- arbitrary
 
         pure $ NetworkConfig
             { networkConfigurationYaml = yaml
@@ -520,26 +813,38 @@ instance Arbitrary NetworkConfig where
             }
 
 data WalletConfig = WalletConfig
-    { walletDbPath   :: !Text
-    , walletPath     :: !Text
-    , walletLogging  :: !Bool
-    , walletPort     :: !Integer
-    , walletAddress  :: !Text
-    , walletRelays   :: ![[Host]]
-    , walletFallback :: !Integer
-    , walletValency  :: !Integer
+    { walletDbPath   :: !WalletDbPath
+    , walletPath     :: !WalletPath
+    , walletLogging  :: !WalletLogging
+    , walletPort     :: !WalletPort
+    , walletAddress  :: !WalletAddress
+    , walletRelays   :: !WalletRelays
+    , walletFallback :: !WalletFallback
+    , walletValency  :: !WalletValency
     } deriving (Eq, Generic, Show)
 
-instance Interpret WalletConfig
+instance Interpret WalletConfig where
+    autoWith _ = record
+        ( WalletConfig
+            <$> (WalletDbPath <$> field "walletDbPath" strictText)
+            <*> (WalletPath <$> field "walletPath" strictText)
+            <*> (WalletLogging <$> field "walletLogging" bool)
+            <*> (WalletPort <$> field "walletPort" integer)
+            <*> (WalletAddress <$> field "walletAddress" strictText)
+            <*> (WalletRelays <$> field "walletRelays" auto)
+            <*> (WalletFallback <$> field "walletFallback" integer)
+            <*> (WalletValency <$> field "walletValency" integer)
+        )
+
 instance Inject WalletConfig
 
 instance Arbitrary WalletConfig where
     arbitrary = do
-        dbpath   <- genSafeText
-        path     <- genSafeText
+        dbpath   <- arbitrary
+        path     <- arbitrary
         logging  <- arbitrary
         port     <- arbitrary
-        address  <- genSafeText
+        address  <- arbitrary
         relays   <- arbitrary
         fallback <- arbitrary
         valency  <- arbitrary
@@ -550,7 +855,7 @@ instance Arbitrary WalletConfig where
             , walletLogging  = logging
             , walletPort     = port
             , walletAddress  = address
-            , walletRelays   = [[relays]]
+            , walletRelays   = relays
             , walletFallback = fallback
             , walletValency  = valency
             }
