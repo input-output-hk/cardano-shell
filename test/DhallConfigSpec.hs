@@ -13,8 +13,7 @@ import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           Cardano.Shell.Configuration.Types (BlockchainConfig,
-                                                    ClusterConfig,
+import           Cardano.Shell.Configuration.Types (ClusterConfig,
                                                     InstallerConfig, Launcher,
                                                     NodeArgs, OSConfig, Param)
 

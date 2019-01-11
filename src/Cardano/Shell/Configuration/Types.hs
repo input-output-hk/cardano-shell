@@ -682,17 +682,7 @@ instance Interpret BlockchainConfig where
             <*> (NodeDbPath <$> field "blockchainNodeDbPath" strictText)
         )
 
-instance Inject BlockchainConfig where
-    injectWith opt = injectAutoWithOption $ options
-      where
-        options = opt {fieldModifier = replaceWith}
-        replaceWith :: Text -> Text
-        replaceWith "getConfigurationYamlPath" = "blockchainConfigurationYaml"
-        replaceWith "getKeyFile"               = "blockchainKeyFile"
-        replaceWith "getStatePath"             = "blockchainStatePath"
-        replaceWith "getNodePath"              = "blockchainNodePath"
-        replaceWith "getNodeDbPath"            = "blockchainNodeDbPath"
-        replaceWith text                       = text
+instance Inject BlockchainConfig
 
 instance Arbitrary BlockchainConfig where
     arbitrary = do
