@@ -1,5 +1,6 @@
 # cardano-shell
 
+[![Coverage Status](https://coveralls.io/repos/github/input-output-hk/cardano-shell/badge.svg?branch=develop)](https://coveralls.io/github/input-output-hk/cardano-shell?branch=develop)
 
 | Develop	| Master   |
 |---		|---	|
