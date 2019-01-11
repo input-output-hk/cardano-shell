@@ -17,11 +17,41 @@ module Cardano.Shell.Configuration.Types
     , WalletTopologyConfig(..)
     , renderOS
     , renderCluster
+
     -- * Feature configs
     , LoggingConfig(..)
     , BlockchainConfig(..)
     , NetworkConfig(..)
     , WalletConfig(..)
+
+    -- * Fields
+    , ConfigurationYamlPath(..)
+    , KeyFile(..)
+    , StatePath(..)
+    , NodePath(..)
+    , NodeDbPath(..)
+    , LogPrefix(..)
+    , NodeLogConfig(..)
+    , NodeLogPath(..)
+    , WorkingDir(..)
+    , LauncherLogsPrefix(..)
+    , LogConsoleOff(..)
+    , Topology(..)
+    , X509ToolPath(..)
+    , Valency(..)
+    , Fallback(..)
+    , TlsPath(..)
+    , Tlsca(..)
+    , Tlscert(..)
+    , Tlskey(..)
+    , WalletDbPath(..)
+    , WalletPath(..)
+    , WalletLogging(..)
+    , WalletPort(..)
+    , WalletAddress(..)
+    , WalletRelays(..)
+    , WalletFallback(..)
+    , WalletValency(..)
     ) where
 
 import           Cardano.Prelude hiding (bool, evalState, maybe)
@@ -683,7 +713,6 @@ instance Interpret BlockchainConfig where
         )
 
 instance Inject BlockchainConfig
-
 instance Arbitrary BlockchainConfig where
     arbitrary = do
         yaml       <- arbitrary
