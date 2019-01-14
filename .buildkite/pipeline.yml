@@ -1,8 +1,10 @@
 steps:
+
   - label: 'stack coveralls coverage'
-    command:
+    command: 
+      - 'nix-env -iA nixos.haskellPackages.stack-hpc-coveralls'
       - 'stack test --coverage'
-      - './check_coverage.sh'
+      - 'shc --repo-token=$COVERALLS_REPO_TOKEN cardano-shell cardano-shell-test'
     agents:
       system: x86_64-linux
 

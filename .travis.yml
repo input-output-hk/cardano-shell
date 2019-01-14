@@ -15,17 +15,22 @@ cache:
 before_install:
 - mkdir -p ~/.local/bin
 - export PATH=$HOME/.local/bin:$PATH
+# install stack
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards
   --strip-components=1 -C ~/.local/bin '*/stack'
+# install nix
+- travis_retry curl https://nixos.org/nix/install | sh
+# add path for nix
+- . /home/travis/.nix-profile/etc/profile.d/nix.sh
 install:
-- stack --no-terminal --install-ghc build --only-dependencies --jobs=4
+- stack build --nix --no-terminal
 
 script:
-  - stack test --no-terminal --coverage
+  - stack test --nix --no-terminal --coverage
 
 after_script:
   - travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-$GHCVER.tar.bz2 | tar -xj
-  - ./shc argon argon-test
+  - ./shc cardano-shell cardano-shell-test
 
 notifications:
   email: false
