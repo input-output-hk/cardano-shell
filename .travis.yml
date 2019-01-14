@@ -1,7 +1,24 @@
 env:
   - GHCVER=8.0.1 STACK_YAML=stack.yaml
 
-# [...]
+sudo: false
+language: c
+cache:
+  directories:
+  - "$HOME/.stack"
+  - "$HOME/build/input-output-hk/cardano-shell/.stack-work"
+    #addons:
+    #  apt:
+    #    packages:
+    #    - zlib1g-dev
+    #    - libgmp3-dev
+before_install:
+- mkdir -p ~/.local/bin
+- export PATH=$HOME/.local/bin:$PATH
+- travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards
+  --strip-components=1 -C ~/.local/bin '*/stack'
+install:
+- stack --no-terminal --install-ghc build --only-dependencies --jobs=4
 
 script:
   - stack test --no-terminal --coverage
@@ -9,3 +26,6 @@ script:
 after_script:
   - travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-$GHCVER.tar.bz2 | tar -xj
   - ./shc argon argon-test
+
+notifications:
+  email: false
