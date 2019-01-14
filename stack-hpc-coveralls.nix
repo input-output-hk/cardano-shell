@@ -8,9 +8,9 @@ mkDerivation {
   pname = "stack-hpc-coveralls";
   version = "0.0.4.0";
   src = fetchgit {
-    url = "https://github.com/rubik/stack-hpc-coveralls";
-    sha256 = "1k1rbndfb4shaknc368yyf9p680kfr9b9di5w6yfw9y5a1cschhc";
-    rev = "3d8352d5642ab214a7a574bd797880ae39595a44";
+    url = "https://github.com/input-output-hk/stack-hpc-coveralls";
+    sha256 = "0b0nrh8ylkm3g92a8basv1cxnbxjx5vd7b3g3fdf6w0i6vms3xsm";
+    rev = "72bcf5cd572f7fa76e46058999eb8ff098ad6563";
     fetchSubmodules = true;
   };
   isLibrary = true;
