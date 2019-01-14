@@ -2,13 +2,7 @@ steps:
   - label: 'stack coveralls coverage'
     command:
       - 'stack test --coverage'
-      - 'pwd'
-      - 'ls -la'
-      - 'curl -L -v https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar -xj'
-      - 'ls -la'
-      - 'which ./shc'
-      - 'echo $COVERALLS_REPO_TOKEN'
-      - './shc --repo-token=$COVERALLS_REPO_TOKEN cardano-shell cardano-shell-test'
+      - './check_coverage.sh'
     agents:
       system: x86_64-linux
 
