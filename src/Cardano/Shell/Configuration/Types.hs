@@ -54,14 +54,14 @@ module Cardano.Shell.Configuration.Types
     , WalletValency(..)
     ) where
 
-import           Cardano.Prelude hiding (bool, evalState, maybe)
+import           Cardano.Prelude hiding (evalState, maybe)
 
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
 import qualified Data.Text as T
 import           Dhall (GenericInject, Inject (..), InputType, Interpret (..),
-                        InterpretOptions (..), auto, bool, field,
-                        genericInjectWith, integer, record, strictText)
+                        InterpretOptions (..), auto, field,
+                        genericInjectWith, record)
 import           GHC.Generics (from)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
                                   elements, listOf, listOf1)
@@ -329,17 +329,9 @@ newtype Host = Host {
     getHost :: Text
     } deriving (Eq, Generic, Show)
 
-instance Interpret Host where
-    autoWith _ = record
-        (Host <$> field "host" strictText)
+instance Interpret Host
 
-instance Inject Host where
-    injectWith opt = injectAutoWithOption $ options
-      where
-        options = opt {fieldModifier = replaceWithHost}
-        replaceWithHost :: Text -> Text
-        replaceWithHost "getHost" = "host"
-        replaceWithHost text      = text
+instance Inject Host
 
 instance Arbitrary Host where
     arbitrary = Host <$> genSafeText
@@ -448,6 +440,7 @@ newtype ConfigurationYamlPath = ConfigurationYamlPath {
     getConfigurationYamlPath :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret ConfigurationYamlPath
 instance Inject ConfigurationYamlPath
 
 instance Arbitrary ConfigurationYamlPath where
@@ -457,6 +450,7 @@ newtype KeyFile = KeyFile {
     getKeyFile :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret KeyFile
 instance Inject KeyFile
 
 instance Arbitrary KeyFile where
@@ -466,6 +460,7 @@ newtype StatePath = StatePath {
     getStatePath :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret StatePath
 instance Inject StatePath
 
 instance Arbitrary StatePath where
@@ -475,6 +470,7 @@ newtype NodePath = NodePath {
     getNodePath :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret NodePath
 instance Inject NodePath
 
 instance Arbitrary NodePath where
@@ -484,6 +480,7 @@ newtype NodeDbPath = NodeDbPath {
     getNodeDbPath :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret NodeDbPath
 instance Inject NodeDbPath
 
 instance Arbitrary NodeDbPath where
@@ -493,6 +490,7 @@ newtype LogPrefix = LogPrefix {
     getLogPrefix :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret LogPrefix
 instance Inject LogPrefix
 
 instance Arbitrary LogPrefix where
@@ -502,24 +500,27 @@ newtype NodeLogConfig = NodeLogConfig {
     getNodeLogConfig :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret NodeLogConfig
 instance Inject NodeLogConfig
 
 instance Arbitrary NodeLogConfig where
     arbitrary = NodeLogConfig <$> genSafeText
 
 newtype NodeLogPath = NodeLogPath {
-    getNodeLogPath :: Text
+    getNodeLogPath :: Maybe Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret NodeLogPath
 instance Inject NodeLogPath
 
 instance Arbitrary NodeLogPath where
-    arbitrary = NodeLogPath <$> genSafeText
+    arbitrary = NodeLogPath <$> maybeOf genSafeText
 
 newtype WorkingDir = WorkingDir {
     getWorkingDir :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret WorkingDir
 instance Inject WorkingDir
 
 instance Arbitrary WorkingDir where
@@ -529,6 +530,7 @@ newtype LauncherLogsPrefix = LauncherLogsPrefix {
     getLauncherLogsPrefix :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret LauncherLogsPrefix
 instance Inject LauncherLogsPrefix
 
 instance Arbitrary LauncherLogsPrefix where
@@ -538,6 +540,7 @@ newtype LogConsoleOff = LogConsoleOff {
     getLogConsoleOff :: Bool
     } deriving (Eq, Show, Generic)
 
+instance Interpret LogConsoleOff
 instance Inject LogConsoleOff
 
 instance Arbitrary LogConsoleOff where
@@ -547,6 +550,7 @@ newtype Topology = Topology {
     getTopology :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret Topology
 instance Inject Topology
 
 instance Arbitrary Topology where
@@ -556,6 +560,7 @@ newtype X509ToolPath = X509ToolPath {
     getX509ToolPath :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret X509ToolPath
 instance Inject X509ToolPath
 
 instance Arbitrary X509ToolPath where
@@ -565,6 +570,7 @@ newtype TlsPath = TlsPath {
     getTlsPath :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret TlsPath
 instance Inject TlsPath
 
 instance Arbitrary TlsPath where
@@ -574,6 +580,7 @@ newtype Valency = Valency {
     getValency :: Integer
     } deriving (Eq, Show, Generic)
 
+instance Interpret Valency
 instance Inject Valency
 
 instance Arbitrary Valency where
@@ -583,6 +590,7 @@ newtype Fallback = Fallback {
     getFallback :: Integer
     } deriving (Eq, Show, Generic)
 
+instance Interpret Fallback
 instance Inject Fallback
 
 instance Arbitrary Fallback where
@@ -592,6 +600,7 @@ newtype Tlsca = Tlsca {
     getTlsca :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret Tlsca
 instance Inject Tlsca
 
 instance Arbitrary Tlsca where
@@ -601,6 +610,7 @@ newtype Tlscert = Tlscert {
     getTlscert :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret Tlscert
 instance Inject Tlscert
 
 instance Arbitrary Tlscert where
@@ -610,6 +620,7 @@ newtype Tlskey = Tlskey {
     getTlskey :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret Tlskey
 instance Inject Tlskey
 
 instance Arbitrary Tlskey where
@@ -619,6 +630,7 @@ newtype WalletDbPath = WalletDbPath {
     getDbPath :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret WalletDbPath
 instance Inject WalletDbPath
 
 instance Arbitrary WalletDbPath where
@@ -628,6 +640,7 @@ newtype WalletPath = WalletPath {
     getWalletPath :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret WalletPath
 instance Inject WalletPath
 
 instance Arbitrary WalletPath where
@@ -637,6 +650,7 @@ newtype WalletLogging = WalletLogging {
     getWalletLogging :: Bool
     } deriving (Eq, Show, Generic)
 
+instance Interpret WalletLogging
 instance Inject WalletLogging
 
 instance Arbitrary WalletLogging where
@@ -646,6 +660,7 @@ newtype WalletPort = WalletPort {
     getWalletPort :: Integer
     } deriving (Eq, Show, Generic)
 
+instance Interpret WalletPort
 instance Inject WalletPort
 
 instance Arbitrary WalletPort where
@@ -655,6 +670,7 @@ newtype WalletAddress = WalletAddress {
     getWalletAddress :: Text
     } deriving (Eq, Show, Generic)
 
+instance Interpret WalletAddress
 instance Inject WalletAddress
 
 instance Arbitrary WalletAddress where
@@ -664,6 +680,7 @@ newtype WalletRelays = WalletRelays {
     getWalletRelays :: [[Host]]
     } deriving (Eq, Show, Generic)
 
+instance Interpret WalletRelays
 instance Inject WalletRelays
 
 instance Arbitrary WalletRelays where
@@ -675,6 +692,7 @@ newtype WalletFallback = WalletFallback {
     getWalletFallback :: Integer
     } deriving (Eq, Show, Generic)
 
+instance Interpret WalletFallback
 instance Inject WalletFallback
 
 instance Arbitrary WalletFallback where
@@ -684,6 +702,7 @@ newtype WalletValency = WalletValency {
     getWalletValency :: Integer
     } deriving (Eq, Show, Generic)
 
+instance Interpret WalletValency
 instance Inject WalletValency
 
 instance Arbitrary WalletValency where
@@ -702,15 +721,7 @@ data BlockchainConfig = BlockchainConfig {
     , blockchainNodeDbPath        :: !NodeDbPath
     } deriving (Eq, Generic, Show)
 
-instance Interpret BlockchainConfig where
-    autoWith _ = record
-        ( BlockchainConfig
-            <$> (ConfigurationYamlPath <$> field "blockchainConfigurationYaml" strictText)
-            <*> (KeyFile <$> field "blockchainKeyFile" strictText)
-            <*> (StatePath <$> field "blockchainStatePath" strictText)
-            <*> (NodePath <$> field "blockchainNodePath" strictText)
-            <*> (NodeDbPath <$> field "blockchainNodeDbPath" strictText)
-        )
+instance Interpret BlockchainConfig
 
 instance Inject BlockchainConfig
 instance Arbitrary BlockchainConfig where
@@ -734,24 +745,13 @@ data LoggingConfig = LoggingConfig {
       loggingConfigurationYaml  :: !ConfigurationYamlPath
     , loggingLogPrefix          :: !LogPrefix
     , loggingNodeLogConfig      :: !NodeLogConfig
-    , loggingNodeLogPath        :: !(Maybe NodeLogPath)
+    , loggingNodeLogPath        :: !NodeLogPath
     , loggingWorkingDir         :: !WorkingDir
     , loggingLauncherLogsPrefix :: !LauncherLogsPrefix
     , loggingLogConsoleOff      :: !LogConsoleOff
     } deriving (Eq, Generic, Show)
 
-instance Interpret LoggingConfig where
-    autoWith _ = record
-        ( LoggingConfig
-            <$> (ConfigurationYamlPath <$> field "loggingConfigurationYaml" strictText)
-            <*> (LogPrefix <$> field "loggingLogPrefix" strictText)
-            <*> (NodeLogConfig <$> field "loggingNodeLogConfig" strictText)
-            <*> ((Just . NodeLogPath) <$> field "loggingNodeLogConfig" strictText)
-            <*> (WorkingDir <$> field "loggingWorkingDir" strictText)
-            <*> (LauncherLogsPrefix <$> field "loggingLauncherLogsPrefix" strictText)
-            <*> (LogConsoleOff <$> field "loggingLogConsoleOfff" Dhall.bool)
-        )
-
+instance Interpret LoggingConfig
 instance Inject LoggingConfig
 
 instance Arbitrary LoggingConfig where
@@ -759,7 +759,7 @@ instance Arbitrary LoggingConfig where
         yaml          <- arbitrary
         prefix        <- arbitrary
         logConfig     <- arbitrary
-        mlogPath      <- maybeOf arbitrary
+        logPath       <- arbitrary
         workingDir    <- arbitrary
         logsPrefix    <- arbitrary
         logconsoleOff <- arbitrary
@@ -768,7 +768,7 @@ instance Arbitrary LoggingConfig where
             { loggingConfigurationYaml  = yaml
             , loggingLogPrefix          = prefix
             , loggingNodeLogConfig      = logConfig
-            , loggingNodeLogPath        = mlogPath
+            , loggingNodeLogPath        = logPath
             , loggingWorkingDir         = workingDir
             , loggingLauncherLogsPrefix = logsPrefix
             , loggingLogConsoleOff      = logconsoleOff
@@ -788,20 +788,7 @@ data NetworkConfig = NetworkConfig
     , networkTlskey            :: !Tlskey
     } deriving (Eq, Generic, Show)
 
-instance Interpret NetworkConfig where
-    autoWith _ = record
-        ( NetworkConfig
-            <$> (ConfigurationYamlPath <$> field "networkConfigurationYaml" strictText)
-            <*> (Topology <$> field "networkTopology" strictText)
-            <*> (X509ToolPath <$> field "networkX509ToolPath" strictText)
-            <*> (Host <$> field "networkHost" strictText)
-            <*> (Valency <$> field "networkValency" integer)
-            <*> (Fallback <$> field "networkFallback" integer)
-            <*> (TlsPath <$> field "networkTlsPath" strictText)
-            <*> (Tlsca <$> field "networkTlsca" strictText)
-            <*> (Tlscert <$> field "networkTlscert" strictText)
-            <*> (Tlskey <$> field "networkTlskey" strictText)
-        )
+instance Interpret NetworkConfig
 
 instance Inject NetworkConfig
 
@@ -842,19 +829,7 @@ data WalletConfig = WalletConfig
     , walletValency  :: !WalletValency
     } deriving (Eq, Generic, Show)
 
-instance Interpret WalletConfig where
-    autoWith _ = record
-        ( WalletConfig
-            <$> (WalletDbPath <$> field "walletDbPath" strictText)
-            <*> (WalletPath <$> field "walletPath" strictText)
-            <*> (WalletLogging <$> field "walletLogging" bool)
-            <*> (WalletPort <$> field "walletPort" integer)
-            <*> (WalletAddress <$> field "walletAddress" strictText)
-            <*> (WalletRelays <$> field "walletRelays" auto)
-            <*> (WalletFallback <$> field "walletFallback" integer)
-            <*> (WalletValency <$> field "walletValency" integer)
-        )
-
+instance Interpret WalletConfig
 instance Inject WalletConfig
 
 instance Arbitrary WalletConfig where

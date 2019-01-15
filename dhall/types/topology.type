@@ -1,7 +1,7 @@
 { wallet :
   {
-      wcfgRelays    : List (List { host : Text})
-    , wcfgValency   : Integer
-    , wcfgFallbacks : Integer
+      wtcfgRelays    : List (List { getHost : Text})
+    , wtcfgValency   : Integer
+    , wtcfgFallbacks : Integer
   }
 }

@@ -2,12 +2,12 @@
 \(os: ../types/os.type) ->
 \(launcher : ../types/launcher.type) ->
 \(topology : ../types/topology.type) ->
-{ walletDbPath   = os.osNodeArgs.naWalletDBPath
-, walletPath     = os.osPass.pWalletPath
-, walletLogging  = os.osPass.pWalletLogging
-, walletPort     = cluster.ccfgWalletPort
-, walletAddress  = launcher.lWalletAddress
-, walletRelays   = topology.wallet.wcfgRelays
-, walletValency  = topology.wallet.wcfgValency
-, walletFallback = topology.wallet.wcfgFallbacks
+{ walletDbPath   = { getDbPath = os.osNodeArgs.naWalletDBPath }
+, walletPath     = { getWalletPath = os.osPass.pWalletPath }
+, walletLogging  = { getWalletLogging = os.osPass.pWalletLogging}
+, walletPort     = { getWalletPort = cluster.ccfgWalletPort}
+, walletAddress  = { getWalletAddress = launcher.lWalletAddress }
+, walletRelays   = { getWalletRelays = topology.wallet.wtcfgRelays}
+, walletValency  = { getWalletValency = topology.wallet.wtcfgValency}
+, walletFallback = { getWalletFallback = topology.wallet.wtcfgFallbacks}
 }
