@@ -73,6 +73,9 @@ data OS
     | Win64
     deriving ( Eq, Read, Show)
 
+instance Arbitrary OS where
+    arbitrary = elements [Linux64, Macos64, Win64]
+
 -- | Cluster
 data Cluster
     = Mainnet
@@ -80,6 +83,9 @@ data Cluster
     | Testnet
     | Demo
     deriving (Bounded, Enum, Eq, Read, Show)
+
+instance Arbitrary Cluster where
+    arbitrary = elements [Mainnet, Staging, Testnet, Demo]
 
 -- | Convert 'OS' into 'Text'
 renderOS :: OS -> Text
