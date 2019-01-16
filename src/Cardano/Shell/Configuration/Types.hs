@@ -60,8 +60,8 @@ import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
 import qualified Data.Text as T
 import           Dhall (GenericInject, Inject (..), InputType, Interpret (..),
-                        InterpretOptions (..), auto, field,
-                        genericInjectWith, record)
+                        InterpretOptions (..), auto, field, genericInjectWith,
+                        record)
 import           GHC.Generics (from)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
                                   elements, listOf, listOf1)
@@ -71,10 +71,10 @@ data OS
     = Linux64
     | Macos64
     | Win64
-    deriving ( Eq, Read, Show)
+    deriving (Bounded, Enum, Eq, Read, Show)
 
 instance Arbitrary OS where
-    arbitrary = elements [Linux64, Macos64, Win64]
+    arbitrary = elements [Linux64 .. Win64]
 
 -- | Cluster
 data Cluster
@@ -85,7 +85,7 @@ data Cluster
     deriving (Bounded, Enum, Eq, Read, Show)
 
 instance Arbitrary Cluster where
-    arbitrary = elements [Mainnet, Staging, Testnet, Demo]
+    arbitrary = elements [Mainnet .. Demo]
 
 -- | Convert 'OS' into 'Text'
 renderOS :: OS -> Text
