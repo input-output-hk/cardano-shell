@@ -23,6 +23,7 @@ library
   exposed-modules:
       Cardano.Shell.Lib
     , Cardano.Shell.Types
+    , Cardano.Shell.Presets
     , Cardano.Shell.Configuration.Types
   hs-source-dirs:
       src
@@ -51,7 +52,8 @@ library
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
                        DeriveGeneric
-  
+                       Rank2Types
+
   ghc-options:         -Wall
                        -Wcompat
                        -Wincomplete-record-updates
