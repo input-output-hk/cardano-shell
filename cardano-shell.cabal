@@ -50,7 +50,8 @@ library
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
-
+                       DeriveGeneric
+  
   ghc-options:         -Wall
                        -Wcompat
                        -Wincomplete-record-updates
