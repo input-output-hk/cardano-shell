@@ -718,7 +718,7 @@ instance Arbitrary WalletValency where
 -- Modules/features
 --------------------------------------------------------------------------------
 
--- | Configuration fro Blockchain module
+-- | Configuration from Blockchain module
 data BlockchainConfig = BlockchainConfig {
       blockchainConfigurationYaml :: !ConfigurationYamlPath
     , blockchainKeyFile           :: !KeyFile
