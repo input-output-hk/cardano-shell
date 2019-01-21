@@ -59,43 +59,51 @@ mkBlockchainConfig :: OS -> Cluster -> IO BlockchainConfig
 mkBlockchainConfig os cluster = input auto blockchainPath
   where
     blockchainPath = toFeaturePath "blockchain"
-        <> "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ")"
+        <> "(" <> osPath os <> " " <> clusterPath cluster <> ")"
 
 mkLoggingConfig :: OS -> Cluster -> IO LoggingConfig
 mkLoggingConfig os cluster = input auto loggingPath
   where
     loggingPath = toFeaturePath "logging"
-        <> "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ")"
-        <> "(" <> toPath "launcher" <> " " <> toPath "mainnet" <> " " <>
-        "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ")" <>")"
+        <> "(" <> osPath os <> " " <> clusterPath cluster <> ")"
+        <> "(" <> toPath "launcher" <> " " <> clusterPath cluster <> " " <>
+        "(" <> osPath os <> " " <> clusterPath cluster <> ")" <>")"
 
 mkNetworkConfig :: OS -> Cluster -> IO NetworkConfig
 mkNetworkConfig os cluster = input auto networkPath
   where
     networkPath = toFeaturePath "network" <> " "
-        <> toPath "mainnet"
-        <> "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ") "
-        <> "(" <> toPath "launcher" <> " " <> toPath "mainnet" <> " " <>
-        "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ")" <>") "
-        <> "(" <> toPath "topology" <> " " <> toPath (renderCluster cluster) <> ")"
+        <> toPath (renderCluster cluster)
+        <> "(" <> osPath os <> " " <> clusterPath cluster <> ") "
+        <> "(" <> toPath "launcher" <> " " <> clusterPath cluster <> " " <>
+        "(" <> osPath os <> " " <> clusterPath cluster <> ")" <>")"
 
 mkWalletConfig :: OS -> Cluster -> IO WalletConfig
 mkWalletConfig os cluster = input auto walletPath
   where
     walletPath = toFeaturePath "wallet" <> " "
-        <> toPath "mainnet"
-        <> "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ") "
-        <> "(" <> toPath "launcher" <> " " <> toPath "mainnet" <> " " <>
-        "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ")" <>") "
-        <> "(" <> toPath "topology" <> " " <> toPath (renderCluster cluster) <> ")"
+        <> clusterPath cluster
+        <> "(" <> osPath os <> " " <> clusterPath cluster <> ") "
+        <> "(" <> toPath "launcher" <> " " <> clusterPath cluster <> " " <>
+        "(" <> osPath os <> " " <> clusterPath cluster <> ")" <>") "
+        <> "(" <> toPath "topology" <> " " <> clusterPath cluster <> ")"
 
 --------------------------------------------------------------------------------
 -- Helper function
 --------------------------------------------------------------------------------
 
+-- | Render given text into dhall file path
 toFeaturePath :: Text -> Text
 toFeaturePath fileName = "./dhall/features/" <> fileName <> ".dhall"
 
 -- | Given an FileName, return 'FilePath' to dhall file
 toPath :: Text -> Text
 toPath fileName = "./dhall/" <> fileName <> ".dhall"
+
+-- | Return given 'Cluster' dhall filepath
+clusterPath :: Cluster -> Text
+clusterPath cluster = toPath $ renderCluster cluster
+
+-- | Return givne 'OS' dhall filepath
+osPath :: OS -> Text
+osPath os = toPath $ renderOS os
