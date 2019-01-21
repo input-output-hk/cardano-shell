@@ -786,8 +786,6 @@ data NetworkConfig = NetworkConfig
     , networkTopology          :: !Topology
     , networkX509ToolPath      :: !X509ToolPath
     , networkHost              :: !Host
-    , networkValency           :: !Valency
-    , networkFallback          :: !Fallback
     , networkTlsPath           :: !TlsPath
     , networkTlsca             :: !Tlsca
     , networkTlscert           :: !Tlscert
@@ -805,8 +803,6 @@ instance Arbitrary NetworkConfig where
         x509path <- arbitrary
         tlspath  <- arbitrary
         host     <- arbitrary
-        valency  <- arbitrary
-        fallback <- arbitrary
         tlsca    <- arbitrary
         tlscert  <- arbitrary
         tlskey   <- arbitrary
@@ -817,8 +813,6 @@ instance Arbitrary NetworkConfig where
             , networkX509ToolPath      = x509path
             , networkTlsPath           = tlspath
             , networkHost              = host
-            , networkValency           = valency
-            , networkFallback          = fallback
             , networkTlsca             = tlsca
             , networkTlscert           = tlscert
             , networkTlskey            = tlskey
