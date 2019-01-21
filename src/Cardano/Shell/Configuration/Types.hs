@@ -343,9 +343,8 @@ instance Arbitrary Host where
     arbitrary = Host <$> genSafeText
 
 -- | Installer configuration
-data InstallerConfig = InstallerConfig
-    { icfgInstallDirectory :: !Text
-    , icfgWalletPort       :: !Integer
+newtype InstallerConfig = InstallerConfig
+    { icfgInstallDirectory :: Text
     } deriving (Eq, Generic, Show)
 
 instance Interpret InstallerConfig
@@ -355,11 +354,9 @@ instance Inject InstallerConfig
 instance Arbitrary InstallerConfig where
     arbitrary = do
         installDirectory <- genSafeText
-        walletport       <- arbitrary
 
         pure InstallerConfig
             { icfgInstallDirectory = installDirectory
-            , icfgWalletPort       = walletport
             }
 
 -- | Launcher configuration
