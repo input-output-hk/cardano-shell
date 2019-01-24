@@ -1,4 +1,4 @@
-\(cluster : ./cluster.type)      ->
+\(cluster : ./types/cluster.type)      ->
 let dataDir = "\${HOME}/Library/Application Support/Daedalus${cluster.ccfgInstallDirectorySuffix}"
     --
     --

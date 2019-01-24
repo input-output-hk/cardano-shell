@@ -1,4 +1,4 @@
-\(cluster : ./cluster.type)      ->
+\(cluster : ./types/cluster.type)      ->
 let dataDir = "\${XDG_DATA_HOME}/Daedalus/${cluster.ccfgName}"
 in
 { osName      = "linux64"

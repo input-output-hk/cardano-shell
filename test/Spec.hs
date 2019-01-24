@@ -5,7 +5,7 @@ module Main where
 import           Cardano.Prelude
 
 import           Control.Concurrent.Classy (MonadConc)
-import           DhallConfigSpec (dhallConfigSpec)
+import           DhallConfigSpec (dhallConfigSpec, mkConfigSpec)
 
 import           Test.DejaFu (abortsNever, deadlocksNever, exceptionsNever)
 import           Test.Hspec (Spec, describe, hspec)
@@ -20,6 +20,7 @@ main :: IO ()
 main = hspec $ do
     describe "App should have no concurrency issues" validConcurrencySpec
     describe "Dhall configurations" dhallConfigSpec
+    describe "Cardano configurations" mkConfigSpec
 
 -- | A valid concurrency specification.
 validConcurrencySpec :: Spec
