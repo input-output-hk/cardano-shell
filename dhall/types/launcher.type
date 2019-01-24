@@ -1,0 +1,29 @@
+{ lConfiguration :
+    { lcfgFilePath    : Text
+    , lcfgKey         : Text
+    , lcfgSystemStart : Optional Integer
+    , lcfgSeed        : Optional Integer
+    }
+, lNodeDbPath         : Text
+, lNodeLogConfig      : Text
+, lUpdaterPath        : Text
+, lUpdaterArgs        : List Text
+, lUpdateArchive      : Optional Text
+, lLogsPrefix         : Text
+, lReportServer       : Text
+, lX509ToolPath       : Text
+
+-- XXX: NodeArgs
+, lTlsca              : Text
+, lTlscert            : Text
+, lTlsKey             : Text
+, lNoClientAuth       : Bool
+, lLogConsoleOff      : Bool
+, lUpdateServer       : Text
+, lKeyFile            : Text
+, lTopology           : Text
+, lWalletDbPath       : Text
+, lUpdateLatestPath   : Text
+, lWalletAddress      : Text
+, lUpdateWithPackage  : Bool
+}
