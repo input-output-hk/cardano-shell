@@ -91,7 +91,7 @@ generateSingleCommand = do
 -- | The function that creates a list of commands in @IO@.
 generateListOfCommands :: (MonadIO m) => m ()
 generateListOfCommands = do
-    generatedCommands <- liftIO $ generate concurrencyDSLSequenceGenerator
+    generatedCommands <- liftIO . generate . listOf1 $ concurrencyDSLGenerator
     void $ traverse interepretConcurrencyDSL generatedCommands
 
 -- | The interpretation of the DSL result. It's been simplified so we don't need to
@@ -117,11 +117,6 @@ data CommandDSL
     | AsyncCmd MicrosecondsDelay
     deriving (Eq, Show)
 
--- | The generator of a list of commands, which we can use to
--- replace a list of commands on.
-concurrencyDSLSequenceGenerator :: Gen [CommandDSL]
-concurrencyDSLSequenceGenerator = listOf1 concurrencyDSLGenerator
-
 -- | The DSL generator. It uses specific frequencies so it a bit biased,
 -- but I think it's showing a more realistic generation like this.
 concurrencyDSLGenerator :: Gen CommandDSL
@@ -131,9 +126,9 @@ concurrencyDSLGenerator = frequency
     , (2, AsyncCmd      <$> generateMillisecondDelay)
     ]
  where
-    -- | A delay from one millisecond to one whole day.
+    -- | A delay from one millisecond to ten milliseconds.
     generateMillisecondDelay :: Gen Int
-    generateMillisecondDelay = choose (1, 10) --86400 * 1000000)
+    generateMillisecondDelay = choose (1, 10)
 
 
 
