@@ -10,15 +10,17 @@ module Cardano.Shell.Types
     , loadCardanoConfiguration
     , applicationProductionMode
     , Core (..)
+    , Genesis (GenesisExternal, GenesisInternal)
     , Spec (..)
     , Initializer (..)
     , TestBalance (..)
     , FakeAvvmBalance (..)
     , BlockVersionData (..)
+    , LastKnownBlockVersion (..)
     , SoftForkRule (..)
     , TxFeePolicy (..)
     , TxSizeLinear (..)
-    , ProtocolConstants 
+    , ProtocolConstants (..)
     , NTP (..)
     , Update (..)
     , TXP (..)
@@ -28,6 +30,7 @@ module Cardano.Shell.Types
     , Node (..)
     , TLS (..)
     , Wallet (..)
+    , Throttle (..)
     , Certificate (..)
     ) where
 

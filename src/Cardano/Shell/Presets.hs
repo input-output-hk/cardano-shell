@@ -3,18 +3,28 @@ module Cardano.Shell.Presets
     , devConfiguration
     ) where
 
-import Cardano.Shell.Types ( Core (..)
-                           , GenesisExternal (..)
-                           , GenesisInternal (..)
+import Cardano.Shell.Types ( CardanoConfiguration (..)
+                           , CardanoEnvironment (..)
+                           , CardanoFeature (..)
+                           , CardanoFeatureInit (..)
+                           , NoDependency (..)
+                           , ApplicationEnvironment (..)
+                           , CardanoApplication (..)
+                           , initializeCardanoEnvironment
+                           , loadCardanoConfiguration
+                           , applicationProductionMode
+                           , Core (..)
+                           , Genesis (..)
                            , Spec (..)
                            , Initializer (..)
                            , TestBalance (..)
                            , FakeAvvmBalance (..)
                            , BlockVersionData (..)
+                           , LastKnownBlockVersion (..)
                            , SoftForkRule (..)
                            , TxFeePolicy (..)
                            , TxSizeLinear (..)
-                           , ProtocolConstants 
+                           , ProtocolConstants (..)
                            , NTP (..)
                            , Update (..)
                            , TXP (..)
@@ -24,7 +34,7 @@ import Cardano.Shell.Types ( Core (..)
                            , Node (..)
                            , TLS (..)
                            , Wallet (..)
-                           , NoThrottle (..)
+                           , Throttle (..)
                            , Certificate (..)
                            )
 
