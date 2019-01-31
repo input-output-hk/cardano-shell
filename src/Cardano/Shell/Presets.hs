@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Cardano.Shell.Presets
     ( mainnetConfiguration
     , devConfiguration
@@ -48,79 +50,86 @@ mainnetConfiguration = CardanoConfiguration
                        , ccLogConfig = "./log-config.yaml"
                        , ccDBPath   = "./db/"
                        , ccApplicationLockFile = ""
-                       , ccCore       = Core { genesis =
-                                          GenesisExternal { src      = "mainnet-genesis.json"
-                                                          , fileHash = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
-                                                          }
-                                             , requiresNetworkMagic = "NetworkMainOrStage"
-                                             , dbSerializeVersion   = 0
+                       , ccCore       = Core { coGenesis =
+                                          Genesis { geInternal = False
+                                                  , geSpec     = Spec {..}
+                                                  , geSrc      = "mainnet-genesis.json"
+                                                  , geFileHash = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
+                                                  }
+                                             , coRequiresNetworkMagic = "NetworkMainOrStage"
+                                             , coDBSerializeVersion   = 0
                                              }
-                       , ccNTP        = NTP { responseTimeout = 30000000
-                                            , pollDelay       = 1800000000
-                                            , servers         = [ "0.pool.ntp.org"
+                       , ccNTP        = NTP { ntpResponseTimeout = 30000000
+                                            , ntpPollDelay       = 1800000000
+                                            , ntpServers         = [ "0.pool.ntp.org"
                                                                 , "2.pool.ntp.org"
                                                                 , "3.pool.ntp.org"
                                                                 ]
                                             }
-                       , ccUpdate     = Update { applicationName       = "cardano-sl"
-                                               , applicationVersion    = 1
-                                               , lastKnownBlockVersion =
-                                                   LastKnownBlockVersion { bvMajor = 0
-                                                                         , bvMinor = 2
-                                                                         , bvAlt   = 0
+                       , ccUpdate     = Update { upApplicationName       = "cardano-sl"
+                                               , upApplicationVersion    = 1
+                                               , upLastKnownBlockVersion =
+                                                   LastKnownBlockVersion { lkbvMajor = 0
+                                                                         , lkbvMinor = 2
+                                                                         , lkbvAlt   = 0
                                                                          }
                                                }
-                       , ccTXP        = TXP { memPoolLimitTx = 200
-                                            , assetLockedSrcAddress = []
+                       , ccTXP        = TXP { txpMemPoolLimitTx = 200
+                                            , txpAssetLockedSrcAddress = []
                                              }
-                       , ccSSC        = SSC { mpcSendInterval               = 100
-                                            , mdNoCommitmentsEpochThreshold = 3
-                                            , noReportNoSecretsForEpoch1    = True
+                       , ccSSC        = SSC { sscMPCSendInterval               = 100
+                                            , sscMdNoCommitmentsEpochThreshold = 3
+                                            , sscNoReportNoSecretsForEpoch1    = True
                                             }
                        , ccDLG        = DLG { dlgCacheParam       = 500
-                                            , messageCacheTimeout = 30
+                                            , dlgMessageCacheTimeout = 30
                                             }
-                       , ccBlock      = Block { networkDiameter        = 18
-                                              , recoveryHeadersMessage = 2200
-                                              , streamWindow           = 2048
-                                              , nonCriticalCQBootstrap = 0.95
-                                              , nonCriticalCQ          = 0.8
-                                              , criticalCQBootstrap    = 0.8888
-                                              , criticalCQ             = 0.654321
-                                              , criticalForkThreshold  = 3
-                                              , fixedTimeCQ            = 3600
+                       , ccBlock      = Block { blNetworkDiameter        = 18
+                                              , blRecoveryHeadersMessage = 2200
+                                              , blStreamWindow           = 2048
+                                              , blNonCriticalCQBootstrap = 0.95
+                                              , blNonCriticalCQ          = 0.8
+                                              , blCriticalCQBootstrap    = 0.8888
+                                              , blCriticalCQ             = 0.654321
+                                              , blCriticalForkThreshold  = 3
+                                              , blFixedTimeCQ            = 3600
                                               }
-                       , ccNode       = Node { networkConnectionTimeout     = 15000
-                                             , conversationEstablishTimeout = 30000
-                                             , blockRetrievalQueueSize      = 100
-                                             , pendingTxResubmissionPeriod  = 7
-                                             , walletProductionApi          = True
-                                             , walletTxCreationDisabled     = False
-                                             , explorerExtendedApi          = False
+                       , ccNode       = Node { noNetworkConnectionTimeout     = 15000
+                                             , noConversationEstablishTimeout = 30000
+                                             , noBlockRetrievalQueueSize      = 100
+                                             , noPendingTxResubmissionPeriod  = 7
+                                             , noWalletProductionApi          = True
+                                             , noWalletTxCreationDisabled     = False
+                                             , noExplorerExtendedApi          = False
                                              }
-                       , ccTLS        = TLS { ca      = Certificate
-                                                            { organization = "Input Output HK"
-                                                            , commonName   = "Cardano SL Self-Signed Root CA"
-                                                            , expiryDays   = 3600
-                                                            , altDNS       = []
+                       , ccTLS        = TLS { tlsCA      = Certificate
+                                                            { certOrganization = "Input Output HK"
+                                                            , certCommonName   = "Cardano SL Self-Signed Root CA"
+                                                            , certExpiryDays   = 3600
+                                                            , certAltDNS       = []
                                                             }
-                                            , server  = Certificate
-                                                            { organization = "Input Output HK"
-                                                            , commonName   = "Cardano SL Server Node"
-                                                            , expiryDays   = 3600
-                                                            , altDNS       = [ "localhost"
+                                            , tlsServer  = Certificate
+                                                            { certOrganization = "Input Output HK"
+                                                            , certCommonName   = "Cardano SL Server Node"
+                                                            , certExpiryDays   = 3600
+                                                            , certAltDNS       = [ "localhost"
                                                                              , "localhost.localdomain"
                                                                              , "127.0.0.1"
                                                                              , "::1" ]
                                                             }
-                                            , clients = Certificate
-                                                            { organization = "Input Output HK"
-                                                            , commonName   = "Daedalus Wallet"
-                                                            , expiryDays   = 3600
-                                                            , altDNS       = []
+                                            , tlsClients = Certificate
+                                                            { certOrganization = "Input Output HK"
+                                                            , certCommonName   = "Daedalus Wallet"
+                                                            , certExpiryDays   = 3600
+                                                            , certAltDNS       = []
                                                             }
                                             }
-                       , ccWallet    = Wallet { throttle = NoThrottle }
+                       , ccWallet    = Wallet { waThrottle = SetThrottle { thEnabled = False
+                                                                         , thRate    = 0
+                                                                         , thPeriod  = ""
+                                                                         , thBurst   = 0
+                                                                         }
+                                              }
                        }
 
 --------------------------------------------------------------------------------
@@ -133,128 +142,133 @@ devConfiguration = CardanoConfiguration
                        , ccDBPath   = "./db/"
                        , ccLogConfig = "./log-config.yaml"
                        , ccApplicationLockFile = ""
-                       , ccCore     = Core { genesis  =
-                                        GenesisInternal { spec =
-                                          Spec { initializer =
-                                            Initializer { testBalance =
-                                              TestBalance { poors          = 12
-                                                          , richmen        = 4
-                                                          , richmenShare   = 0.99
-                                                          , useHDAddresses = True
-                                                          , totalBalance   = 600000000000000000
+                       , ccCore     = Core { coGenesis  =
+                                        Genesis { geSpec =
+                                          Spec { spInitializer =
+                                            Initializer { inTestBalance =
+                                              TestBalance { tePoors          = 12
+                                                          , teRichmen        = 4
+                                                          , teRichmenShare   = 0.99
+                                                          , teUseHDAddresses = True
+                                                          , teTotalBalance   = 600000000000000000
                                                           }
-                                                        , fakeAvvmBalance  =
-                                                            FakeAvvmBalance { count      = 10
-                                                                            , oneBalance = 100000
+                                                        , inFakeAvvmBalance  =
+                                                            FakeAvvmBalance { faCount      = 10
+                                                                            , faOneBalance = 100000
                                                                             }
-                                                        , avvmBalanceFactor = 1
-                                                        , useHeavyDlg       = True
-                                                        , seed              = 0
+                                                        , inAVVMBalanceFactor = 1
+                                                        , inUseHeavyDlg       = True
+                                                        , inSeed              = 0
                                                         }
 
-                                               , blockVersionData  =
-                                                   BlockVersionData { scriptVersion = 0
-                                                                    , slotDuration  = 7000
-                                                                    , maxBlockSize  = 2000000
-                                                                    , maxHeaderSize = 2000000
-                                                                    , maxTxSize     = 4096
-                                                                    , maxProposalSize = 700
-                                                                    , mpcThd            = 0.01
-                                                                    , heavyDelThd       = 0.005
-                                                                    , updateVoteThd     = 0.001
-                                                                    , updateProposalThd = 0.1
-                                                                    , updateImplicit    = 10
-                                                                    , softforkRule =
-                                                                        SoftForkRule { initThd      = 0.9
-                                                                                     , minThd       = 0.6
-                                                                                     , thdDecrement = 0.05
+                                               , spBlockVersionData  =
+                                                   BlockVersionData { bvdScriptVersion = 0
+                                                                    , bvdSlotDuration  = 7000
+                                                                    , bvdMaxBlockSize  = 2000000
+                                                                    , bvdMaxHeaderSize = 2000000
+                                                                    , bvdMaxTxSize     = 4096
+                                                                    , bvdMaxProposalSize = 700
+                                                                    , bvdMpcThd            = 0.01
+                                                                    , bvdHeavyDelThd       = 0.005
+                                                                    , bvdUpdateVoteThd     = 0.001
+                                                                    , bvdUpdateProposalThd = 0.1
+                                                                    , bvdUpdateImplicit    = 10
+                                                                    , bvdSoftforkRule =
+                                                                        SoftForkRule { sfrInitThd      = 0.9
+                                                                                     , sfrMinThd       = 0.6
+                                                                                     , sfrThdDecrement = 0.05
                                                                                      }
-                                                                    , txFeePolicy =
-                                                                        TxFeePolicy { txSizeLinear =
-                                                                          TxSizeLinear { a = 155381
-                                                                                       , b = 43.946
+                                                                    , bvdTXFeePolicy =
+                                                                        TxFeePolicy { txfTXSizeLinear =
+                                                                          TxSizeLinear { txsA = 155381
+                                                                                       , txsB = 43.946
                                                                                        }
                                                                                     }
-                                                                    , unlockStakeEpoch = 18446744073709551615
+                                                                    , bvdUnlockStakeEpoch = 18446744073709551615
                                                                     }
 
-                                               , protocolConstants =
-                                                   ProtocolConstants { k             = 2
-                                                                     , protocolMagic = 55550001
+                                               , spProtocolConstants =
+                                                   ProtocolConstants { prK             = 2
+                                                                     , prProtocolMagic = 55550001
                                                                      }
-                                               , ftsSeed           = "c2tvdm9yb2RhIEdndXJkYSBib3JvZGEgcHJvdm9kYSA="
-                                               , heavyDelegation   = ""
-                                               , avvmDistr         = ""
+                                               , spFTSSeed           = "c2tvdm9yb2RhIEdndXJkYSBib3JvZGEgcHJvdm9kYSA="
+                                               , spHeavyDelegation   = ""
+                                               , spAVVMDistr         = ""
                                                }
                                                         }
-                                          , requiresNetworkMagic = "RequiresNoMagic"
-                                          , dbSerializeVersion   = 0
+                                          , coRequiresNetworkMagic = "RequiresNoMagic"
+                                          , coDBSerializeVersion   = 0
                                           }
-                       , ccNTP        = NTP { responseTimeout = 30000000
-                                            , pollDelay       = 1800000000
-                                            , servers         = [ "0.pool.ntp.org"
+                       , ccNTP        = NTP { ntpResponseTimeout = 30000000
+                                            , ntpPollDelay       = 1800000000
+                                            , ntpServers         = [ "0.pool.ntp.org"
                                                                 , "2.pool.ntp.org"
                                                                 , "3.pool.ntp.org"
                                                                 ]
                                             }
-                       , ccUpdate     = Update { applicationName       = "cardano-sl"
-                                               , applicationVersion    = 0
-                                               , lastKnownBlockVersion =
-                                                   LastKnownBlockVersion { bvMajor = 0
-                                                                         , bvMinor = 0
-                                                                         , bvAlt   = 0
+                       , ccUpdate     = Update { upApplicationName       = "cardano-sl"
+                                               , upApplicationVersion    = 0
+                                               , upLastKnownBlockVersion =
+                                                   LastKnownBlockVersion { lkbvMajor = 0
+                                                                         , lkbvMinor = 0
+                                                                         , lkbvAlt   = 0
                                                                          }
                                                }
-                       , ccTXP        = TXP { memPoolLimitTx = 200
-                                            , assetLockedSrcAddress = []
+                       , ccTXP        = TXP { txpMemPoolLimitTx = 200
+                                            , txpAssetLockedSrcAddress = []
                                             }
-                       , ccSSC        = SSC { mpcSendInterval               = 10
-                                            , mdNoCommitmentsEpochThreshold = 3
-                                            , noReportNoSecretsForEpoch1    = False
+                       , ccSSC        = SSC { sscMPCSendInterval               = 10
+                                            , sscMdNoCommitmentsEpochThreshold = 3
+                                            , sscNoReportNoSecretsForEpoch1    = False
                                             }
                        , ccDLG        = DLG { dlgCacheParam       = 500
-                                            , messageCacheTimeout = 30
+                                            , dlgMessageCacheTimeout = 30
                                             }
-                       , ccBlock      = Block { networkDiameter        = 3
-                                              , recoveryHeadersMessage = 20
-                                              , streamWindow           = 2048
-                                              , nonCriticalCQBootstrap = 0.95
-                                              , nonCriticalCQ          = 0.8
-                                              , criticalCQBootstrap    = 0.8888
-                                              , criticalCQ             = 0.654321
-                                              , criticalForkThreshold  = 2
-                                              , fixedTimeCQ            = 10
+                       , ccBlock      = Block { blNetworkDiameter        = 3
+                                              , blRecoveryHeadersMessage = 20
+                                              , blStreamWindow           = 2048
+                                              , blNonCriticalCQBootstrap = 0.95
+                                              , blNonCriticalCQ          = 0.8
+                                              , blCriticalCQBootstrap    = 0.8888
+                                              , blCriticalCQ             = 0.654321
+                                              , blCriticalForkThreshold  = 2
+                                              , blFixedTimeCQ            = 10
                                               }
-                       , ccNode       = Node { networkConnectionTimeout     = 15000
-                                             , conversationEstablishTimeout = 30000
-                                             , blockRetrievalQueueSize      = 100
-                                             , pendingTxResubmissionPeriod  = 7
-                                             , walletProductionApi          = False
-                                             , walletTxCreationDisabled     = False
-                                             , explorerExtendedApi          = False
+                       , ccNode       = Node { noNetworkConnectionTimeout     = 15000
+                                             , noConversationEstablishTimeout = 30000
+                                             , noBlockRetrievalQueueSize      = 100
+                                             , noPendingTxResubmissionPeriod  = 7
+                                             , noWalletProductionApi          = False
+                                             , noWalletTxCreationDisabled     = False
+                                             , noExplorerExtendedApi          = False
                                              }
-                       , ccTLS        = TLS { ca      = Certificate
-                                                            { organization = "Input Output HK"
-                                                            , commonName   = "Cardano SL Self-Signed Root CA"
-                                                            , expiryDays   = 3650
-                                                            , altDNS       = []
+                       , ccTLS        = TLS { tlsCA      = Certificate
+                                                            { certOrganization = "Input Output HK"
+                                                            , certCommonName   = "Cardano SL Self-Signed Root CA"
+                                                            , certExpiryDays   = 3650
+                                                            , certAltDNS       = []
                                                             }
-                                            , server  = Certificate
-                                                            { organization = "Input Output HK"
-                                                            , commonName   = "Cardano SL Server Node"
-                                                            , expiryDays   = 365
-                                                            , altDNS       = [ "localhost"
+                                            , tlsServer  = Certificate
+                                                            { certOrganization = "Input Output HK"
+                                                            , certCommonName   = "Cardano SL Server Node"
+                                                            , certExpiryDays   = 365
+                                                            , certAltDNS       = [ "localhost"
                                                                              , "localhost.localdomain"
                                                                              , "127.0.0.1"
                                                                              , "::1" ]
                                                             }
-                                            , clients = Certificate
-                                                            { organization = "Input Output HK"
-                                                            , commonName   = "Daedalus Wallet"
-                                                            , expiryDays   = 365
-                                                            , altDNS       = []
+                                            , tlsClients = Certificate
+                                                            { certOrganization = "Input Output HK"
+                                                            , certCommonName   = "Daedalus Wallet"
+                                                            , certExpiryDays   = 365
+                                                            , certAltDNS       = []
                                                             }
                                             }
                        , ccWallet     =
-                           Wallet { throttle = NoThrottle }
+                           Wallet { waThrottle =  SetThrottle { thEnabled = False
+                                                              , thRate    = 0
+                                                              , thPeriod  = ""
+                                                              , thBurst   = 0
+                                                              }
+                                 }
                        }

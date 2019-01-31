@@ -10,7 +10,7 @@ module Cardano.Shell.Types
     , loadCardanoConfiguration
     , applicationProductionMode
     , Core (..)
-    , Genesis (GenesisExternal, GenesisInternal)
+    , Genesis (..)
     , Spec (..)
     , Initializer (..)
     , TestBalance (..)
@@ -137,66 +137,67 @@ data CardanoConfiguration = CardanoConfiguration
     } deriving (Eq, Show)
 
 data Core = Core
-    { genesis              :: !Genesis
-    , requiresNetworkMagic :: !Text
+    { coGenesis              :: !Genesis
+    , coRequiresNetworkMagic :: !Text
       -- ^ Bool-isomorphic flag indicating whether we're on testnet
       -- or mainnet/staging.
-    , dbSerializeVersion   :: !Integer
+    , coDBSerializeVersion   :: !Integer
       -- ^ Versioning for values in node's DB
     } deriving (Eq, Show)
 
-data Genesis = GenesisInternal { spec     :: !Spec }
-             | GenesisExternal { src      :: !FilePath
-                               , fileHash :: !Text
-                               }
+data Genesis = Genesis { geInternal :: !Bool
+                       , geSpec     :: !Spec
+                       , geSrc      :: !FilePath
+                       , geFileHash :: !Text
+                       }
              deriving (Eq, Show)
 
 data Spec = Spec
-    { initializer       :: !Initializer
+    { spInitializer       :: !Initializer
       -- ^ Other data which depend on genesis type.
-    , blockVersionData  :: !BlockVersionData
+    , spBlockVersionData  :: !BlockVersionData
       -- ^ Genesis 'BlockVersionData'.
-    , protocolConstants :: !ProtocolConstants
+    , spProtocolConstants :: !ProtocolConstants
       -- ^ Other constants which affect consensus.
-    , ftsSeed           :: !Text
+    , spFTSSeed           :: !Text
       -- ^ Seed for FTS for 0-th epoch.
-    , heavyDelegation   :: !Text
+    , spHeavyDelegation   :: !Text
       -- ^ Genesis state of heavyweight delegation.
-    , avvmDistr         :: !Text
+    , spAVVMDistr         :: !Text
       -- ^ Genesis data describes avvm utxo.
     } deriving (Eq, Show)
 
 -- | This data type contains various options presense of which depends
 -- on whether we want genesis for mainnet or testnet.
 data Initializer = Initializer
-    { testBalance       :: !TestBalance
-    , fakeAvvmBalance   :: !FakeAvvmBalance
-    , avvmBalanceFactor :: !Int
-    , useHeavyDlg       :: !Bool
-    , seed              :: !Int
+    { inTestBalance       :: !TestBalance
+    , inFakeAvvmBalance   :: !FakeAvvmBalance
+    , inAVVMBalanceFactor :: !Int
+    , inUseHeavyDlg       :: !Bool
+    , inSeed              :: !Int
       -- ^ Seed to use to generate secret data. It's used only in
       -- testnet, shouldn't be used for anything important.
     } deriving (Eq, Show)
 
 -- | These options determine balances of nodes specific for testnet.
 data TestBalance = TestBalance
-    { poors          :: !Int
+    { tePoors          :: !Int
       -- ^ Number of poor nodes (with small balance).
-    , richmen        :: !Word
+    , teRichmen        :: !Word
       -- ^ Number of rich nodes (with huge balance).
-    , richmenShare   :: !Double
+    , teRichmenShare   :: !Double
       -- ^ Portion of stake owned by all richmen together.
-    , useHDAddresses :: !Bool
+    , teUseHDAddresses :: !Bool
       -- ^ Whether generate plain addresses or with hd payload.
-    , totalBalance   :: !Int
+    , teTotalBalance   :: !Int
       -- ^ Total balance owned by these nodes.
     } deriving (Eq, Show)
 
 -- | These options determines balances of fake AVVM nodes which didn't
 -- really go through vending, but pretend they did.
 data FakeAvvmBalance = FakeAvvmBalance
-    { count      :: !Word
-    , oneBalance :: !Word64
+    { faCount      :: !Word
+    , faOneBalance :: !Word64
     } deriving (Eq, Show)
 
 -- | If we require options to automatically restart a module.
@@ -206,75 +207,75 @@ data ModuleAutoRestart
     deriving (Eq, Show)
 
 data BlockVersionData = BlockVersionData
-    { scriptVersion     :: !Int
-    , slotDuration      :: !Int
-    , maxBlockSize      :: !Int
-    , maxHeaderSize     :: !Int
-    , maxTxSize         :: !Int
-    , maxProposalSize   :: !Int
-    , mpcThd            :: !Float
-    , heavyDelThd       :: !Float
-    , updateVoteThd     :: !Float
-    , updateProposalThd :: !Float
-    , updateImplicit    :: !Int
-    , softforkRule      :: !SoftForkRule
-    , txFeePolicy       :: !TxFeePolicy
-    , unlockStakeEpoch  :: !Integer
+    { bvdScriptVersion     :: !Int
+    , bvdSlotDuration      :: !Int
+    , bvdMaxBlockSize      :: !Int
+    , bvdMaxHeaderSize     :: !Int
+    , bvdMaxTxSize         :: !Int
+    , bvdMaxProposalSize   :: !Int
+    , bvdMpcThd            :: !Float
+    , bvdHeavyDelThd       :: !Float
+    , bvdUpdateVoteThd     :: !Float
+    , bvdUpdateProposalThd :: !Float
+    , bvdUpdateImplicit    :: !Int
+    , bvdSoftforkRule      :: !SoftForkRule
+    , bvdTXFeePolicy       :: !TxFeePolicy
+    , bvdUnlockStakeEpoch  :: !Integer
     } deriving (Eq, Show)
 
 data SoftForkRule = SoftForkRule
-    { initThd      :: !Float
-    , minThd       :: !Float
-    , thdDecrement :: !Float
+    { sfrInitThd      :: !Float
+    , sfrMinThd       :: !Float
+    , sfrThdDecrement :: !Float
     } deriving (Eq, Show)
 
 data TxFeePolicy = TxFeePolicy
-    { txSizeLinear :: !TxSizeLinear
+    { txfTXSizeLinear :: !TxSizeLinear
     } deriving (Eq, Show)
 
 data TxSizeLinear = TxSizeLinear
-    { a :: !Int
-    , b :: !Float
+    { txsA :: !Int
+    , txsB :: !Float
     } deriving (Eq, Show)
 
 data ProtocolConstants = ProtocolConstants
-    { k             :: !Int
+    { prK             :: !Int
     -- ^ Security parameter from the paper.
-    , protocolMagic :: !Int
+    , prProtocolMagic :: !Int
     -- ^ Magic constant for separating real/testnet.
     } deriving (Eq, Show)
 
 data NTP = NTP
-    { responseTimeout :: !Int
-    , pollDelay       :: !Int
-    , servers         :: ![Text]
+    { ntpResponseTimeout :: !Int
+    , ntpPollDelay       :: !Int
+    , ntpServers         :: ![Text]
     } deriving (Eq, Show)
 
 data Update = Update
-    { applicationName       :: !Text
-    , applicationVersion    :: !Int
-    , lastKnownBlockVersion :: !LastKnownBlockVersion
+    { upApplicationName       :: !Text
+    , upApplicationVersion    :: !Int
+    , upLastKnownBlockVersion :: !LastKnownBlockVersion
     } deriving (Eq, Show)
 
 data LastKnownBlockVersion = LastKnownBlockVersion
-    { bvMajor :: !Int
-    , bvMinor :: !Int
-    , bvAlt   :: !Int
+    { lkbvMajor :: !Int
+    , lkbvMinor :: !Int
+    , lkbvAlt   :: !Int
     } deriving (Eq, Show)
 
 data SSC = SSC
-    { mpcSendInterval               :: !Word
+    { sscMPCSendInterval               :: !Word
       -- ^ Length of interval for sending MPC message
-    , mdNoCommitmentsEpochThreshold :: !Int
+    , sscMdNoCommitmentsEpochThreshold :: !Int
       -- ^ Threshold of epochs for malicious activity detection
-    , noReportNoSecretsForEpoch1    :: !Bool
+    , sscNoReportNoSecretsForEpoch1    :: !Bool
       -- ^ Don't print “SSC couldn't compute seed” for the first epoch.
     } deriving (Eq, Show)
 
 data TXP = TXP
-    { memPoolLimitTx        :: !Int
+    { txpMemPoolLimitTx        :: !Int
       -- ^ Limit on the number of transactions that can be stored in the mem pool.
-    , assetLockedSrcAddress :: ![Text]
+    , txpAssetLockedSrcAddress :: ![Text]
       -- ^ Set of source address which are asset-locked. Transactions which
       -- use these addresses as transaction inputs will be silently dropped.
     } deriving (Eq, Show)
@@ -283,72 +284,72 @@ data DLG = DLG
     { dlgCacheParam       :: !Int
       -- ^ This value parameterizes size of cache used in Delegation.
       -- Not bytes, but number of elements.
-    , messageCacheTimeout :: !Int
+    , dlgMessageCacheTimeout :: !Int
       -- ^ Interval we ignore cached messages for if it's sent again.
     } deriving (Eq, Show)
 
 data Block = Block
-    { networkDiameter        :: !Int
+    { blNetworkDiameter        :: !Int
       -- ^Estimated time needed to broadcast message from one node to all other nodes
-    , recoveryHeadersMessage :: !Int
+    , blRecoveryHeadersMessage :: !Int
       -- ^Maximum amount of headers node can put into headers message while in "after offline" or "recovery" mode.
-    , streamWindow           :: !Int
+    , blStreamWindow           :: !Int
       -- ^ Number of blocks to have inflight
-    , nonCriticalCQBootstrap :: !Double
+    , blNonCriticalCQBootstrap :: !Double
       -- ^ If chain quality in bootstrap era is less than this value, non critical misbehavior will be reported.
-    , nonCriticalCQ          :: !Double
+    , blNonCriticalCQ          :: !Double
       -- ^ If chain quality after bootstrap era is less than this value, non critical misbehavior will be reported.
-    , criticalCQ             :: !Double
+    , blCriticalCQ             :: !Double
       -- ^ If chain quality after bootstrap era is less than this value, critical misbehavior will be reported.
-    , criticalCQBootstrap    :: !Double
+    , blCriticalCQBootstrap    :: !Double
       -- ^ If chain quality in bootstrap era is less than this value, critical misbehavior will be reported.
-    , criticalForkThreshold  :: !Int
+    , blCriticalForkThreshold  :: !Int
       -- ^ Number of blocks such that if so many blocks are rolled back, it requires immediate reaction.
-    , fixedTimeCQ            :: !Int
+    , blFixedTimeCQ            :: !Int
       -- ^ Chain quality will be also calculated for this amount of seconds.
     } deriving (Eq, Show)
 
 --- | Top-level Cardano SL node configuration
 data Node = Node
-    { networkConnectionTimeout     :: !Int
+    { noNetworkConnectionTimeout     :: !Int
       -- ^ Network connection timeout in milliseconds
-    , conversationEstablishTimeout :: !Int
+    , noConversationEstablishTimeout :: !Int
       -- ^ Conversation acknowledgement timeout in milliseconds.
-    , blockRetrievalQueueSize      :: !Int
+    , noBlockRetrievalQueueSize      :: !Int
       -- ^ Block retrieval queue capacity
-    , pendingTxResubmissionPeriod  :: !Int
+    , noPendingTxResubmissionPeriod  :: !Int
       -- ^ Minimal delay between pending transactions resubmission
-    , walletProductionApi          :: !Bool
+    , noWalletProductionApi          :: !Bool
       -- ^ Whether hazard wallet endpoint should be disabled
-    , walletTxCreationDisabled     :: !Bool
+    , noWalletTxCreationDisabled     :: !Bool
       -- ^ Disallow transaction creation or re-submission of
       -- pending transactions by the wallet
-    , explorerExtendedApi          :: !Bool
+    , noExplorerExtendedApi          :: !Bool
       -- ^ Enable explorer extended API for fetching more
     } deriving (Eq, Show)
 
 data TLS = TLS
-    { ca      :: !Certificate
-    , server  :: !Certificate
-    , clients :: !Certificate
+    { tlsCA      :: !Certificate
+    , tlsServer  :: !Certificate
+    , tlsClients :: !Certificate
     } deriving (Eq, Show)
 
 data Certificate = Certificate
-    { organization :: !Text
-    , commonName   :: !Text
-    , expiryDays   :: !Int
-    , altDNS       :: ![Text]
+    { certOrganization :: !Text
+    , certCommonName   :: !Text
+    , certExpiryDays   :: !Int
+    , certAltDNS       :: ![Text]
     } deriving (Eq, Show)
 
 -- | Contains wallet configuration variables.
 data Wallet = Wallet
-    { throttle :: !Throttle
+    { waThrottle :: !Throttle
     } deriving (Eq, Show)
 
 -- | Rate-limiting/throttling parameters
-data Throttle = NoThrottle | SetThrottle
-    { enabled :: !Bool
-    , rate    :: !Int
-    , period  :: !Text
-    , burst   :: !Int
+data Throttle = SetThrottle
+    { thEnabled :: !Bool
+    , thRate    :: !Int
+    , thPeriod  :: !Text
+    , thBurst   :: !Int
     } deriving (Eq, Show)
