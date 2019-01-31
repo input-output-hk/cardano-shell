@@ -1,5 +1,5 @@
-\(cluster : ./cluster.type) ->
-\(os      : ./os.type)      ->
+\(cluster : ./types/cluster.type) ->
+\(os      : ./types/os.type)      ->
 { lConfiguration         =
     { lcfgFilePath          = os.osConfigurationYaml
     , lcfgKey               = "${cluster.ccfgKeyPrefix}_${os.osName}"

@@ -25,6 +25,7 @@ library
     , Cardano.Shell.Types
     , Cardano.Shell.Presets
     , Cardano.Shell.Configuration.Types
+    , Cardano.Shell.Configuration.Lib
   hs-source-dirs:
       src
   build-depends:
@@ -104,6 +105,7 @@ test-suite cardano-shell-test
     , cardano-shell
     , cardano-prelude
     , dhall
+    , safe-exceptions
     -- quickcheck
     , QuickCheck
     , hspec

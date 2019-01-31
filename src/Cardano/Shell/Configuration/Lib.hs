@@ -3,17 +3,25 @@ module Cardano.Shell.Configuration.Lib
     , mkTopology
     , mkOSConfig
     , mkInstallerConfig
+    -- Configurations for features
+    , mkBlockchainConfig
+    , mkLoggingConfig
+    , mkNetworkConfig
+    , mkWalletConfig
     ) where
 
 import           Cardano.Prelude
 
 import           Dhall (auto, input)
 
-import           Cardano.Shell.Configuration.Types (Cluster (..),
+import           Cardano.Shell.Configuration.Types (BlockchainConfig,
+                                                    Cluster (..),
                                                     InstallerConfig, Launcher,
-                                                    Launcher, OS (..), OSConfig,
-                                                    TopologyConfig,
-                                                    renderCluster, renderOS)
+                                                    Launcher, LoggingConfig,
+                                                    NetworkConfig, OS (..),
+                                                    OSConfig, TopologyConfig,
+                                                    WalletConfig, renderCluster,
+                                                    renderOS)
 
 -- | Generate 'TopologyConfig' with given 'Cluster'
 mkTopology :: Cluster -> IO TopologyConfig
@@ -43,6 +51,59 @@ mkLauncher os cluster = input auto launcherPath
         <> " " <> toPath (renderCluster cluster)
         <> " " <> "(" <> toPath (renderOS os) <> " " <> toPath (renderCluster cluster) <> ")"
 
+--------------------------------------------------------------------------------
+-- Features
+--------------------------------------------------------------------------------
+
+mkBlockchainConfig :: OS -> Cluster -> IO BlockchainConfig
+mkBlockchainConfig os cluster = input auto blockchainPath
+  where
+    blockchainPath = toFeaturePath "blockchain"
+        <> "(" <> osPath os <> " " <> clusterPath cluster <> ")"
+
+mkLoggingConfig :: OS -> Cluster -> IO LoggingConfig
+mkLoggingConfig os cluster = input auto loggingPath
+  where
+    loggingPath = toFeaturePath "logging"
+        <> "(" <> osPath os <> " " <> clusterPath cluster <> ")"
+        <> "(" <> toPath "launcher" <> " " <> clusterPath cluster <> " " <>
+        "(" <> osPath os <> " " <> clusterPath cluster <> ")" <>")"
+
+mkNetworkConfig :: OS -> Cluster -> IO NetworkConfig
+mkNetworkConfig os cluster = input auto networkPath
+  where
+    networkPath = toFeaturePath "network" <> " "
+        <> toPath (renderCluster cluster)
+        <> "(" <> osPath os <> " " <> clusterPath cluster <> ") "
+        <> "(" <> toPath "launcher" <> " " <> clusterPath cluster <> " " <>
+        "(" <> osPath os <> " " <> clusterPath cluster <> ")" <>")"
+
+mkWalletConfig :: OS -> Cluster -> IO WalletConfig
+mkWalletConfig os cluster = input auto walletPath
+  where
+    walletPath = toFeaturePath "wallet" <> " "
+        <> clusterPath cluster
+        <> "(" <> osPath os <> " " <> clusterPath cluster <> ") "
+        <> "(" <> toPath "launcher" <> " " <> clusterPath cluster <> " " <>
+        "(" <> osPath os <> " " <> clusterPath cluster <> ")" <>") "
+        <> "(" <> toPath "topology" <> " " <> clusterPath cluster <> ")"
+
+--------------------------------------------------------------------------------
+-- Helper function
+--------------------------------------------------------------------------------
+
+-- | Render given text into dhall file path
+toFeaturePath :: Text -> Text
+toFeaturePath fileName = "./dhall/features/" <> fileName <> ".dhall"
+
 -- | Given an FileName, return 'FilePath' to dhall file
 toPath :: Text -> Text
 toPath fileName = "./dhall/" <> fileName <> ".dhall"
+
+-- | Return given 'Cluster' dhall filepath
+clusterPath :: Cluster -> Text
+clusterPath cluster = toPath $ renderCluster cluster
+
+-- | Return givne 'OS' dhall filepath
+osPath :: OS -> Text
+osPath os = toPath $ renderOS os

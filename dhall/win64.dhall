@@ -1,4 +1,4 @@
-\(cluster : ./cluster.type)      ->
+\(cluster : ./types/cluster.type)      ->
    let installDir = "Daedalus${cluster.ccfgInstallDirectorySuffix}"
 in let dataDir = "\${APPDATA}\\${installDir}"
     --
