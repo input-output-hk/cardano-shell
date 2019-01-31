@@ -24,9 +24,7 @@ applicationProductionMode _          = False
 
 -- | Cardano configuration
 data CardanoConfiguration = CardanoConfiguration
-    { ccLogPath                 :: !FilePath
-    -- ^ The location of the log files on the filesystem.
-    , ccLogConfig               :: !FilePath
+    { ccLogConfigFile           :: !FilePath
     -- ^ The path to the log configuration.
     , ccDBPath                  :: !FilePath
     -- ^ The location of the DB on the filesystem.
@@ -54,8 +52,12 @@ initializeCardanoEnvironment = do
         }
 
 loadCardanoConfiguration :: IO CardanoConfiguration
-loadCardanoConfiguration = do
-    pure $ CardanoConfiguration mempty mempty mempty mempty
+loadCardanoConfiguration = pure $
+    CardanoConfiguration
+        { ccLogConfigFile       = "app/log-config/log-config-0.yaml"
+        , ccDBPath              = mempty
+        , ccApplicationLockFile = mempty
+        }
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency
@@ -88,4 +90,3 @@ data CardanoFeature = CardanoFeature
     , featureShutdown :: forall m. (MonadIO m, MonadConc m) => m ()
     -- ^ What we call when we shut down the feature.
     }
-
