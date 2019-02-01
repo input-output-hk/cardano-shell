@@ -1,4 +1,6 @@
-{ pkgs ? import <nixpkgs> {}
+{ args ? { config = import ./config.nix; }
+, pkgs ? import <nixpkgs> { inherit args; }
+, src ? ../.
 }:
 let
   overrideWith = override: default:
@@ -57,6 +59,8 @@ let
     ];
     modules = [
       haskell.ghcHackagePatches.${compiler}
+
+      { packages.cardano-wallet.src = pkgs.lib.mkForce src; }
     ];
   };
 

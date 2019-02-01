@@ -1,6 +1,6 @@
 let
   hsPkgs = import ./default.nix {};
-  mainShell = hsPkgs.cardano-shell.components.all;
+  mainShell = hsPkgs.haskellPackages.cardano-shell.components.all;
   pkgs = import (import ./nixpkgs.nix) { config = import ./config.nix; };
   runCoveralls = pkgs.stdenv.mkDerivation {
     name = "run-coveralls";
