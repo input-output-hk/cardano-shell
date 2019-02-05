@@ -29,6 +29,7 @@ import           Formatting.Buildable (Buildable (..))
 
 import           System.Directory (doesFileExist)
 
+import           Cardano.Shell.Presets (mainnetConfiguration)
 import           Cardano.Shell.Types (ApplicationEnvironment (..),
                                       CardanoApplication (..),
                                       CardanoConfiguration (..),
@@ -36,7 +37,6 @@ import           Cardano.Shell.Types (ApplicationEnvironment (..),
                                       applicationProductionMode,
                                       initializeCardanoEnvironment,
                                       loadCardanoConfiguration)
-import           Cardano.Shell.Presets (mainnetConfiguration)
 
 --------------------------------------------------------------------------------
 -- General exceptions
