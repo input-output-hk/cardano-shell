@@ -281,7 +281,7 @@ data TXP = TXP
     } deriving (Eq, Show)
 
 data DLG = DLG
-    { dlgCacheParam       :: !Int
+    { dlgCacheParam          :: !Int
       -- ^ This value parameterizes size of cache used in Delegation.
       -- Not bytes, but number of elements.
     , dlgMessageCacheTimeout :: !Int

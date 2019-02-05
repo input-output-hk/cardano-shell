@@ -5,40 +5,27 @@ module Cardano.Shell.Presets
     , devConfiguration
     ) where
 
-import Cardano.Shell.Types ( CardanoConfiguration (..)
-                           , CardanoEnvironment (..)
-                           , CardanoFeature (..)
-                           , CardanoFeatureInit (..)
-                           , NoDependency (..)
-                           , ApplicationEnvironment (..)
-                           , CardanoApplication (..)
-                           , initializeCardanoEnvironment
-                           , loadCardanoConfiguration
-                           , applicationProductionMode
-                           , Core (..)
-                           , Genesis (..)
-                           , Spec (..)
-                           , Initializer (..)
-                           , TestBalance (..)
-                           , FakeAvvmBalance (..)
-                           , BlockVersionData (..)
-                           , LastKnownBlockVersion (..)
-                           , SoftForkRule (..)
-                           , TxFeePolicy (..)
-                           , TxSizeLinear (..)
-                           , ProtocolConstants (..)
-                           , NTP (..)
-                           , Update (..)
-                           , TXP (..)
-                           , SSC (..)
-                           , DLG (..)
-                           , Block (..)
-                           , Node (..)
-                           , TLS (..)
-                           , Wallet (..)
-                           , Throttle (..)
-                           , Certificate (..)
-                           )
+import           Cardano.Prelude
+
+import           Cardano.Shell.Types (ApplicationEnvironment (..), Block (..),
+                                      BlockVersionData (..),
+                                      CardanoApplication (..),
+                                      CardanoConfiguration (..),
+                                      CardanoEnvironment (..),
+                                      CardanoFeature (..),
+                                      CardanoFeatureInit (..), Certificate (..),
+                                      Core (..), DLG (..), FakeAvvmBalance (..),
+                                      Genesis (..), Initializer (..),
+                                      LastKnownBlockVersion (..), NTP (..),
+                                      NoDependency (..), Node (..),
+                                      ProtocolConstants (..), SSC (..),
+                                      SoftForkRule (..), Spec (..), TLS (..),
+                                      TXP (..), TestBalance (..), Throttle (..),
+                                      TxFeePolicy (..), TxSizeLinear (..),
+                                      Update (..), Wallet (..),
+                                      applicationProductionMode,
+                                      initializeCardanoEnvironment,
+                                      loadCardanoConfiguration)
 
 --------------------------------------------------------------------------------
 -- Cardano Mainnet Configuration
@@ -52,7 +39,58 @@ mainnetConfiguration = CardanoConfiguration
                        , ccApplicationLockFile = ""
                        , ccCore       = Core { coGenesis =
                                           Genesis { geInternal = False
-                                                  , geSpec     = Spec {..}
+                                                  , geSpec     =
+                                                    Spec { spInitializer =
+                                                        Initializer { inTestBalance =
+                                                          TestBalance { tePoors          = 0
+                                                                      , teRichmen        = 0
+                                                                      , teRichmenShare   = 0
+                                                                      , teUseHDAddresses = True
+                                                                      , teTotalBalance   = 0
+                                                                      }
+                                                                    , inFakeAvvmBalance  =
+                                                                        FakeAvvmBalance { faCount      = 0
+                                                                                        , faOneBalance = 0
+                                                                                        }
+                                                                    , inAVVMBalanceFactor = 0
+                                                                    , inUseHeavyDlg       = True
+                                                                    , inSeed              = 0
+                                                                    }
+
+                                                           , spBlockVersionData  =
+                                                               BlockVersionData { bvdScriptVersion = 0
+                                                                                , bvdSlotDuration  = 0
+                                                                                , bvdMaxBlockSize  = 0
+                                                                                , bvdMaxHeaderSize = 0
+                                                                                , bvdMaxTxSize     = 0
+                                                                                , bvdMaxProposalSize = 0
+                                                                                , bvdMpcThd            = 0
+                                                                                , bvdHeavyDelThd       = 0
+                                                                                , bvdUpdateVoteThd     = 0
+                                                                                , bvdUpdateProposalThd = 0
+                                                                                , bvdUpdateImplicit    = 0
+                                                                                , bvdSoftforkRule =
+                                                                                    SoftForkRule { sfrInitThd      = 0
+                                                                                                 , sfrMinThd       = 0
+                                                                                                 , sfrThdDecrement = 0
+                                                                                                 }
+                                                                                , bvdTXFeePolicy =
+                                                                                    TxFeePolicy { txfTXSizeLinear =
+                                                                                      TxSizeLinear { txsA = 0
+                                                                                                   , txsB = 0
+                                                                                                   }
+                                                                                                }
+                                                                                , bvdUnlockStakeEpoch = 0
+                                                                                }
+
+                                                           , spProtocolConstants =
+                                                               ProtocolConstants { prK             = 0
+                                                                                 , prProtocolMagic = 0
+                                                                                 }
+                                                           , spFTSSeed           = "c2tvdm9yb2RhIEdndXJkYSBib3JvZGEgcHJvdm9kYSA="
+                                                           , spHeavyDelegation   = ""
+                                                           , spAVVMDistr         = ""
+                                                           }
                                                   , geSrc      = "mainnet-genesis.json"
                                                   , geFileHash = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
                                                   }
@@ -143,7 +181,10 @@ devConfiguration = CardanoConfiguration
                        , ccLogConfig = "./log-config.yaml"
                        , ccApplicationLockFile = ""
                        , ccCore     = Core { coGenesis  =
-                                        Genesis { geSpec =
+                                        Genesis { geInternal = True
+                                                , geSrc = ""
+                                                , geFileHash = ""
+                                                , geSpec =
                                           Spec { spInitializer =
                                             Initializer { inTestBalance =
                                               TestBalance { tePoors          = 12
@@ -195,6 +236,7 @@ devConfiguration = CardanoConfiguration
                                                , spHeavyDelegation   = ""
                                                , spAVVMDistr         = ""
                                                }
+
                                                         }
                                           , coRequiresNetworkMagic = "RequiresNoMagic"
                                           , coDBSerializeVersion   = 0

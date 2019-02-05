@@ -6,13 +6,14 @@ import           Cardano.Shell.Features.Logging (createLoggingFeature)
 import           Cardano.Shell.Features.Networking (createNetworkingFeature)
 
 import           Cardano.Shell.Lib
+import           Cardano.Shell.Presets (mainnetConfiguration)
 import           Cardano.Shell.Types
 
 main :: IO ()
 main = do
 
     -- General
-    cardanoConfiguration            <-  loadCardanoConfiguration
+    cardanoConfiguration            <-  loadCardanoConfiguration mainnetConfiguration
     cardanoEnvironment              <-  initializeCardanoEnvironment
 
     -- We check that the application is not already running.
