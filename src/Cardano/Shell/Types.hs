@@ -24,9 +24,7 @@ applicationProductionMode _          = False
 
 -- | Cardano configuration
 data CardanoConfiguration = CardanoConfiguration
-    { ccLogPath                 :: !FilePath
-    -- ^ The location of the log files on the filesystem.
-    , ccLogConfig               :: !FilePath
+    { ccLogConfigFile           :: !FilePath
     -- ^ The path to the log configuration.
     , ccDBPath                  :: !FilePath
     -- ^ The location of the DB on the filesystem.
@@ -53,9 +51,14 @@ initializeCardanoEnvironment = do
         , ceEkgStore    = ekgStore
         }
 
-loadCardanoConfiguration :: IO CardanoConfiguration
-loadCardanoConfiguration = do
-    pure $ CardanoConfiguration mempty mempty mempty mempty
+-- | We don't want to import anything from other modules here, so we keep this empty.
+loadEmptyCardanoConfiguration :: IO CardanoConfiguration
+loadEmptyCardanoConfiguration = pure $
+    CardanoConfiguration
+        { ccLogConfigFile       = mempty
+        , ccDBPath              = mempty
+        , ccApplicationLockFile = mempty
+        }
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency
@@ -88,4 +91,3 @@ data CardanoFeature = CardanoFeature
     , featureShutdown :: forall m. (MonadIO m, MonadConc m) => m ()
     -- ^ What we call when we shut down the feature.
     }
-
