@@ -48,7 +48,7 @@ extra-deps:
       - test
 
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
-    commit: 4dc4d541a645b84a281faa8950a7fd4e61708963
+    commit: 95a19ed4b01522793b71968b047c69d832b5663e
     subdirs:
       - .
 

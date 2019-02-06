@@ -1,9 +1,12 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE Rank2Types       #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Main where
 
 import           Cardano.Prelude
+
 import           Control.Concurrent.Classy (MonadConc)
+import           Control.Exception.Safe (throwM)
 import           DhallConfigSpec (dhallConfigSpec, mkConfigSpec)
 
 import           Test.DejaFu (abortsNever, deadlocksNever, exceptionsNever)
@@ -11,7 +14,7 @@ import           Test.Hspec (Spec, describe, hspec)
 import           Test.Hspec.Contrib.HUnit (fromHUnitTest)
 import           Test.HUnit.DejaFu (testDejafu)
 import           Test.QuickCheck (Gen, arbitraryASCIIChar, choose, frequency,
-                                  generate, listOf1)
+                                  generate, listOf1, oneof)
 
 import           Cardano.Shell.Lib (AllFeaturesInitFunction,
                                     GeneralException (..), runApplication)
@@ -51,8 +54,16 @@ validConcurrencySpec = do
     runApplicationExceptional :: forall m. (MonadIO m, MonadConc m) => m ()
     runApplicationExceptional = runApplication cardanoFeaturesInit application
       where
+
         application :: IO ()
-        application = throwIO UnknownFailureException
+        application = void $ throwM @IO <$> arbitraryGeneralException
+        -- ^ helping the compiler with TypeApplications
+          where
+            arbitraryGeneralException :: IO GeneralException
+            arbitraryGeneralException = generate . oneof $
+                [ pure UnknownFailureException
+                , pure ApplicationAlreadyRunningException
+                ]
 
     -- | We actually need to improve this and add arbitrary @CardanoFeature@s
     -- and add concurrency primitives of appropriate depth to check we have it working.
