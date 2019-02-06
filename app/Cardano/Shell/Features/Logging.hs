@@ -16,8 +16,9 @@ import           Cardano.BM.Trace (Trace)
 import qualified Cardano.BM.Trace as Trace
 
 import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
-                     CardanoFeature (..), CardanoFeatureInit (..),
-                     NoDependency (..), ccLogConfigFile)
+                                      CardanoFeature (..),
+                                      CardanoFeatureInit (..),
+                                      NoDependency (..), ccLogConfigFile)
 
 --------------------------------------------------------------------------------
 -- Loggging feature
@@ -28,7 +29,7 @@ import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
 --------------------------------
 
 data LoggingParameters = LoggingParameters
-    { lpConf :: Configuration
+    { lpConfiguration :: Configuration
     }
 
 --------------------------------
@@ -42,13 +43,13 @@ data LoggingParameters = LoggingParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { llBasicTrace  :: forall m. (MonadIO m) => Trace m
-    , llLogDebug    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llLogInfo     :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llLogNotice   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llLogWarning  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llLogError    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llAppendName  :: forall m. (MonadIO m) => Text -> Trace m -> m (Trace m)
+    { llBasicTrace :: forall m. (MonadIO m) => Trace m
+    , llLogDebug   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogInfo    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogNotice  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogWarning :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llLogError   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
+    , llAppendName :: forall m. (MonadIO m) => Text -> Trace m -> m (Trace m)
     }
 
 --------------------------------
@@ -85,8 +86,8 @@ loggingCardanoFeatureInit = CardanoFeatureInit
     }
   where
     initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
-    initLogging _ _ _ logparams = do
-        baseTrace <- setupTrace (Right (lpConf logparams)) "cardano"
+    initLogging _ _ _ loggingParameters = do
+        baseTrace <- setupTrace (Right (lpConfiguration loggingParameters)) "cardano"
         pure $ LoggingLayer
                 { llBasicTrace  = Trace.natTrace liftIO baseTrace
                 , llLogDebug    = Trace.logDebug

@@ -51,10 +51,11 @@ initializeCardanoEnvironment = do
         , ceEkgStore    = ekgStore
         }
 
-loadCardanoConfiguration :: IO CardanoConfiguration
-loadCardanoConfiguration = pure $
+-- | We don't want to import anything from other modules here, so we keep this empty.
+loadEmptyCardanoConfiguration :: IO CardanoConfiguration
+loadEmptyCardanoConfiguration = pure $
     CardanoConfiguration
-        { ccLogConfigFile       = "app/log-config/log-config-0.yaml"
+        { ccLogConfigFile       = mempty
         , ccDBPath              = mempty
         , ccApplicationLockFile = mempty
         }

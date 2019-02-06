@@ -79,3 +79,13 @@ initializeAllFeatures cardanoConfiguration cardanoEnvironment = do
             ]
 
     pure (allCardanoFeatures, loggingLayer)
+
+-- | Load the actual configuration.
+loadCardanoConfiguration :: IO CardanoConfiguration
+loadCardanoConfiguration = pure $
+    CardanoConfiguration
+        { ccLogConfigFile       = "./configuration/log-configuration.yaml"
+        , ccDBPath              = mempty
+        , ccApplicationLockFile = mempty
+        }
+
