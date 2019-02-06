@@ -1,12 +1,12 @@
 module NodeIPC.Test where
 
-import    Cardano.Prelude
+import           Cardano.Prelude
 
-import System.Environment (setEnv)
-import System.IO (hClose)
+import           System.Environment (setEnv, unsetEnv)
+import           System.IO (hClose)
 
-import NodeIPC.Lib
-import NodeIPC.Message
+import           NodeIPC.Lib
+import           NodeIPC.Message
 
 --------------------------------------------------------------------------------
 -- Testing
@@ -25,6 +25,7 @@ testIPC = do
         (\(ipcHandle, process) -> do
             hClose ipcHandle
             cancel process
+            unsetEnv "NODE_CHANNEL_FD"
         )
         (\(ipcHandle, _) -> do
             sendMessage ipcHandle Ping
