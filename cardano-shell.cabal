@@ -25,11 +25,18 @@ library
     , Cardano.Shell.Types
     , Cardano.Shell.Configuration.Types
     , Cardano.Shell.Configuration.Lib
+    , NodeIPC.Message
+    , NodeIPC.Lib
+    , NodeIPC.Test
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , binary
+    , bytestring
     , cardano-prelude
+    , Cabal
     -- general util
     , directory
     , formatting     
