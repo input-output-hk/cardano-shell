@@ -49,6 +49,7 @@ For serving the module functionality, we can use `withAsync` for top-level calls
 The option left for discussion is whether we should have a need for a restart on a module/process.
 
 For more info about the architecture, please take a look at [here](ARCHITECTURE.md).
+For more info about the launcher, please take a look at [here](LAUNCHER.md).
 
 ## Example
 
