@@ -151,6 +151,7 @@ type AllFeaturesInitFunction = CardanoConfiguration -> CardanoEnvironment -> IO 
 -- | The wrapper for the application providing modules.
 runApplication :: forall m. (MonadIO m, MonadConc m) => AllFeaturesInitFunction -> IO () -> m ()
 runApplication initializeAllFeatures application = do
+
     -- General
     cardanoConfiguration            <-  liftIO loadEmptyCardanoConfiguration
     cardanoEnvironment              <-  liftIO initializeCardanoEnvironment
@@ -163,5 +164,3 @@ runApplication initializeAllFeatures application = do
 
     -- Here we run them.
     runCardanoApplicationWithFeatures Development cardanoFeatures cardanoApplication
-
-
