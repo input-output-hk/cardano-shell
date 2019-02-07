@@ -13,7 +13,7 @@ module NodeIPC.Lib
     , MsgOut(..)
     ) where
 
-import           Cardano.Prelude hiding (catches, handle)
+import           Cardano.Prelude hiding (catches)
 
 import           Control.Exception.Safe (Handler (..), MonadCatch, catches,
                                          throwM)
@@ -92,11 +92,11 @@ getIPCHandle = do
 -- | Start NodeJS IPC with given 'Handle' and 'Port'
 startNodeJsIPC :: (MonadIO m) => Handle -> Port -> m ()
 startNodeJsIPC portHandle port = liftIO $ bracket
-    (async $ startIpcListener portHandle port) 
+    (async $ startIpcListener portHandle port)
     cancel
-    (\_ -> return ())
+    (const $ return ())
 
--- | Start IPC listener with given Handle and Port
+-- | Start IPC listener with given Handl    e and Port
 startIpcListener :: forall m . (MonadIO m, MonadCatch m) => Handle -> Port -> m ()
 startIpcListener portHandle (Port port) = do
     liftIO $ hSetNewlineMode portHandle noNewlineTranslation

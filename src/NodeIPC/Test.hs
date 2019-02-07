@@ -5,8 +5,9 @@ import           Cardano.Prelude
 import           System.Environment (setEnv, unsetEnv)
 import           System.IO (hClose)
 
-import           NodeIPC.Lib
-import           NodeIPC.Message
+import           NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..), getIPCHandle,
+                              startNodeJsIPC)
+import           NodeIPC.Message (readMessage, sendMessage)
 
 import           Prelude (String)
 --------------------------------------------------------------------------------
