@@ -8,29 +8,37 @@ import           System.IO (hClose)
 import           NodeIPC.Lib
 import           NodeIPC.Message
 
+import           Prelude (String)
 --------------------------------------------------------------------------------
 -- Testing
 --------------------------------------------------------------------------------
 
-testIPC :: IO MsgOut
-testIPC = do
-    setEnv "NODE_CHANNEL_FD" "0" -- ???
+testIPCWithEnv :: IO MsgOut
+testIPCWithEnv = testIPC setEnv unsetEnv getIPCHandle
+
+type SetEnvFunc   = String -> String -> IO ()
+type UnsetEnvFunc = String -> IO ()
+
+testIPC :: SetEnvFunc -> UnsetEnvFunc -> IO Handle -> IO MsgOut
+testIPC setEnvFunc unsetEnvFunc handleFunc = do
+    setEnvFunc "NODE_CHANNEL_FD" "0" -- ???
     bracket acquire restore action
   where
     acquire :: IO Handle
     acquire = do
         let port = Port 8090
-        ipcHandle <- getIPCHandle
+        ipcHandle <- handleFunc
         startNodeJsIPC ipcHandle port
         return ipcHandle
 
     restore :: Handle -> IO ()
     restore ipcHandle = do
         hClose ipcHandle
-        unsetEnv "NODE_CHANNEL_FD"
+        unsetEnvFunc "NODE_CHANNEL_FD"
 
     action :: Handle -> IO MsgOut
     action ipcHandle = do
+        threadDelay (1 * 10 * 100000)
         sendMessage ipcHandle Ping
         -- Should be Pong
-        liftIO $ readMessage ipcHandle
+        readMessage ipcHandle
