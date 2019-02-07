@@ -26,6 +26,7 @@ library
     , Cardano.Shell.Presets
     , Cardano.Shell.Configuration.Types
     , Cardano.Shell.Configuration.Lib
+    , Cardano.Shell.Constants.Types
   hs-source-dirs:
       src
   build-depends:
@@ -52,7 +53,6 @@ library
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
-                       DeriveGeneric
                        Rank2Types
 
   ghc-options:         -Wall
