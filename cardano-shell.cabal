@@ -33,7 +33,7 @@ library
     , cardano-prelude
     -- general util
     , directory
-    , formatting     
+    , formatting
     , safe-exceptions
     , text
     , transformers
@@ -124,4 +124,3 @@ test-suite cardano-shell-test
                        -Wincomplete-uni-patterns
                        -Wredundant-constraints
                        -Wpartial-fields
-

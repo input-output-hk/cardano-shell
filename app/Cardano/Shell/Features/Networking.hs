@@ -57,7 +57,7 @@ testNetworkLayer loggingLayer = NetworkLayer
     { sendToNodes       = \_ -> pure "SEND"
     , readFromNodes     = \_ -> do
                                 let m = "READ"
-                                llLogInfo loggingLayer (llStartTrace loggingLayer) m
+                                llLogInfo loggingLayer (llBasicTrace loggingLayer) m
                                 pure m
     }
 

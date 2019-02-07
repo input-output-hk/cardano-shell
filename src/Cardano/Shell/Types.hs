@@ -54,6 +54,18 @@ applicationProductionMode :: ApplicationEnvironment -> Bool
 applicationProductionMode Production = True
 applicationProductionMode _          = False
 
+-- | Cardano configuration
+data CardanoConfiguration = CardanoConfiguration
+    { ccLogConfigFile           :: !FilePath
+    -- ^ The path to the log configuration.
+    , ccDBPath                  :: !FilePath
+    -- ^ The location of the DB on the filesystem.
+    , ccApplicationLockFile     :: !FilePath
+    -- ^ The location of the application lock file that is used
+    -- as a semaphore se we can run just one application
+    -- instance at a time.
+    }
+
 -- | The common runtime environment for all features in the server.
 -- All features have access to this environment.
 data CardanoEnvironment = CardanoEnvironment
@@ -71,9 +83,14 @@ initializeCardanoEnvironment = do
         , ceEkgStore    = ekgStore
         }
 
-loadCardanoConfiguration :: CardanoConfiguration -> IO CardanoConfiguration
-loadCardanoConfiguration configuration = do
-    pure $ configuration
+-- | We don't want to import anything from other modules here, so we keep this empty.
+loadEmptyCardanoConfiguration :: IO CardanoConfiguration
+loadEmptyCardanoConfiguration = pure $
+    CardanoConfiguration
+        { ccLogConfigFile       = mempty
+        , ccDBPath              = mempty
+        , ccApplicationLockFile = mempty
+        }
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency

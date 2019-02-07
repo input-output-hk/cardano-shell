@@ -10,15 +10,16 @@ module Cardano.Shell.Features.Logging
 
 import           Cardano.Prelude hiding (trace)
 
-import           Cardano.BM.Configuration.Static (defaultConfigStdout)
-import           Cardano.BM.Setup (setupTrace)
+import           Cardano.BM.Configuration (Configuration)
+import qualified Cardano.BM.Configuration as Config
+import           Cardano.BM.Setup (setupTrace, shutdownTrace)
 import           Cardano.BM.Trace (Trace)
 import qualified Cardano.BM.Trace as Trace
 
-import           Cardano.Shell.Types (CardanoConfiguration (..),
-                                      CardanoEnvironment, CardanoFeature (..),
+import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
+                                      CardanoFeature (..),
                                       CardanoFeatureInit (..),
-                                      NoDependency (..))
+                                      NoDependency (..), ccLogConfigFile)
 
 --------------------------------------------------------------------------------
 -- Loggging feature
@@ -29,9 +30,8 @@ import           Cardano.Shell.Types (CardanoConfiguration (..),
 --------------------------------
 
 data LoggingParameters = LoggingParameters
-    { configFp :: FilePath
-    , prefixFp :: FilePath
-    } deriving (Show, Eq)
+    { lpConfiguration :: Configuration
+    }
 
 --------------------------------
 -- Layer
@@ -44,7 +44,11 @@ data LoggingParameters = LoggingParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
+<<<<<<< HEAD
     { llStartTrace :: forall m. (MonadIO m) => Trace m
+=======
+    { llBasicTrace :: forall m. (MonadIO m) => Trace m
+>>>>>>> develop
     , llLogDebug   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
     , llLogInfo    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
     , llLogNotice  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
@@ -64,9 +68,7 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration = do
     -- we parse any additional configuration if there is any
     -- We don't know where the user wants to fetch the additional configuration from, it could be from
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
-    loggingConfiguration    <-  pure $ LoggingParameters
-                                    (ccLogConfig cardanoConfiguration)
-                                    (ccLogPath cardanoConfiguration)
+    loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ ccLogConfigFile cardanoConfiguration)
 
     -- we construct the layer
     loggingLayer            <- (featureInit loggingCardanoFeatureInit)
@@ -89,11 +91,10 @@ loggingCardanoFeatureInit = CardanoFeatureInit
     }
   where
     initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
-    initLogging _ _ _ _logparams = do
-        cfg <- defaultConfigStdout  -- TODO initialize from 'configFp logparams'
-        baseTrace <- setupTrace (Right cfg) "simple"
+    initLogging _ _ _ loggingParameters = do
+        baseTrace <- setupTrace (Right (lpConfiguration loggingParameters)) "cardano"
         pure $ LoggingLayer
-                { llStartTrace  = Trace.natTrace liftIO baseTrace
+                { llBasicTrace  = Trace.natTrace liftIO baseTrace
                 , llLogDebug    = Trace.logDebug
                 , llLogInfo     = Trace.logInfo
                 , llLogNotice   = Trace.logNotice
@@ -102,7 +103,7 @@ loggingCardanoFeatureInit = CardanoFeatureInit
                 , llAppendName  = Trace.appendName
                 }
     cleanupLogging :: LoggingLayer -> IO ()
-    cleanupLogging _ = pure ()  -- TODO
+    cleanupLogging loggingLayer = shutdownTrace $ llBasicTrace loggingLayer
 
 loggingCardanoFeature :: LoggingCardanoFeature -> LoggingLayer -> CardanoFeature
 loggingCardanoFeature loggingCardanoFeature' loggingLayer = CardanoFeature
