@@ -244,9 +244,9 @@ devConfiguration = CardanoConfiguration
                        , ccNTP        = NTP { ntpResponseTimeout = 30000000
                                             , ntpPollDelay       = 1800000000
                                             , ntpServers         = [ "0.pool.ntp.org"
-                                                                , "2.pool.ntp.org"
-                                                                , "3.pool.ntp.org"
-                                                                ]
+                                                                   , "2.pool.ntp.org"
+                                                                   , "3.pool.ntp.org"
+                                                                   ]
                                             }
                        , ccUpdate     = Update { upApplicationName       = "cardano-sl"
                                                , upApplicationVersion    = 0
@@ -295,9 +295,10 @@ devConfiguration = CardanoConfiguration
                                                             , certCommonName   = "Cardano SL Server Node"
                                                             , certExpiryDays   = 365
                                                             , certAltDNS       = [ "localhost"
-                                                                             , "localhost.localdomain"
-                                                                             , "127.0.0.1"
-                                                                             , "::1" ]
+                                                                                 , "localhost.localdomain"
+                                                                                 , "127.0.0.1"
+                                                                                 , "::1" 
+                                                                                 ]
                                                             }
                                             , tlsClients = Certificate
                                                             { certOrganization = "Input Output HK"
