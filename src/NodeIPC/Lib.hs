@@ -79,6 +79,7 @@ instance Show NodeIPCException where
 
 instance Exception NodeIPCException
 
+-- | Acquire Handle for IPC communication
 getIPCHandle :: IO Handle
 getIPCHandle = do
     mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
@@ -88,11 +89,12 @@ getIPCHandle = do
             Left err -> throwM $ UnableToParseNodeChannel $ toS err
             Right fd -> liftIO $ fdToHandle fd
 
--- Pass logging layer here
-startNodeJsIPC :: (MonadIO m) => Port -> m ()
-startNodeJsIPC port = do
-    portHandle <- liftIO $ getIPCHandle
-    liftIO $ void $ forkIO $ startIpcListener portHandle port
+-- | Start NodeJS IPC with given 'Handle' and 'Port'
+startNodeJsIPC :: (MonadIO m) => Handle -> Port -> m ()
+startNodeJsIPC portHandle port = liftIO $ bracket
+    (async $ startIpcListener portHandle port) 
+    cancel
+    (\_ -> return ())
 
 -- | Start IPC listener with given Handle and Port
 startIpcListener :: forall m . (MonadIO m, MonadCatch m) => Handle -> Port -> m ()
@@ -118,7 +120,7 @@ startIpcListener portHandle (Port port) = do
        liftIO $ when (isEOFError err) $ logError "its an eof"
        liftIO $ hFlush stdout
        liftIO $ hClose portHandle
-       liftIO $ throwM IPCException
+       throwM IPCException
 
      handleMsgError :: MessageException -> m ()
      handleMsgError err = send $ ParseError $ show err

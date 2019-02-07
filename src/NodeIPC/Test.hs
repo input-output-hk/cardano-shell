@@ -14,24 +14,23 @@ import           NodeIPC.Message
 
 testIPC :: IO MsgOut
 testIPC = do
-    setEnv "NODE_CHANNEL_FD" "1" -- ???
+    setEnv "NODE_CHANNEL_FD" "0" -- ???
     bracket acquire restore action
   where
-    acquire :: IO (Handle, Async ())
+    acquire :: IO Handle
     acquire = do
         let port = Port 8090
         ipcHandle <- getIPCHandle
-        process   <- async $ startNodeJsIPC port
-        return (ipcHandle, process)
+        startNodeJsIPC ipcHandle port
+        return ipcHandle
 
-    restore :: (Handle, Async()) -> IO ()
-    restore (ipcHandle, process) = do
+    restore :: Handle -> IO ()
+    restore ipcHandle = do
         hClose ipcHandle
-        cancel process
         unsetEnv "NODE_CHANNEL_FD"
 
-    action :: (Handle, Async ()) -> IO MsgOut
-    action (ipcHandle, _) = do
+    action :: Handle -> IO MsgOut
+    action ipcHandle = do
         sendMessage ipcHandle Ping
         -- Should be Pong
         liftIO $ readMessage ipcHandle
