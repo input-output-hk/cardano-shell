@@ -13,13 +13,22 @@
 \usepackage{hyperref}
 % for UML
 \usepackage{tikz}
+\usetikzlibrary{automata, positioning, arrows}
 \usepackage{pgf-umlsd}
-\usepgflibrary{arrows} % for pgf-umlsd
+%\usepgflibrary{arrows} % for pgf-umlsd
 \usepackage{verbatim}
 % for ld
 \usepackage{bussproofs}
 
 \usetikzlibrary{calc,positioning,arrows}
+
+\tikzset{
+    ->, % makes the edges directed
+    >=stealth', % makes the arrow heads bold
+    node distance=3cm, % specifies the minimum distance between two nodes. Change if necessary.
+    every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+    initial text=$ $, % sets the text that appears on the start arrow
+    }
 
 % The following is the general setup of the machinery. As this
 % gets longer, it's probably useful to extract this into its own
@@ -325,8 +334,8 @@ The introduction. WIP!
 Currently, the \textit{Daedalus} and the \textit{Node} (this is what I'm calling the node, thus the uppercase) communicate via \textbf{IPC for reaching a consensus which port to use for the JSON API communication, since we have a lot of issues of ports being used} .
 \textbf{IPC} (Inter Process Communication) is a set of methods which processes can use to communicate - \url{https://en.wikipedia.org/wiki/Inter-process_communication}.\\
 
-The package on the nodejs side can be found here - \url{https://www.npmjs.com/package/node-ipc}.
-The basic example can be found here - \url{https://github.com/RIAEvangelist/node-ipc/tree/master/example/unixWindowsSocket/basic}.\\
+The actual communication right now is being done by the \textit{spawn} function, pieces of which can be found \href{https://github.com/nodejs/node/blob/62942e9ad7a59b76e9255ea2560bad2245709efc/lib/internal/child_process.js#L306}{here}.
+The part of the code which adds the handle id which they will use to communicate via environment variable "NODE_CHANNEL_FD" \href{https://github.com/nodejs/node/blob/master/lib/internal/child_process.js#L324-L335}{here}.\\
 
 Currently, the \textit{Deadalus} starts the \textit{Node} (we will ignore the \textit{Launcher} for now, since it complicates the story a bit).\\
 
@@ -336,14 +345,14 @@ When the \textit{Daedalus} calls and starts the \textit{Node}, it also opens up 
 First, the \textit{Node} sends the message \textbf{Started} back to the \textit{Daedalus} to inform him that the communcation can begin.
 After that, \textit{Daedalus} sends the message \textbf{QueryPort} to the \textit{Node}, and the \textit{Node} responds with the free port it found using \textbf{ReplyPort PORTNUM} that is going to be used for starting the HTTP "server" serving the \textit{JSON API} which they can then use to communicate further.\\
 
-Since the communication is bi-directional, we can presume they are using sockets.\\
+Since the communication is bi-directional, currently the communication is using \textbf{files}.\\
 
 We can easily generalize this concept. We can say that \textit{Daedalus} is the \textit{Server}, and that the \textit{Node} is the \textit{Client}. Since the communication is bi-directional, we can say that either way, but we can presume that the \textit{Server} is the process which is started first.
 
 What does this bring us? It brings us the ability to \textbf{decouple} our implementation from the specific setting where \textit{Daedalus} is the \textit{Server} and the \textit{Node} is the \textit{Client}. There are some ideas that we might switch the order of the way we currently run these two, so we can freely implement that either way. For example, when we write tests for this communication protocol, we need to both start the server and the client and then check their interaction. It also removes any extra information that we might need to drop anyway. What we are focusing here is the \textbf{communication protocol} and not it's actors. We don't really care who says to whom, we are interested in seeing what is being said - \textit{how the whole protocol works}.
 
 % http://www.texample.net/tikz/examples/pgf-umlsd/
-\begin{figure}
+\begin{figure}[ht]
   \centering
 
   \begin{sequencediagram}
@@ -376,7 +385,7 @@ Here we will take a look at the simplest possible communication. \textbf{Ping} a
 
 We can take a look at this very simple protocol on Figure ~\ref{fig:ipcPingPongFig}.\\
 
-\begin{figure}
+\begin{figure}[ht]
   \centering
 
   \begin{sequencediagram}
@@ -466,7 +475,8 @@ The other situation just halts the protocol, which we can observe as bottom.
 
 \begin{equation}
     \label{eq:protocol-ipc-queryport}
-    \AxiomC{$QueryPort$}
+    \AxiomC{$Started$}
+    \UnaryInfC{$QueryPort$}
     \AxiomC{}
     \UnaryInfC{$\neg MessageSendFailure$}   
     \BinaryInfC{$ReplyPort \{ \textbf{port} \mid port < 65535 \wedge port > 0 \}$}
@@ -482,8 +492,34 @@ The other situation just halts the protocol, which we can observe as bottom.
 
 And that is our full communication protocol. It can be seen on Figure ~\ref{fig:ipcFullProtocolFig}.\\
 
+The state machine diagram that can be used to represent this can be seen here.\\
+
+\begin{figure}[ht] % ’ht’ tells LaTeX to place the figure ’here’ or at the top of the page
+    \centering % centers the figure
+    \begin{tikzpicture}
+        \node[state, accepting, initial] (q1) {$Started$};
+        \node[state, right of=q1] (q2) {$Ping$};
+        \node[state, accepting, right of=q2] (q3) {$Pong$};
+        \node[state, below of=q1] (q4) {$QueryPort$};
+        \node[state, accepting, right of=q4] (q5) {$ReplyPort$};
+        \draw 
+            (q1) edge[above] node{} (q2)
+            (q2) edge[above] node{} (q3)
+            (q3) edge[bend left, below] node{} (q1) %return
+            %(q3) edge[bend left, below] node{} (q2)
+            (q1) edge[below] node{} (q4)
+            (q4) edge[below] node{} (q5)
+            (q5) edge[below] node{} (q1); %return
+    \end{tikzpicture}
+    \caption{Full protocol FSM.}
+    \label{fig:my_label}
+\end{figure}
+
+
+
+
 % http://www.texample.net/tikz/examples/pgf-umlsd/
-\begin{figure}
+\begin{figure}[ht]
   \centering
 
   \begin{sequencediagram}
