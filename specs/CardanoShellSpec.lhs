@@ -27,7 +27,7 @@
     >=stealth', % makes the arrow heads bold
     node distance=3cm, % specifies the minimum distance between two nodes. Change if necessary.
     every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
-    initial text=$ $, % sets the text that appears on the start arrow
+    initial text=$Start$, % sets the text that appears on the start arrow
     }
 
 % The following is the general setup of the machinery. As this
@@ -120,146 +120,20 @@
 > x `implies` y = not x || y
 > infixr 1 `implies`
 
-> data Block = Block String
-> instance Eq Block
-> instance Ord Block
+> data ServerMessage 
+>    = QueryPort
+>    | Ping
 
-> data TxId
-> instance Eq TxId
-> instance Ord TxId
+> instance Eq ServerMessage
+> instance Ord ServerMessage
 
-> data Ix
-> instance Eq Ix
-> instance Ord Ix
+> data ClientMessage 
+>    = Started
+>    | Pong
+>    | ReplyPort Word16
 
-> data Addr
-
-> data Coin
-> instance Eq Coin
-> instance Ord Coin
-> instance Num Coin
-
-> type TxIn = Pair TxId Ix
-> type TxOut = Pair Addr Coin
-> type UTxO = Map TxIn TxOut
-> data Tx
->
-> data Slot
-> instance Eq Slot
-> instance Ord Slot
-
-> data Epoch
-
-> data PrtclConsts
-
-> data Allocs
-
-> type Wdrl = Set (Pair TxId AddrRwd) -- deviates from the spec
-
-> data UTxOEnv =
->   MkUTxOEnv Slot PrtclConsts Allocs Allocs
-
-> data UTxOState =
->   MkUTxOState UTxO Coin Coin Wdrl
-
-> data DWEnv =
->   MkDWEnv Tx Slot
-
-> data DWState =
->   MkDWState DState PState
-
-> data DState
-> data PState
-
-> data DCert
-> instance Eq DCert
-> instance Ord DCert
-
-> data VKey
-> data Sig
-> data Data
-> data DCertBody
-
-> class Serialisable a
-> instance Serialisable DCertBody
-> instance Serialisable Tx
-> instance Serialisable TxId
-> instance Serialisable Ix
-> instance Serialisable Addr
-> instance Serialisable Coin
-> instance (Serialisable a, Serialisable b) => Serialisable (a, b)
-> instance Serialisable a => Serialisable (Set a)
-> instance (Serialisable k, Serialisable v) => Serialisable (Map k v)
-
-> serialised :: Serialisable a => a -> Data
-> serialised = undefined
-
-> txbody :: Tx -> Pair (Set TxIn) (Map Ix TxOut)
-> txbody = undefined
->
-> txid :: Tx -> TxId
-> txid = undefined
->
-> epochToSlot :: Epoch -> Slot
-> epochToSlot = undefined
-
-> restrictDom :: Set k -> Map k v -> Map k v
-> restrictDom = undefined
-
-> subtractDom :: Set k -> Map k v -> Map k v
-> subtractDom = undefined
-
-> utxoRel :: Relation4 UTxOEnv UTxOState Tx UTxOState
-> utxoRel = undefined
-
-> dcerts :: Tx -> List DCert
-> dcerts = undefined
-
-> dCertRetirePool :: [DCert]
-> dCertRetirePool = undefined
-
-> retire :: DCert -> Epoch -- more permissive than in spec
-> retire = undefined
-
-> deleg :: Relation4 Slot DState DCert DState
-> deleg = undefined
-
-> delegW :: Relation4 DWEnv DWState DCert DWState
-> delegW = undefined
-
-> dbody :: Map DCert DCertBody
-> dbody = undefined
-
-> dwit :: Map DCert (Pair VKey Sig)
-> dwit = undefined
-
-> verify :: Relation3 VKey Data Sig
-> verify = undefined
-
-> deposits :: PrtclConsts -> Allocs -> Tx -> Coin
-> deposits = undefined
-
-> keyRefunds :: PrtclConsts -> Allocs -> Tx -> Coin
-> keyRefunds = undefined
-
-> decayedTx :: PrtclConsts -> Allocs -> Tx -> Coin
-> decayedTx = undefined
-
-> txfee :: Tx -> Coin
-> txfee = undefined
-
-> txwdrls :: Tx -> Set AddrRwd
-> txwdrls = undefined
-
-> ttl :: Tx -> Slot
-> ttl = undefined
-
-> minfee :: PrtclConsts -> Tx -> Coin
-> minfee = undefined
-
-> data AddrRwd
-> instance Eq AddrRwd
-> instance Ord AddrRwd
+> instance Eq ClientMessage
+> instance Ord ClientMessage
 
 %endif
 
@@ -270,36 +144,7 @@
 % producing LaTeX output.
 
 %if style /= newcode
-%format txins = "\named{txins}"
-%format txouts = "\named{txouts}"
-%format txfee = "\named{txfee}"
-%format txid = "\named{txid}"
-%format txwdrls = "\named{txwdrls}"
-%format balance = "\named{balance}"
-%format txbody = "\named{txbody}"
-%format deposits = "\named{deposits}"
-%format vardeposits = "\Varid{deposits}"
-%format keyRefunds = "\named{keyRefunds}"
-%format decayedTx = "\named{decayedTx}"
-%format txfee = "\named{txfee}"
-%format ttl = "\named{ttl}"
-%format minfee = "\named{minfee}"
-%format dbody = "\named{dbody}"
-%format dwit = "\named{dwit}"
-%format verify = "\named{verify}"
-%format created = "\named{created}"
-%format destroyed = "\named{destroyed}"
-%format dcerts = "\named{dcerts}"
-%format dCertRetirePool = "\named{DCert_{retirepool}}"
-%format vk_s
-%format sigma = "\sigma"
-%format MkUTxOEnv (slot) (consts) (allocs1) (allocs2) = "\left(\begin{array}{c}" slot "\cr " consts "\cr " allocs1 "\cr " allocs2 "\end{array}\right)"
-%format MkUTxOState (utxo) (coin1) (coin2) (wdrl) = "\left(\begin{array}{c}" utxo "\cr " coin1 "\cr " coin2 "\cr " wdrl "\end{array}\right)"
-%format utxoRel (env) (state1) (tx) (state2) = env "\vdash" state1 "\trans{utxo}{" tx "}" state2
-%format MkDWEnv (tx) (slot) = "\left(\begin{array}{c}" tx "\cr " slot "\end{array}\right)"
-%format MkDWState (dstate) (pstate) = "\left(\begin{array}{c}" dstate "\cr " pstate "\end{array}\right)"
-%format deleg (env) (state1) (cert) (state2) = env "\vdash" state1 "\trans{deleg}{" cert "}" state2
-%format delegW (env) (state1) (cert) (state2) = env "\vdash" state1 "\trans{delegw}{" cert "}" state2
+%format fullProtocol = "\named{fullProtocol}"
 %endif
 
 \begin{document}
@@ -404,7 +249,9 @@ We can take a look at this very simple protocol on Figure ~\ref{fig:ipcPingPongF
 
 Very simple transformation rules can be applied here.
 
-\[ Ping \Longrightarrow Pong \]
+\begin{equation}
+    Ping \Longrightarrow Pong
+\end{equation}
 
 \begin{equation}
     \label{eq:ping-pong-ipc}
@@ -425,14 +272,17 @@ What can go wrong when we send the message? For example, we need to consider wha
 
 We can simplify all of this by saying there is an exception \textit{MessageSendFailure} that can be used on \textbf{both sides}. This simplifies a lot of things for us, including different exceptional situations we might reach. The result can be seen here.
 
-\[ (Ping \wedge \neg MessageSendFailure) \Longrightarrow Pong \]
+\begin{equation}
+    (Ping \wedge \neg MessageSendFailure) \Longrightarrow Pong
+\end{equation}
 
-\begin{prooftree}
+\begin{equation}
     \AxiomC{$Ping$}
     \AxiomC{}
     \UnaryInfC{$\neg MessageSendFailure$}
     \BinaryInfC{$Pong$}
-\end{prooftree}
+    \DisplayProof
+\end{equation}
 
 The other situation just halts the protocol, which we can observe as bottom.
 
@@ -459,9 +309,13 @@ What can go wrong when we send the message? The same thing as in the previous se
 
 We can simplify all of this by saying there is an exception \textit{MessageSendFailure} that can be used on both sides. This simplifies a lot of things for us, including different exceptional situations we might reach. The result can be seen here.
 
-\[ Ping \wedge \neg MessageSendFailure \Longrightarrow Pong \]
+\begin{equation}
+    Ping \wedge \neg MessageSendFailure \Longrightarrow Pong
+\end{equation}
 
-\[ Started \wedge QueryPort \wedge \neg MessageSendFailure \Longrightarrow ReplyPort \]
+\begin{equation}
+    Started \wedge QueryPort \wedge \neg MessageSendFailure \Longrightarrow ReplyPort
+\end{equation}
 
 The other situation just halts the protocol, which we can observe as bottom.
 
@@ -515,9 +369,6 @@ The state machine diagram that can be used to represent this can be seen here.\\
     \label{fig:my_label}
 \end{figure}
 
-
-
-
 % http://www.texample.net/tikz/examples/pgf-umlsd/
 \begin{figure}[ht]
   \centering
@@ -540,7 +391,16 @@ The state machine diagram that can be used to represent this can be seen here.\\
   \label{fig:ipcFullProtocolFig}
 \end{figure}
 
+We can then consider a simple transition function for the client.
 
+% https://github.com/input-output-hk/fm-ledger-rules/pull/108/files
+
+> fullProtocol :: ServerMessage -> ClientMessage
+> fullProtocol Ping       =  Pong
+> fullProtocol QueryPort  =  ReplyPort 0
+
+
+\newpage
 \newpage 
 \section{Update mechanism}
 \label{sec:update}
