@@ -32,8 +32,6 @@ import           NodeIPC.Message (MessageException, readMessage, sendMessage)
 
 import qualified Prelude as P (Show (..))
 
--- Try to figure out something that uses MsgIn
-
 -- ^ Message expecting from Daedalus
 data MsgIn
     = QueryPort
@@ -74,7 +72,7 @@ data NodeIPCException
 instance Show NodeIPCException where
     show = \case
         NodeChannelNotFound          -> "Env variable NODE_CHANNEL_FD cannot be found"
-        UnableToParseNodeChannel err -> "Unable to parse NODE_CHANNEL_FD: " <> toS err
+        UnableToParseNodeChannel err -> "Unable to parse NODE_CHANNEL_FD: " <> show err
         IPCException                 -> "IOError has occured"
 
 instance Exception NodeIPCException
@@ -91,43 +89,53 @@ getIPCHandle = do
 
 -- | Start NodeJS IPC with given 'Handle' and 'Port'
 startNodeJsIPC :: (MonadIO m) => Handle -> Port -> m ()
-startNodeJsIPC portHandle port = liftIO $ bracket
-    (async $ startIpcListener portHandle port)
-    cancel
-    (const $ return ())
+startNodeJsIPC portHandle port = liftIO $ void $ async $ ipcListener portHandle port
 
 -- | Start IPC listener with given Handl    e and Port
-startIpcListener :: forall m . (MonadIO m, MonadCatch m) => Handle -> Port -> m ()
-startIpcListener portHandle (Port port) = do
+ipcListener :: forall m . (MonadIO m, MonadCatch m) => Handle -> Port -> m ()
+ipcListener portHandle (Port port) = do
     liftIO $ hSetNewlineMode portHandle noNewlineTranslation
-    catches
-       (forever $ do
-           line <- liftIO $ readMessage portHandle
-           handleMsgIn line
-       )
-       [Handler handler, Handler handleMsgError]
+    send Started
+    handleMsgIn
   where
-     send :: MsgOut -> m ()
-     send = sendMessage portHandle
+    handleMsgIn :: m ()
+    handleMsgIn =
+        catches
+            (do
+                msgIn <- readMessage portHandle
+                case msgIn of
+                    QueryPort -> do
+                        send $ ReplyPort port
+                        shutdown
+                    Ping      -> do
+                        send Pong
+                        shutdown
+            )
+        [Handler handler, Handler handleMsgError]
 
-     handleMsgIn :: MsgIn -> m ()
-     handleMsgIn QueryPort = send $ ReplyPort port
-     handleMsgIn Ping      = send Pong
+    send :: MsgOut -> m ()
+    send = sendMessage portHandle
 
-     -- Huge catch all, fix this:
-     handler :: IOError -> m ()
-     handler err = do
-       liftIO $ when (isEOFError err) $ logError "its an eof"
-       liftIO $ hFlush stdout
-       liftIO $ hClose portHandle
-       throwM IPCException
+    -- Huge catch all, fix this:
+    handler :: IOError -> m ()
+    handler err = do
+        liftIO $ when (isEOFError err) $ logError "its an eof"
+        liftIO $ hFlush stdout
+        liftIO $ hClose portHandle
+        throwM IPCException
 
-     handleMsgError :: MessageException -> m ()
-     handleMsgError err = send $ ParseError $ show err
+    handleMsgError :: MessageException -> m ()
+    handleMsgError err = do
+        send $ ParseError $ show err
+        handleMsgIn
+
+    shutdown :: m ()
+    shutdown = return ()
+
 
 --------------------------------------------------------------------------------
 -- placeholder
 --------------------------------------------------------------------------------
 
 logError :: Text -> IO ()
-logError = putTextLn
+logError = putTextLn <$> show
