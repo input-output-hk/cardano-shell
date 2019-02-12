@@ -26,6 +26,7 @@ import           Prelude (String)
 serverPort :: String
 serverPort = "8765"
 
+-- | Launch NodeIPC server and interact with it using netcat
 exampleWithNetwork :: IO (MsgOut, MsgOut)
 exampleWithNetwork = do
     async startNodeServer
