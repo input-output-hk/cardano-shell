@@ -27,7 +27,7 @@ library
     , Cardano.Shell.Configuration.Lib
     , NodeIPC.Message
     , NodeIPC.Lib
-    , NodeIPC.Test
+    , NodeIPC.Example
   hs-source-dirs:
       src
   build-depends:
@@ -54,6 +54,8 @@ library
     , transformers
     , concurrency
     , QuickCheck
+    , network
+    , process
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
