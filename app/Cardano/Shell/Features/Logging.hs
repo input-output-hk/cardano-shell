@@ -44,11 +44,7 @@ data LoggingParameters = LoggingParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-<<<<<<< HEAD
-    { llStartTrace :: forall m. (MonadIO m) => Trace m
-=======
     { llBasicTrace :: forall m. (MonadIO m) => Trace m
->>>>>>> develop
     , llLogDebug   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
     , llLogInfo    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
     , llLogNotice  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
