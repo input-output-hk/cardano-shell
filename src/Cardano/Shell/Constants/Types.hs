@@ -37,7 +37,7 @@ data CardanoConfiguration = CardanoConfiguration
     { ccLogPath             :: !FilePath
     -- ^ The location of the log files on the filesystem.
     , ccLogConfig           :: !FilePath
-    -- ^ The location of the log configuration on the filesystem
+    -- ^ The location of the log configuration on the filesystem.
     , ccDBPath              :: !FilePath
     -- ^ The location of the DB on the filesystem.
     , ccApplicationLockFile :: !FilePath
@@ -54,15 +54,15 @@ data CardanoConfiguration = CardanoConfiguration
     , ccNode                :: !Node
     , ccTLS                 :: !TLS
     , ccWallet              :: !Wallet
-    } deriving (Eq, Show)
+    } deriving (Eq, Shows)
 
 data Core = Core
     { coGenesis              :: !Genesis
     , coRequiresNetworkMagic :: !Text
-      -- ^ Bool-isomorphic flag indicating whether we're on testnet
+      -- ^ Bool-isomorphic flag indicating whether we're on testnet.
       -- or mainnet/staging.
     , coDBSerializeVersion   :: !Integer
-      -- ^ Versioning for values in node's DB
+      -- ^ Versioning for values in node's DB.
     } deriving (Eq, Show)
 
 data Genesis = Genesis { geInternal :: !Bool
@@ -210,7 +210,7 @@ data DLG = DLG
 
 data Block = Block
     { blNetworkDiameter        :: !Int
-      -- ^Estimated time needed to broadcast message from one node to all other nodes
+      -- ^Estimated time needed to broadcast message from one node to all other nodes.
     , blRecoveryHeadersMessage :: !Int
       -- ^Maximum amount of headers node can put into headers message while in "after offline" or "recovery" mode.
     , blStreamWindow           :: !Int
@@ -232,20 +232,20 @@ data Block = Block
 --- | Top-level Cardano SL node configuration
 data Node = Node
     { noNetworkConnectionTimeout     :: !Int
-      -- ^ Network connection timeout in milliseconds
+      -- ^ Network connection timeout in milliseconds.
     , noConversationEstablishTimeout :: !Int
       -- ^ Conversation acknowledgement timeout in milliseconds.
     , noBlockRetrievalQueueSize      :: !Int
-      -- ^ Block retrieval queue capacity
+      -- ^ Block retrieval queue capacity.
     , noPendingTxResubmissionPeriod  :: !Int
-      -- ^ Minimal delay between pending transactions resubmission
+      -- ^ Minimal delay between pending transactions resubmission.
     , noWalletProductionApi          :: !Bool
-      -- ^ Whether hazard wallet endpoint should be disabled
+      -- ^ Whether hazard wallet endpoint should be disabled.
     , noWalletTxCreationDisabled     :: !Bool
       -- ^ Disallow transaction creation or re-submission of
-      -- pending transactions by the wallet
+      -- pending transactions by the wallet.
     , noExplorerExtendedApi          :: !Bool
-      -- ^ Enable explorer extended API for fetching more
+      -- ^ Enable explorer extended API for fetching more.
     } deriving (Eq, Show)
 
 data TLS = TLS
