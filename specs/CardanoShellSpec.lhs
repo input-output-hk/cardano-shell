@@ -180,7 +180,7 @@ Currently, the \textit{Daedalus} and the \textit{Node} (this is what I'm calling
 \textbf{IPC} (Inter Process Communication) is a set of methods which processes can use to communicate - \url{https://en.wikipedia.org/wiki/Inter-process_communication}.\\
 
 The actual communication right now is being done by the \textit{spawn} function, pieces of which can be found \href{https://github.com/nodejs/node/blob/62942e9ad7a59b76e9255ea2560bad2245709efc/lib/internal/child_process.js#L306}{here}.
-The part of the code which adds the handle id which they will use to communicate via environment variable "NODE_CHANNEL_FD" \href{https://github.com/nodejs/node/blob/master/lib/internal/child_process.js#L324-L335}{here}.\\
+The part of the code which adds the handle id which they will use to communicate via environment variable "NODE\_CHANNEL\_FD" \href{https://github.com/nodejs/node/blob/master/lib/internal/child_process.js#L324-L335}{here}.\\
 
 Currently, the \textit{Deadalus} starts the \textit{Node} (we will ignore the \textit{Launcher} for now, since it complicates the story a bit).\\
 
