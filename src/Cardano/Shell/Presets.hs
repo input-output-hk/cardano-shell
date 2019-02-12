@@ -143,7 +143,7 @@ mainnetConfiguration =
           , sscNoReportNoSecretsForEpoch1    = True
           }
     , ccDLG =
-        DLG { dlgCacheParam       = 500
+        DLG { dlgCacheParam          = 500
             , dlgMessageCacheTimeout = 30
             }
     , ccBlock = 
@@ -203,7 +203,7 @@ mainnetConfiguration =
                 { thEnabled = False
                 , thRate    = 0
                 , thPeriod  = ""
-                 , thBurst   = 0
+                , thBurst   = 0
                 }
           }
     }
