@@ -9,10 +9,10 @@ import           Cardano.Prelude
 import           Control.Exception.Safe (MonadThrow)
 
 import           Cardano.Shell.Features.Logging (LoggingLayer (..))
-import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
-                                      CardanoFeature (..),
+import           Cardano.Shell.Types (CardanoEnvironment, CardanoFeature (..),
                                       CardanoFeatureInit (..))
 
+import           Cardano.Shell.Constants.Types (CardanoConfiguration)
 --------------------------------------------------------------------------------
 -- Networking feature
 --------------------------------------------------------------------------------

@@ -7,48 +7,44 @@ module Cardano.Shell.Presets
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.Types (ApplicationEnvironment (..), Block (..),
-                                      BlockVersionData (..),
-                                      CardanoApplication (..),
-                                      CardanoConfiguration (..),
-                                      CardanoEnvironment (..),
-                                      CardanoFeature (..),
-                                      CardanoFeatureInit (..), Certificate (..),
-                                      Core (..), DLG (..), FakeAvvmBalance (..),
-                                      Genesis (..), Initializer (..),
-                                      LastKnownBlockVersion (..), NTP (..),
-                                      NoDependency (..), Node (..),
-                                      ProtocolConstants (..), SSC (..),
-                                      SoftForkRule (..), Spec (..), TLS (..),
-                                      TXP (..), TestBalance (..), Throttle (..),
-                                      TxFeePolicy (..), TxSizeLinear (..),
-                                      Update (..), Wallet (..),
-                                      applicationProductionMode,
-                                      initializeCardanoEnvironment,
-                                      loadCardanoConfiguration)
+import           Cardano.Shell.Constants.Types (Block (..),
+                                                BlockVersionData (..),
+                                                CardanoConfiguration (..),
+                                                Certificate (..), Core (..),
+                                                DLG (..), FakeAvvmBalance (..),
+                                                Genesis (..), Initializer (..),
+                                                LastKnownBlockVersion (..),
+                                                NTP (..), Node (..),
+                                                ProtocolConstants (..),
+                                                SSC (..), SoftForkRule (..),
+                                                Spec (..), TLS (..), TXP (..),
+                                                TestBalance (..), Throttle (..),
+                                                TxFeePolicy (..),
+                                                TxSizeLinear (..), Update (..),
+                                                Wallet (..))
 
 --------------------------------------------------------------------------------
 -- Cardano Mainnet Configuration
 --------------------------------------------------------------------------------
 
 mainnetConfiguration :: CardanoConfiguration
-mainnetConfiguration = 
+mainnetConfiguration =
   CardanoConfiguration
     { ccLogPath             = "./logs/"
     , ccLogConfig           = "./log-config.yaml"
     , ccDBPath              = "./db/"
     , ccApplicationLockFile = ""
-    , ccCore = 
-        Core 
+    , ccCore =
+        Core
           { coGenesis =
-              Genesis 
+              Genesis
                 { geInternal = False
                 , geSpec     =
-                    Spec 
+                    Spec
                       { spInitializer =
-                          Initializer 
+                          Initializer
                             { inTestBalance =
-                                TestBalance 
+                                TestBalance
                                   { tePoors          = 0
                                   , teRichmen        = 0
                                   , teRichmenShare   = 0
@@ -56,7 +52,7 @@ mainnetConfiguration =
                                   , teTotalBalance   = 0
                                   }
                             , inFakeAvvmBalance  =
-                                FakeAvvmBalance 
+                                FakeAvvmBalance
                                   { faCount      = 0
                                   , faOneBalance = 0
                                   }
@@ -79,15 +75,15 @@ mainnetConfiguration =
                             , bvdUpdateProposalThd = 0
                             , bvdUpdateImplicit    = 0
                             , bvdSoftforkRule =
-                                SoftForkRule 
+                                SoftForkRule
                                   { sfrInitThd      = 0
                                   , sfrMinThd       = 0
                                   , sfrThdDecrement = 0
                                   }
                             , bvdTXFeePolicy =
-                                TxFeePolicy 
+                                TxFeePolicy
                                   { txfTXSizeLinear =
-                                      TxSizeLinear 
+                                      TxSizeLinear
                                         { txsA = 0
                                         , txsB = 0
                                         }
@@ -96,7 +92,7 @@ mainnetConfiguration =
                             }
 
                       , spProtocolConstants =
-                          ProtocolConstants 
+                          ProtocolConstants
                             { prK             = 0
                             , prProtocolMagic = 0
                             }
@@ -110,18 +106,18 @@ mainnetConfiguration =
           , coRequiresNetworkMagic = "NetworkMainOrStage"
           , coDBSerializeVersion   = 0
           }
-    , ccNTP = 
-        NTP 
+    , ccNTP =
+        NTP
           { ntpResponseTimeout = 30000000
           , ntpPollDelay       = 1800000000
-          , ntpServers         = 
+          , ntpServers         =
               [ "0.pool.ntp.org"
               , "2.pool.ntp.org"
               , "3.pool.ntp.org"
               ]
           }
-    , ccUpdate = 
-        Update 
+    , ccUpdate =
+        Update
           { upApplicationName       = "cardano-sl"
           , upApplicationVersion    = 1
           , upLastKnownBlockVersion =
@@ -131,8 +127,8 @@ mainnetConfiguration =
                 , lkbvAlt   = 0
                 }
                                                }
-    , ccTXP = 
-        TXP 
+    , ccTXP =
+        TXP
           { txpMemPoolLimitTx = 200
           , txpAssetLockedSrcAddress = []
           }
@@ -146,8 +142,8 @@ mainnetConfiguration =
         DLG { dlgCacheParam          = 500
             , dlgMessageCacheTimeout = 30
             }
-    , ccBlock = 
-        Block 
+    , ccBlock =
+        Block
           { blNetworkDiameter        = 18
           , blRecoveryHeadersMessage = 2200
           , blStreamWindow           = 2048
@@ -159,7 +155,7 @@ mainnetConfiguration =
           , blFixedTimeCQ            = 3600
           }
     , ccNode =
-        Node 
+        Node
           { noNetworkConnectionTimeout     = 15000
           , noConversationEstablishTimeout = 30000
           , noBlockRetrievalQueueSize      = 100
@@ -169,8 +165,8 @@ mainnetConfiguration =
           , noExplorerExtendedApi          = False
           }
     , ccTLS =
-        TLS 
-          { tlsCA = 
+        TLS
+          { tlsCA =
               Certificate
                 { certOrganization = "Input Output HK"
                 , certCommonName   = "Cardano SL Self-Signed Root CA"
@@ -182,13 +178,13 @@ mainnetConfiguration =
                 { certOrganization = "Input Output HK"
                 , certCommonName   = "Cardano SL Server Node"
                 , certExpiryDays   = 3600
-                , certAltDNS       = 
+                , certAltDNS       =
                     [ "localhost"
                     , "localhost.localdomain"
                     , "127.0.0.1"
                     , "::1" ]
                 }
-          , tlsClients = 
+          , tlsClients =
               Certificate
                 { certOrganization = "Input Output HK"
                 , certCommonName   = "Daedalus Wallet"
@@ -197,9 +193,9 @@ mainnetConfiguration =
                 }
                                             }
     , ccWallet =
-        Wallet 
-          { waThrottle = 
-              SetThrottle 
+        Wallet
+          { waThrottle =
+              SetThrottle
                 { thEnabled = False
                 , thRate    = 0
                 , thPeriod  = ""
@@ -213,24 +209,24 @@ mainnetConfiguration =
 --------------------------------------------------------------------------------
 
 devConfiguration :: CardanoConfiguration
-devConfiguration = 
+devConfiguration =
   CardanoConfiguration
     { ccLogPath             = "./logs/"
     , ccDBPath              = "./db/"
     , ccLogConfig           = "./log-config.yaml"
     , ccApplicationLockFile = ""
-    , ccCore     = 
-      Core 
+    , ccCore     =
+      Core
         { coGenesis  =
-          Genesis 
+          Genesis
             { geInternal = True
             , geSrc      = ""
             , geFileHash = ""
-            , geSpec = Spec 
+            , geSpec = Spec
               { spInitializer =
-              Initializer 
+              Initializer
                 { inTestBalance =
-                TestBalance 
+                TestBalance
                   { tePoors          = 12
                   , teRichmen        = 4
                   , teRichmenShare   = 0.99
@@ -238,7 +234,7 @@ devConfiguration =
                   , teTotalBalance   = 600000000000000000
                   }
                 , inFakeAvvmBalance  =
-                  FakeAvvmBalance 
+                  FakeAvvmBalance
                     { faCount      = 10
                     , faOneBalance = 100000
                     }
@@ -248,7 +244,7 @@ devConfiguration =
                 }
 
               , spBlockVersionData  =
-                BlockVersionData 
+                BlockVersionData
                   { bvdScriptVersion     = 0
                   , bvdSlotDuration      = 7000
                   , bvdMaxBlockSize      = 2000000
@@ -261,15 +257,15 @@ devConfiguration =
                   , bvdUpdateProposalThd = 0.1
                   , bvdUpdateImplicit    = 10
                   , bvdSoftforkRule      =
-                    SoftForkRule 
+                    SoftForkRule
                       { sfrInitThd      = 0.9
                       , sfrMinThd       = 0.6
                       , sfrThdDecrement = 0.05
                       }
                   , bvdTXFeePolicy       =
-                    TxFeePolicy 
+                    TxFeePolicy
                       { txfTXSizeLinear =
-                        TxSizeLinear 
+                        TxSizeLinear
                           { txsA = 155381
                           , txsB = 43.946
                           }
@@ -278,7 +274,7 @@ devConfiguration =
                   }
 
               , spProtocolConstants =
-                ProtocolConstants 
+                ProtocolConstants
                   { prK             = 2
                   , prProtocolMagic = 55550001
                   }
@@ -290,45 +286,45 @@ devConfiguration =
         , coRequiresNetworkMagic = "RequiresNoMagic"
         , coDBSerializeVersion   = 0
         }
-    , ccNTP = 
-        NTP 
+    , ccNTP =
+        NTP
           { ntpResponseTimeout = 30000000
           , ntpPollDelay       = 1800000000
-          , ntpServers         = 
+          , ntpServers         =
             [ "0.pool.ntp.org"
             , "2.pool.ntp.org"
             , "3.pool.ntp.org"
             ]
           }
-    , ccUpdate = 
+    , ccUpdate =
         Update
           { upApplicationName       = "cardano-sl"
           , upApplicationVersion    = 0
           , upLastKnownBlockVersion =
-            LastKnownBlockVersion 
+            LastKnownBlockVersion
               { lkbvMajor = 0
               , lkbvMinor = 0
               , lkbvAlt   = 0
-              1}
+              }
                                                }
-    , ccTXP = 
-        TXP 
+    , ccTXP =
+        TXP
           { txpMemPoolLimitTx = 200
           , txpAssetLockedSrcAddress = []
           }
     , ccSSC =
-        SSC 
+        SSC
           { sscMPCSendInterval = 10
           , sscMdNoCommitmentsEpochThreshold = 3
           , sscNoReportNoSecretsForEpoch1    = False
           }
-    , ccDLG = 
+    , ccDLG =
         DLG
           { dlgCacheParam          = 500
           , dlgMessageCacheTimeout = 30
           }
-    , ccBlock = 
-        Block 
+    , ccBlock =
+        Block
           { blNetworkDiameter        = 3
           , blRecoveryHeadersMessage = 20
           , blStreamWindow           = 2048
@@ -339,8 +335,8 @@ devConfiguration =
           , blCriticalForkThreshold  = 2
           , blFixedTimeCQ            = 10
           }
-    , ccNode = 
-        Node 
+    , ccNode =
+        Node
           { noNetworkConnectionTimeout     = 15000
           , noConversationEstablishTimeout = 30000
           , noBlockRetrievalQueueSize      = 100
@@ -350,8 +346,8 @@ devConfiguration =
           , noExplorerExtendedApi          = False
           }
     , ccTLS =
-        TLS 
-          { tlsCA = 
+        TLS
+          { tlsCA =
               Certificate
                 { certOrganization = "Input Output HK"
                 , certCommonName   = "Cardano SL Self-Signed Root CA"
@@ -363,14 +359,14 @@ devConfiguration =
                 { certOrganization = "Input Output HK"
                 , certCommonName   = "Cardano SL Server Node"
                 , certExpiryDays   = 365
-                , certAltDNS       = 
+                , certAltDNS       =
                     [ "localhost"
                     , "localhost.localdomain"
                     , "127.0.0.1"
-                    , "::1" 
+                    , "::1"
                     ]
                 }
-          , tlsClients = 
+          , tlsClients =
               Certificate
                 { certOrganization = "Input Output HK"
                 , certCommonName   = "Daedalus Wallet"
@@ -379,8 +375,8 @@ devConfiguration =
                 }
           }
     , ccWallet =
-        Wallet 
-          { waThrottle =  SetThrottle 
+        Wallet
+          { waThrottle =  SetThrottle
             { thEnabled = False
             , thRate    = 0
             , thPeriod  = ""

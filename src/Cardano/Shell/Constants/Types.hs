@@ -71,8 +71,7 @@ data Genesis = Genesis { geInternal :: !Bool
                        , geSpec     :: !Spec
                        , geSrc      :: !FilePath
                        , geFileHash :: !Text
-                       }
-             deriving (Eq, Show, Monoid, Semigroup)
+                       } deriving (Eq, Show, Monoid, Semigroup)
 
 data Spec = Spec
     { spInitializer       :: !Initializer

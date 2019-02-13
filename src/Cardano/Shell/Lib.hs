@@ -28,14 +28,14 @@ import           Formatting.Buildable (Buildable (..))
 
 import           System.Directory (doesFileExist)
 
-import           Cardano.Shell.Presets (mainnetConfiguration)
 import           Cardano.Shell.Types (ApplicationEnvironment (..),
                                       CardanoApplication (..),
-                                      CardanoConfiguration (..),
                                       CardanoEnvironment, CardanoFeature (..),
                                       applicationProductionMode,
                                       initializeCardanoEnvironment,
                                       loadEmptyCardanoConfiguration)
+
+import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 
 --------------------------------------------------------------------------------
 -- General exceptions

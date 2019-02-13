@@ -6,7 +6,7 @@ module Cardano.Shell.Types
     , ApplicationEnvironment (..)
     , CardanoApplication (..)
     , initializeCardanoEnvironment
-    , loadCardanoConfiguration
+    , loadEmptyCardanoConfiguration
     , applicationProductionMode
     ) where
 
@@ -14,20 +14,7 @@ import           Cardano.Prelude
 
 import           Control.Concurrent.Classy (MonadConc)
 
-import           Cardano.Shell.Constants.Types (Block (..), 
-                                                BlockVersionData (..), CardanoConfiguration (..), 
-                                                Certificate (..), Core (..),
-                                                DLG (..), FakeAvvmBalance (..),
-                                                Genesis (..), Initializer (..),
-                                                LastKnownBlockVersion (..),
-                                                NTP (..), Node (..),
-                                                ProtocolConstants (..),
-                                                SSC (..), SoftForkRule (..),
-                                                Spec (..), TLS (..), TXP (..),
-                                                TestBalance (..), Throttle (..),
-                                                TxFeePolicy (..),
-                                                TxSizeLinear (..), Update (..),
-                                                Wallet (..))
+import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 
 import qualified System.Metrics as Ekg
 

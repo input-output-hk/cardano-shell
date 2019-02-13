@@ -16,10 +16,12 @@ import           Cardano.BM.Setup (setupTrace, shutdownTrace)
 import           Cardano.BM.Trace (Trace)
 import qualified Cardano.BM.Trace as Trace
 
-import           Cardano.Shell.Types (CardanoConfiguration, CardanoEnvironment,
-                                      CardanoFeature (..),
+import           Cardano.Shell.Types (CardanoEnvironment, CardanoFeature (..),
                                       CardanoFeatureInit (..),
-                                      NoDependency (..), ccLogConfigFile)
+                                      NoDependency (..))
+
+import           Cardano.Shell.Constants.Types (CardanoConfiguration,
+                                                ccLogConfig)
 
 --------------------------------------------------------------------------------
 -- Loggging feature
@@ -64,7 +66,7 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration = do
     -- we parse any additional configuration if there is any
     -- We don't know where the user wants to fetch the additional configuration from, it could be from
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
-    loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ ccLogConfigFile cardanoConfiguration)
+    loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ ccLogConfig cardanoConfiguration)
 
     -- we construct the layer
     loggingLayer            <- (featureInit loggingCardanoFeatureInit)
