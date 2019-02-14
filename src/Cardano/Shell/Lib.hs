@@ -32,10 +32,11 @@ import           Cardano.Shell.Types (ApplicationEnvironment (..),
                                       CardanoApplication (..),
                                       CardanoEnvironment, CardanoFeature (..),
                                       applicationProductionMode,
-                                      initializeCardanoEnvironment,
-                                      loadEmptyCardanoConfiguration)
+                                      initializeCardanoEnvironment)
 
 import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
+
+import           Cardano.Shell.Presets (mainnetConfiguration)
 
 --------------------------------------------------------------------------------
 -- General exceptions
@@ -154,7 +155,7 @@ runApplication :: forall m. (MonadIO m, MonadConc m) => AllFeaturesInitFunction 
 runApplication initializeAllFeatures application = do
 
     -- General
-    cardanoConfiguration            <-  liftIO loadEmptyCardanoConfiguration
+    cardanoConfiguration            <-  liftIO $ pure mainnetConfiguration
     cardanoEnvironment              <-  liftIO initializeCardanoEnvironment
 
     let cardanoApplication :: CardanoApplication

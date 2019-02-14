@@ -56,7 +56,7 @@ data CardanoConfiguration = CardanoConfiguration
     , ccNode                :: !Node
     , ccTLS                 :: !TLS
     , ccWallet              :: !Wallet
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data Core = Core
     { coGenesis              :: !Genesis
@@ -65,13 +65,13 @@ data Core = Core
       -- or mainnet/staging.
     , coDBSerializeVersion   :: !Integer
       -- ^ Versioning for values in node's DB.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data Genesis = Genesis { geInternal :: !Bool
                        , geSpec     :: !Spec
                        , geSrc      :: !FilePath
                        , geFileHash :: !Text
-                       } deriving (Eq, Show, Monoid, Semigroup)
+                       } deriving (Eq, Show)
 
 data Spec = Spec
     { spInitializer       :: !Initializer
@@ -86,7 +86,7 @@ data Spec = Spec
       -- ^ Genesis state of heavyweight delegation.
     , spAVVMDistr         :: !Text
       -- ^ Genesis data describes avvm utxo.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 -- | This data type contains various options presense of which depends
 -- on whether we want genesis for mainnet or testnet.
@@ -98,7 +98,7 @@ data Initializer = Initializer
     , inSeed              :: !Int
       -- ^ Seed to use to generate secret data. It's used only in
       -- testnet, shouldn't be used for anything important.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 -- | These options determine balances of nodes specific for testnet.
 data TestBalance = TestBalance
@@ -112,20 +112,20 @@ data TestBalance = TestBalance
       -- ^ Whether generate plain addresses or with hd payload.
     , teTotalBalance   :: !Int
       -- ^ Total balance owned by these nodes.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 -- | These options determines balances of fake AVVM nodes which didn't
 -- really go through vending, but pretend they did.
 data FakeAvvmBalance = FakeAvvmBalance
     { faCount      :: !Word
     , faOneBalance :: !Word64
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 -- | If we require options to automatically restart a module.
 data ModuleAutoRestart
     = ModuleRestart
     | ModuleNoRestart
-    deriving (Eq, Show, Monoid, Semigroup)
+    deriving (Eq, Show)
 
 data BlockVersionData = BlockVersionData
     { bvdScriptVersion     :: !Int
@@ -142,47 +142,47 @@ data BlockVersionData = BlockVersionData
     , bvdSoftforkRule      :: !SoftForkRule
     , bvdTXFeePolicy       :: !TxFeePolicy
     , bvdUnlockStakeEpoch  :: !Integer
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data SoftForkRule = SoftForkRule
     { sfrInitThd      :: !Float
     , sfrMinThd       :: !Float
     , sfrThdDecrement :: !Float
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data TxFeePolicy = TxFeePolicy
     { txfTXSizeLinear :: !TxSizeLinear
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data TxSizeLinear = TxSizeLinear
     { txsA :: !Int
     , txsB :: !Float
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data ProtocolConstants = ProtocolConstants
     { prK             :: !Int
     -- ^ Security parameter from the paper.
     , prProtocolMagic :: !Int
     -- ^ Magic constant for separating real/testnet.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data NTP = NTP
     { ntpResponseTimeout :: !Int
     , ntpPollDelay       :: !Int
     , ntpServers         :: ![Text]
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data Update = Update
     { upApplicationName       :: !Text
     , upApplicationVersion    :: !Int
     , upLastKnownBlockVersion :: !LastKnownBlockVersion
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data LastKnownBlockVersion = LastKnownBlockVersion
     { lkbvMajor :: !Int
     , lkbvMinor :: !Int
     , lkbvAlt   :: !Int
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data SSC = SSC
     { sscMPCSendInterval               :: !Word
@@ -191,7 +191,7 @@ data SSC = SSC
       -- ^ Threshold of epochs for malicious activity detection
     , sscNoReportNoSecretsForEpoch1    :: !Bool
       -- ^ Don't print “SSC couldn't compute seed” for the first epoch.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data TXP = TXP
     { txpMemPoolLimitTx        :: !Int
@@ -199,7 +199,7 @@ data TXP = TXP
     , txpAssetLockedSrcAddress :: ![Text]
       -- ^ Set of source address which are asset-locked. Transactions which
       -- use these addresses as transaction inputs will be silently dropped.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data DLG = DLG
     { dlgCacheParam          :: !Int
@@ -207,7 +207,7 @@ data DLG = DLG
       -- Not bytes, but number of elements.
     , dlgMessageCacheTimeout :: !Int
       -- ^ Interval we ignore cached messages for if it's sent again.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data Block = Block
     { blNetworkDiameter        :: !Int
@@ -228,7 +228,7 @@ data Block = Block
       -- ^ Number of blocks such that if so many blocks are rolled back, it requires immediate reaction.
     , blFixedTimeCQ            :: !Int
       -- ^ Chain quality will be also calculated for this amount of seconds.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 --- | Top-level Cardano SL node configuration
 data Node = Node
@@ -247,25 +247,25 @@ data Node = Node
       -- pending transactions by the wallet.
     , noExplorerExtendedApi          :: !Bool
       -- ^ Enable explorer extended API for fetching more.
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data TLS = TLS
     { tlsCA      :: !Certificate
     , tlsServer  :: !Certificate
     , tlsClients :: !Certificate
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 data Certificate = Certificate
     { certOrganization :: !Text
     , certCommonName   :: !Text
     , certExpiryDays   :: !Int
     , certAltDNS       :: ![Text]
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 -- | Contains wallet configuration variables.
 data Wallet = Wallet
     { waThrottle :: !Throttle
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)
 
 -- | Rate-limiting/throttling parameters
 data Throttle = SetThrottle
@@ -273,4 +273,4 @@ data Throttle = SetThrottle
     , thRate    :: !Int
     , thPeriod  :: !Text
     , thBurst   :: !Int
-    } deriving (Eq, Show, Monoid, Semigroup)
+    } deriving (Eq, Show)

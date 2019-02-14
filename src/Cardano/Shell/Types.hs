@@ -6,7 +6,6 @@ module Cardano.Shell.Types
     , ApplicationEnvironment (..)
     , CardanoApplication (..)
     , initializeCardanoEnvironment
-    , loadEmptyCardanoConfiguration
     , applicationProductionMode
     ) where
 
@@ -47,26 +46,6 @@ initializeCardanoEnvironment = do
     return CardanoEnvironment
         { ceLogEnv      = "To implement"
         , ceEkgStore    = ekgStore
-        }
-
--- | We don't want to import anything from other modules here, so we keep this empty.
-loadEmptyCardanoConfiguration :: IO CardanoConfiguration
-loadEmptyCardanoConfiguration = pure $
-    CardanoConfiguration
-        { ccLogConfig           = mempty
-        , ccDBPath              = mempty
-        , ccApplicationLockFile = mempty
-        , ccLogPath             = mempty
-        , ccCore                = mempty
-        , ccNTP                 = mempty
-        , ccUpdate              = mempty
-        , ccTXP                 = mempty
-        , ccSSC                 = mempty
-        , ccDLG                 = mempty
-        , ccBlock               = mempty
-        , ccNode                = mempty
-        , ccTLS                 = mempty
-        , ccWallet              = mempty
         }
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
