@@ -91,11 +91,11 @@ getIPCHandle = do
 startNodeJsIPC :: (MonadIO m) => Handle -> Port -> m ()
 startNodeJsIPC portHandle port = liftIO $ void $ async $ ipcListener portHandle port
 
--- | Start IPC listener with given Handl    e and Port
+-- | Start IPC listener with given Handle and Port
 ipcListener :: forall m . (MonadIO m, MonadCatch m) => Handle -> Port -> m ()
 ipcListener portHandle (Port port) = do
     liftIO $ hSetNewlineMode portHandle noNewlineTranslation
-    send Started
+    --send Started --do consider this
     handleMsgIn
   where
     handleMsgIn :: m ()
@@ -103,11 +103,13 @@ ipcListener portHandle (Port port) = do
         catches
             (do
                 msgIn <- readMessage portHandle
+                liftIO $ putTextLn $ show msgIn
                 case msgIn of
                     QueryPort -> do
                         send $ ReplyPort port
                         shutdown
                     Ping      -> do
+                        liftIO $ putTextLn "Got PING!"
                         send Pong
                         shutdown
             )

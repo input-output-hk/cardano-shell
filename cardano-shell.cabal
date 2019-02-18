@@ -43,6 +43,7 @@ library
     , safe-exceptions
     , text
     , transformers
+    , unix
     -- json & config
     , contravariant
     , dhall
