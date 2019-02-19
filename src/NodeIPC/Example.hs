@@ -10,27 +10,71 @@ import           Network.Socket (AddrInfo (..), AddrInfoFlag (..), Socket,
                                  withSocketsDo)
 import           System.Environment (setEnv, unsetEnv)
 import           System.IO (BufferMode (..), hClose, hSetBuffering)
-import           System.Process (StdStream (..), proc, std_in, std_out,
-                                 withCreateProcess)
+import           System.Process hiding (getPid)
+import           System.Process.Internals
 
 import           NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..), getIPCHandle,
                               startNodeJsIPC)
 import           NodeIPC.Message (readMessage, sendMessage)
 
-import           Prelude (String)
+import           Prelude (String, error)
+
+import           System.Posix.Process
 
 --------------------------------------------------------------------------------
 -- Testing
 --------------------------------------------------------------------------------
 
+getPid ph = withProcessHandle ph go
+  where
+    go ph_ = case ph_ of
+               OpenHandle x   -> return $ Just x
+               ClosedHandle _ -> return Nothing
+
 serverPort :: String
 serverPort = "8765"
+
+example2 :: IO ()
+example2 = do
+    async startNodeServer
+    -- (_,_,_,ph) <- createProcess $ shell "echo $$;sleep 1000" -- prints process id -- NEED TO KEEP THIS ALIVE
+    realProcessId <- getProcessID
+    putTextLn $ "real process id: " <> show realProcessId
+    -- mSomething <- getPid ph
+    -- let realProcessId = case mSomething of
+    --                         Nothing -> error "Nothing was found"
+    --                         Just x  -> x
+    putTextLn $ "echo \"Ping\" > /proc/" <> show realProcessId <> "/fd/0"
+    threadDelay $ 1 * 10000000000
+    -- void $ createProcess
+    --     (proc "echo" ["\"Ping\"", ">", ("/proc/" <> show realProcessId <> "/fd/0")])
+    --     { std_out = CreatePipe
+    --     , std_in  = CreatePipe
+    --     }
+    -- echo "shows on the tty but bypasses cat" > /proc/{readlProcessId}/fd/0
+    return ()
+
+-- Dbus, message queue, domain sockets
+-- annonymous pipes
+
+-- hGetLine to communicate
+
+-- system D: monitoring/service manager
+-- go devops/website, c library
+
+-- inheriting annoymous pipes
+-- try stdin stdout
+-- cant do logging
+
+-- nodejs: named pipes in windows
+-- unix: unix domain socket
+
 
 -- | Launch NodeIPC server and interact with it using netcat
 exampleWithNetwork :: IO (MsgOut, MsgOut)
 exampleWithNetwork = do
     async startNodeServer
-    withCreateProcess (proc "nc" ["localhost", serverPort])
+    withCreateProcess (proc "nc" ["localhost", serverPort]) -- ??
         { std_out = CreatePipe
         , std_in  = CreatePipe
         } $ \(Just hin) (Just hout) _ _ -> do

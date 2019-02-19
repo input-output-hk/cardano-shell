@@ -64,11 +64,13 @@ send portHandle blob = do
     hFlush portHandle
   where
     sendWindowsMessage :: Word32 -> Word32 -> BSL.ByteString -> IO ()
-    sendWindowsMessage int1 int2 blob' = do
-        BSLC.hPut portHandle $ runPut $
-            (putWord32le int1) <> (putWord32le int2) <> (putWord64le $ fromIntegral $ BSL.length blob')
-            <> (putLazyByteString blob)
-
+    sendWindowsMessage int1 int2 blob' =
+        BSLC.hPut portHandle $ runPut $ mconcat 
+            [ putWord32le int1
+            , putWord32le int2
+            , putWord64le $ fromIntegral $ BSL.length blob'
+            , putLazyByteString blob'
+            ]
     sendLinuxMessage :: BSL.ByteString -> IO ()
     sendLinuxMessage = BSLC.hPutStrLn portHandle
 

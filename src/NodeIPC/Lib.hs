@@ -84,14 +84,14 @@ getIPCHandle = do
     case mFdstring of
         Nothing -> throwM NodeChannelNotFound
         Just fdstring -> case readEither fdstring of
-            Left err -> throwM $ UnableToParseNodeChannel $ toS err
-            Right fd -> liftIO $ fdToHandle fd
+            Left err  -> throwM $ UnableToParseNodeChannel $ toS err
+            Right fd  -> liftIO $ fdToHandle fd
 
 -- | Start NodeJS IPC with given 'Handle' and 'Port'
 startNodeJsIPC :: (MonadIO m) => Handle -> Port -> m ()
 startNodeJsIPC portHandle port = liftIO $ void $ async $ ipcListener portHandle port
 
--- | Start IPC listener with given Handl    e and Port
+-- | Start IPC listener with given Handle and Port
 ipcListener :: forall m . (MonadIO m, MonadCatch m) => Handle -> Port -> m ()
 ipcListener portHandle (Port port) = do
     liftIO $ hSetNewlineMode portHandle noNewlineTranslation
@@ -104,12 +104,10 @@ ipcListener portHandle (Port port) = do
             (do
                 msgIn <- readMessage portHandle
                 case msgIn of
-                    QueryPort -> do
-                        send $ ReplyPort port
-                        shutdown
+                    QueryPort -> send (ReplyPort port) >> shutdown
                     Ping      -> do
-                        send Pong
-                        shutdown
+                        liftIO $ putTextLn "We got ping"
+                        send Pong >> shutdown
             )
         [Handler handler, Handler handleMsgError]
 
@@ -126,6 +124,7 @@ ipcListener portHandle (Port port) = do
 
     handleMsgError :: MessageException -> m ()
     handleMsgError err = do
+        liftIO $ putTextLn "We got something weird"
         send $ ParseError $ show err
         handleMsgIn
 
