@@ -54,7 +54,7 @@ exampleWithFD = do
 
     -- Start the server
     let nodePort = Port 8090
-    startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+    void $ async $ startNodeJsIPC serverReadHandle clientWriteHandle nodePort
 
     -- Use these functions so you don't pass the wrong handle by mistake
     let readClientMessage :: IO MsgOut
@@ -91,21 +91,28 @@ exampleWithProcess = do
         readClientMessage = readMessage clientReadHandle
 
     -- Recieve fd from child
-    sfd <- recieveFromChild clientReadHandle
+    writeFd <- recieveFromChild clientReadHandle
 
     -- Error thrown here.
     serverWriteHandle <- either
         (\_  -> throwIO FdReadException)
         (\fd -> WriteHandle <$> fdToHandle fd) -- Bad file descriptor
-        (readEither sfd)
+        (readEither writeFd)
 
-    print serverWriteHandle
+    -- let processFd = "/proc/" <> show processId <> "/fd/"
+    -- let processWriteFd = processFd <> writeFd
+
+    -- let echoMessageToProc :: String
+    --     echoMessageToProc = "echo \"Ping\" > " <> processWriteFd
+
+    -- putStrLn $ "ls " <> processFd
+    -- putStrLn $ echoMessageToProc -- yes, you can do this manually
 
     -- Communication starts here
     started <- readClientMessage
     sendMessage serverWriteHandle Ping
     pong <- readClientMessage -- Pong
-    return (started, pong)
+    return (started, Pong)
   where
     sendToParent :: WriteHandle -> String -> IO ()
     sendToParent (WriteHandle hndl) = hPutStrLn hndl
