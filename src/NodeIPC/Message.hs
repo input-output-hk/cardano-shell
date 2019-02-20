@@ -2,6 +2,8 @@ module NodeIPC.Message
     ( sendMessage
     , readMessage
     , MessageException
+    , ReadHandle(..)
+    , WriteHandle(..)
     ) where
 
 import           Cardano.Prelude
@@ -26,11 +28,39 @@ instance Show MessageException where
 
 instance Exception MessageException
 
-sendMessage :: (MonadIO m, ToJSON msg) => Handle -> msg -> m ()
-sendMessage portHandle cmd = liftIO $ send portHandle $ encode cmd
+-- | Read handle
+newtype ReadHandle = ReadHandle
+    { getReadHandle :: Handle
+    }
 
-readMessage :: (MonadIO m, MonadThrow m, FromJSON msg) => Handle -> m msg
-readMessage portHandle = do
+-- | Write handle
+newtype WriteHandle = WriteHandle
+    { getWriteHandle :: Handle
+    }
+
+sendMessage :: (MonadIO m, ToJSON msg) => WriteHandle -> msg -> m ()
+sendMessage (WriteHandle hndl) cmd = liftIO $ send $ encode cmd
+  where
+    send :: BSL.ByteString -> IO ()
+    send blob = do
+        if buildOS == Windows
+            then sendWindowsMessage 1 0 (blob <> "\n") -- What's with 1 and 0?
+            else sendLinuxMessage blob
+        hFlush hndl
+      where
+        sendWindowsMessage :: Word32 -> Word32 -> BSL.ByteString -> IO ()
+        sendWindowsMessage int1 int2 blob' =
+            BSLC.hPut hndl $ runPut $ mconcat 
+                [ putWord32le int1
+                , putWord32le int2
+                , putWord64le $ fromIntegral $ BSL.length blob'
+                , putLazyByteString blob'
+                ]
+        sendLinuxMessage :: BSL.ByteString -> IO ()
+        sendLinuxMessage = BSLC.hPutStrLn hndl
+
+readMessage :: (MonadIO m, MonadThrow m, FromJSON msg) => ReadHandle -> m msg
+readMessage (ReadHandle hndl) = do
     encodedMessage <- if buildOS == Windows
         then do
             (_, _, blob) <- liftIO $ windowsReadMessage
@@ -45,44 +75,26 @@ readMessage portHandle = do
   where
     windowsReadMessage :: IO (Word32, Word32, BSL.ByteString)
     windowsReadMessage = do
-        int1 <- readInt32 portHandle
-        int2 <- readInt32 portHandle
-        size <- readInt64 portHandle
-        blob <- BSL.hGet portHandle $ fromIntegral size
+        int1 <- readInt32 hndl
+        int2 <- readInt32 hndl
+        size <- readInt64 hndl
+        blob <- BSL.hGet hndl $ fromIntegral size
         return (int1, int2, blob)
 
     linuxReadMessage :: IO BSL.ByteString
     linuxReadMessage = do
-        line <- hGetLine portHandle
+        line <- hGetLine hndl
         return $ BSLC.pack line
 
-send :: Handle -> BSL.ByteString -> IO ()
-send portHandle blob = do
-    if buildOS == Windows
-        then sendWindowsMessage 1 0 (blob <> "\n") -- What's with 1 and 0?
-        else sendLinuxMessage blob
-    hFlush portHandle
-  where
-    sendWindowsMessage :: Word32 -> Word32 -> BSL.ByteString -> IO ()
-    sendWindowsMessage int1 int2 blob' =
-        BSLC.hPut portHandle $ runPut $ mconcat 
-            [ putWord32le int1
-            , putWord32le int2
-            , putWord64le $ fromIntegral $ BSL.length blob'
-            , putLazyByteString blob'
-            ]
-    sendLinuxMessage :: BSL.ByteString -> IO ()
-    sendLinuxMessage = BSLC.hPutStrLn portHandle
+    readInt64 :: Handle -> IO Word64
+    readInt64 hnd = do
+        bs <- BSL.hGet hnd 8
+        pure $ runGet getWord64le bs
 
-readInt64 :: Handle -> IO Word64
-readInt64 hnd = do
-    bs <- BSL.hGet hnd 8
-    pure $ runGet getWord64le bs
-
-readInt32 :: Handle -> IO Word32
-readInt32 hnd = do
-    bs <- BSL.hGet hnd 4
-    pure $ runGet getWord32le bs
+    readInt32 :: Handle -> IO Word32
+    readInt32 hnd = do
+        bs <- BSL.hGet hnd 4
+        pure $ runGet getWord32le bs
 
 -- | Monadic generalisation of 'either'.
 eitherM :: Monad m => (a -> m c) -> (b -> m c) -> m (Either a b) -> m c

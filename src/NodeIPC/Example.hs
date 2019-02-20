@@ -8,7 +8,8 @@ import           System.IO (BufferMode (..), hSetBuffering)
 
 import           NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
                               startNodeJsIPC)
-import           NodeIPC.Message (readMessage, sendMessage)
+import           NodeIPC.Message (ReadHandle (..), WriteHandle (..),
+                                  readMessage, sendMessage)
 
 import           GHC.IO.Handle.FD (fdToHandle)
 import           System.Process (createPipeFd)
@@ -36,22 +37,8 @@ import           System.Process (createPipeFd)
 exampleWithFD :: IO (MsgOut, MsgOut)
 exampleWithFD = do
 
-    -- Create Handle for client side
-    (readFd, writeFd)   <- createPipeFd
-    clientWriteHandle   <- fdToHandle writeFd
-    clientReadHandle    <- fdToHandle readFd
-
-    -- Create Handle for server side
-    (sReadFd, sWriteFd) <- createPipeFd
-    serverWriteHandle   <- fdToHandle sWriteFd
-    serverReadHandle    <- fdToHandle sReadFd
-
-    mapM_ (\h -> hSetBuffering h LineBuffering) 
-        [ clientWriteHandle
-        , clientReadHandle
-        , serverWriteHandle
-        , serverReadHandle
-        ]
+    (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
+    (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
 
     -- Start the server
     let nodePort = Port 8090
@@ -60,7 +47,7 @@ exampleWithFD = do
     -- Use these functions so you don't pass the wrong handle by mistake
     let readClientMessage :: IO MsgOut
         readClientMessage = readMessage clientReadHandle
-    
+
     let sendServer :: MsgIn -> IO ()
         sendServer = sendMessage serverWriteHandle
 
@@ -69,3 +56,18 @@ exampleWithFD = do
     sendServer Ping
     pong <- readClientMessage -- Pong
     return (started, pong)
+  where
+    getReadWriteHandles :: IO (ReadHandle, WriteHandle)
+    getReadWriteHandles = do
+        (readFd, writeFd) <- createPipeFd
+        writeHndl         <- fdToHandle writeFd
+        readHndl          <- fdToHandle readFd
+
+        mapM_ (\h -> hSetBuffering h LineBuffering)
+            [ readHndl
+            , writeHndl
+            ]
+
+        let readHandle = ReadHandle readHndl
+        let writeHandle = WriteHandle writeHndl
+        return (readHandle, writeHandle)

@@ -28,7 +28,8 @@ import           System.IO (hClose, hFlush, hSetNewlineMode,
                             noNewlineTranslation)
 import           System.IO.Error (IOError, isEOFError)
 
-import           NodeIPC.Message (MessageException, readMessage, sendMessage)
+import           NodeIPC.Message (MessageException, ReadHandle(..), WriteHandle(..),
+                                  readMessage, sendMessage)
 
 import qualified Prelude as P (Show (..))
 
@@ -84,25 +85,25 @@ getIPCHandle = do
     case mFdstring of
         Nothing -> throwM NodeChannelNotFound
         Just fdstring -> case readEither fdstring of
-            Left err  -> throwM $ UnableToParseNodeChannel $ toS err
-            Right fd  -> liftIO $ fdToHandle fd
+            Left err -> throwM $ UnableToParseNodeChannel $ toS err
+            Right fd -> liftIO $ fdToHandle fd
 
 -- | Start NodeJS IPC with given 'Handle' and 'Port'
-startNodeJsIPC :: (MonadIO m) => Handle -> Handle -> Port -> m ()
-startNodeJsIPC inputHandle outputHandle port = 
-    liftIO $ void $ async $ ipcListener inputHandle outputHandle port
+startNodeJsIPC :: (MonadIO m) => ReadHandle -> WriteHandle -> Port -> m ()
+startNodeJsIPC readHandle writeHandle port =
+    liftIO $ void $ async $ ipcListener readHandle writeHandle port
 
 -- | Start IPC listener with given Handle and Port
-ipcListener :: forall m . (MonadIO m, MonadCatch m) 
-            => Handle
+ipcListener :: forall m . (MonadIO m, MonadCatch m)
+            => ReadHandle
             -- ^ Read handle
-            -> Handle
+            -> WriteHandle
             -- ^ Write handle
             -> Port
             -- ^ Open port
             -> m ()
-ipcListener inputHandle outputHandle (Port port) = do
-    liftIO $ hSetNewlineMode inputHandle noNewlineTranslation
+ipcListener readHndl@(ReadHandle rHndl) writeHndl (Port port) = do
+    liftIO $ hSetNewlineMode rHndl noNewlineTranslation
     send Started
     handleMsgIn
   where
@@ -110,7 +111,7 @@ ipcListener inputHandle outputHandle (Port port) = do
     handleMsgIn =
         catches
             (do
-                msgIn <- readMessage inputHandle
+                msgIn <- readMessage readHndl
                 liftIO $ putTextLn $ show msgIn
                 case msgIn of
                     QueryPort -> send (ReplyPort port) >> shutdown
@@ -121,13 +122,13 @@ ipcListener inputHandle outputHandle (Port port) = do
         [Handler handler, Handler handleMsgError]
 
     send :: MsgOut -> m ()
-    send = sendMessage outputHandle
+    send = sendMessage writeHndl
 
     -- Huge catch all, fix this:
     handler :: IOError -> m ()
     handler err = do
         liftIO $ when (isEOFError err) $ logError "its an eof"
-        liftIO $ hClose inputHandle
+        liftIO $ hClose rHndl
         liftIO $ hFlush stdout
         throwM IPCException
 
