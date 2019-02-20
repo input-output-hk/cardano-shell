@@ -1,3 +1,5 @@
+{-| This module provides an example of how NodeIPC works.
+-}
 module NodeIPC.Example where
 
 import           Cardano.Prelude
@@ -9,56 +11,58 @@ import           NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
 import           NodeIPC.Message (readMessage, sendMessage)
 
 import           GHC.IO.Handle.FD (fdToHandle)
-import           System.Posix.Process (getProcessID)
 import           System.Process (createPipeFd)
 
-import           Prelude (String)
 
 --------------------------------------------------------------------------------
 -- Testing
 --------------------------------------------------------------------------------
 
 -- | Example using file descriptor
-exampleWithFD :: IO MsgOut
+--
+-- We want server/client to read only the messages that each should care about
+-- In order to realize this, we need two proccesses with each of them providing
+-- read/write handle.
+--
+-- These processes will then pass each others handle respectively and use it to
+-- communicate with each other.
+--
+-- Server will take client's write handle and server's read handle.
+--
+-- Client will take server's write handle and client's read handle.
+exampleWithFD :: IO (MsgOut, MsgOut)
 exampleWithFD = do
-    processId                   <- getProcessID
 
-    (readFd, writeFd)           <- createPipeFd
+    -- Create file descriptor for client side
+    (readFd, writeFd)   <- createPipeFd
+    clientWriteHandle   <- fdToHandle writeFd
+    clientReadHandle    <- fdToHandle readFd
 
-    writeHandle                 <- fdToHandle writeFd
-    readHandle                  <- fdToHandle readFd
+    -- Create file descriptor for server side
+    (sReadFd, sWriteFd) <- createPipeFd
+    serverWriteHandle   <- fdToHandle sWriteFd
+    serverReadHandle    <- fdToHandle sReadFd
 
-    hSetBuffering writeHandle LineBuffering
-    hSetBuffering readHandle LineBuffering
+    mapM_ (\h -> hSetBuffering h LineBuffering) 
+        [ clientWriteHandle
+        , clientReadHandle
+        , serverWriteHandle
+        , serverReadHandle
+        ]
 
+    -- Start the server
     let nodePort = Port 8090
-    startNodeJsIPC readHandle writeHandle nodePort
+    startNodeJsIPC serverReadHandle clientWriteHandle nodePort
 
-    putTextLn $ "READ   FD - " <> show readFd
-    putTextLn $ "WRITE  FD - " <> show writeFd
-
-    let processFd = "/proc/" <> show processId <> "/fd/"
-    let processWriteFd = processFd <> show writeFd
-
-    let echoMessageToProc :: String
-        echoMessageToProc = "echo \"Ping\" > " <> processWriteFd
-
-    putStrLn $ "ls " <> processFd
-    putStrLn $ echoMessageToProc -- yes, you can do this manually
-
-    -- this is to show that it works using from "inside"
-    -- forever $ do
-    --     threadDelay 1000000
-    --     sendMessage writeHandle Ping
+    -- Use these functions so you don't pass the wrong handle by mistake
+    let readClientMessage :: IO MsgOut
+        readClientMessage = readMessage clientReadHandle
+    
+    let sendServer :: MsgIn -> IO ()
+        sendServer = sendMessage serverWriteHandle
 
     -- Communication starts here
-    sendMessage writeHandle Ping
-    readMessage readHandle -- Pong
-
-
-    -- this is a simple example, apply to server
-    --async $
-    --    forever $ do
-    --        result <- readMessage readHandle
-    --        --line <- hGetLine readHandle
-    --        putTextLn $ "GOT - " <> result
+    started <- readClientMessage
+    sendServer Ping
+    pong <- readClientMessage -- Pong
+    return (started, pong)

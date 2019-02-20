@@ -103,7 +103,7 @@ ipcListener :: forall m . (MonadIO m, MonadCatch m)
             -> m ()
 ipcListener inputHandle outputHandle (Port port) = do
     liftIO $ hSetNewlineMode inputHandle noNewlineTranslation
-    -- send Started --do consider this
+    send Started
     handleMsgIn
   where
     handleMsgIn :: m ()
@@ -115,7 +115,6 @@ ipcListener inputHandle outputHandle (Port port) = do
                 case msgIn of
                     QueryPort -> send (ReplyPort port) >> shutdown
                     Ping      -> do
-                        liftIO $ putTextLn "Got PING!"
                         send Pong
                         shutdown
             )
