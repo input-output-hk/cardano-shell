@@ -91,7 +91,7 @@ getIPCHandle = do
 -- | Start NodeJS IPC with given 'Handle' and 'Port'
 startNodeJsIPC :: (MonadIO m) => ReadHandle -> WriteHandle -> Port -> m ()
 startNodeJsIPC readHandle writeHandle port =
-    liftIO $ void $ async $ ipcListener readHandle writeHandle port
+    liftIO $ void $ ipcListener readHandle writeHandle port
 
 -- | Start IPC listener with given Handle and Port
 ipcListener :: forall m . (MonadIO m, MonadCatch m)

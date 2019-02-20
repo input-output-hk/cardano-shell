@@ -36,7 +36,7 @@ newtype ReadHandle = ReadHandle
 -- | Write handle
 newtype WriteHandle = WriteHandle
     { getWriteHandle :: Handle
-    }
+    } deriving Show
 
 sendMessage :: (MonadIO m, ToJSON msg) => WriteHandle -> msg -> m ()
 sendMessage (WriteHandle hndl) cmd = liftIO $ send $ encode cmd
