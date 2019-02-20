@@ -39,7 +39,6 @@ library
     , text
     , transformers
     -- json & config
-    , contravariant
     , dhall
     , ekg-core
     --, async
@@ -53,8 +52,7 @@ library
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
-                       Rank2Types
-
+                       
   ghc-options:         -Wall
                        -Wcompat
                        -Wincomplete-record-updates

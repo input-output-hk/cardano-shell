@@ -47,12 +47,12 @@ data LoggingParameters = LoggingParameters
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
     { llBasicTrace :: forall m. (MonadIO m) => Trace m
-    , llLogDebug   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llLogInfo    :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llLogNotice  :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llLogWarning :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llLogError   :: forall m. (MonadIO m) => Trace m -> Text -> m ()
-    , llAppendName :: forall m. (MonadIO m) => Text -> Trace m -> m (Trace m)
+    , llLogDebug   :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
+    , llLogInfo    :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
+    , llLogNotice  :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
+    , llLogWarning :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
+    , llLogError   :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
+    , llAppendName :: forall m. (MonadIO m) => Text     -> Trace m -> m (Trace m)
     }
 
 --------------------------------

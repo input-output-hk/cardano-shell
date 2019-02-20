@@ -29,7 +29,7 @@ mainnetConfiguration :: CardanoConfiguration
 mainnetConfiguration =
   CardanoConfiguration
     { ccLogPath             = "./logs/"
-    , ccLogConfig           = "./log-config.yaml"
+    , ccLogConfig           = "./configuration/log-configuration.yaml"
     , ccDBPath              = "./db/"
     , ccApplicationLockFile = ""
     , ccCore =

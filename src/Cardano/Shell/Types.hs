@@ -1,3 +1,5 @@
+{-# LANGUAGE Rank2Types #-}
+
 module Cardano.Shell.Types
     ( CardanoEnvironment (..)
     , CardanoFeature (..)

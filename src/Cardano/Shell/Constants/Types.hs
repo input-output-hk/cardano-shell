@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-
 module Cardano.Shell.Constants.Types
     ( CardanoConfiguration (..)
     , Core (..)
