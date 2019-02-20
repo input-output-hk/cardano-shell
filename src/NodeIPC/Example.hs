@@ -68,6 +68,6 @@ exampleWithFD = do
             , writeHndl
             ]
 
-        let readHandle = ReadHandle readHndl
+        let readHandle  = ReadHandle readHndl
         let writeHandle = WriteHandle writeHndl
         return (readHandle, writeHandle)
