@@ -30,6 +30,9 @@ import           System.Process (createPipeFd)
 -- Server will take client's write handle and server's read handle.
 --
 -- Client will take server's write handle and client's read handle.
+--
+-- This allows the two proccesses to send the message to the other while
+-- reading the response that other had sent.
 exampleWithFD :: IO (MsgOut, MsgOut)
 exampleWithFD = do
 
