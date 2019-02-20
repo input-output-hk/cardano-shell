@@ -88,43 +88,53 @@ getIPCHandle = do
             Right fd  -> liftIO $ fdToHandle fd
 
 -- | Start NodeJS IPC with given 'Handle' and 'Port'
-startNodeJsIPC :: (MonadIO m) => Handle -> Port -> m ()
-startNodeJsIPC portHandle port = liftIO $ void $ async $ ipcListener portHandle port
+startNodeJsIPC :: (MonadIO m) => Handle -> Handle -> Port -> m ()
+startNodeJsIPC inputHandle outputHandle port = 
+    liftIO $ void $ async $ ipcListener inputHandle outputHandle port
 
 -- | Start IPC listener with given Handle and Port
-ipcListener :: forall m . (MonadIO m, MonadCatch m) => Handle -> Port -> m ()
-ipcListener portHandle (Port port) = do
-    liftIO $ hSetNewlineMode portHandle noNewlineTranslation
-    send Started
+ipcListener :: forall m . (MonadIO m, MonadCatch m) 
+            => Handle
+            -- ^ Read handle
+            -> Handle
+            -- ^ Write handle
+            -> Port
+            -- ^ Open port
+            -> m ()
+ipcListener inputHandle outputHandle (Port port) = do
+    liftIO $ hSetNewlineMode inputHandle noNewlineTranslation
+    -- send Started --do consider this
     handleMsgIn
   where
     handleMsgIn :: m ()
     handleMsgIn =
         catches
             (do
-                msgIn <- readMessage portHandle
+                msgIn <- readMessage inputHandle
+                liftIO $ putTextLn $ show msgIn
                 case msgIn of
                     QueryPort -> send (ReplyPort port) >> shutdown
                     Ping      -> do
-                        liftIO $ putTextLn "We got ping"
-                        send Pong >> shutdown
+                        liftIO $ putTextLn "Got PING!"
+                        send Pong
+                        shutdown
             )
         [Handler handler, Handler handleMsgError]
 
     send :: MsgOut -> m ()
-    send = sendMessage portHandle
+    send = sendMessage outputHandle
 
     -- Huge catch all, fix this:
     handler :: IOError -> m ()
     handler err = do
         liftIO $ when (isEOFError err) $ logError "its an eof"
+        liftIO $ hClose inputHandle
         liftIO $ hFlush stdout
-        liftIO $ hClose portHandle
         throwM IPCException
 
     handleMsgError :: MessageException -> m ()
     handleMsgError err = do
-        liftIO $ putTextLn "We got something weird"
+        liftIO $ putTextLn "Unexpected message"
         send $ ParseError $ show err
         handleMsgIn
 

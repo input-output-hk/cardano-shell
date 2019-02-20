@@ -43,6 +43,7 @@ library
     , safe-exceptions
     , text
     , transformers
+    , unix
     -- json & config
     , contravariant
     , dhall
@@ -54,7 +55,6 @@ library
     , transformers
     , concurrency
     , QuickCheck
-    , network >= 2.7
     , process
     , unix
 
