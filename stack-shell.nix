@@ -16,6 +16,6 @@ in
 
   haskell.lib.buildStackProject {
     name = "cardano-shell-env";
-    buildInputs = [ zlib openssl git netcat ];
+    buildInputs = [ zlib openssl git ];
     ghc = haskell.packages.ghc863.ghc;
   }
