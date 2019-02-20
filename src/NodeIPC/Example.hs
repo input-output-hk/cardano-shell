@@ -36,12 +36,12 @@ import           System.Process (createPipeFd)
 exampleWithFD :: IO (MsgOut, MsgOut)
 exampleWithFD = do
 
-    -- Create file descriptor for client side
+    -- Create Handle for client side
     (readFd, writeFd)   <- createPipeFd
     clientWriteHandle   <- fdToHandle writeFd
     clientReadHandle    <- fdToHandle readFd
 
-    -- Create file descriptor for server side
+    -- Create Handle for server side
     (sReadFd, sWriteFd) <- createPipeFd
     serverWriteHandle   <- fdToHandle sWriteFd
     serverReadHandle    <- fdToHandle sReadFd
