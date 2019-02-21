@@ -23,8 +23,10 @@ library
   exposed-modules:
       Cardano.Shell.Lib
     , Cardano.Shell.Types
+    , Cardano.Shell.Presets
     , Cardano.Shell.Configuration.Types
     , Cardano.Shell.Configuration.Lib
+    , Cardano.Shell.Constants.Types
   hs-source-dirs:
       src
   build-depends:
@@ -51,7 +53,7 @@ library
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
-
+                       
   ghc-options:         -Wall
                        -Wcompat
                        -Wincomplete-record-updates

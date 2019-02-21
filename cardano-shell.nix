@@ -11,15 +11,14 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     base cardano-prelude concurrency contravariant dhall directory
-    ekg-core formatting iohk-monitoring QuickCheck safe-exceptions text
-    transformers
+    ekg-core formatting QuickCheck safe-exceptions text transformers
   ];
   executableHaskellDepends = [
-    base cardano-prelude safe-exceptions
+    base cardano-prelude iohk-monitoring safe-exceptions
   ];
   testHaskellDepends = [
     base cardano-prelude concurrency dejafu dhall hspec hspec-contrib
-    hunit-dejafu QuickCheck
+    hunit-dejafu QuickCheck safe-exceptions
   ];
   homepage = "https://github.com/input-output-hk/cardano-shell#readme";
   license = stdenv.lib.licenses.mit;

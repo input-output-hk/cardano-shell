@@ -60,6 +60,12 @@ out/
 # Atom
 .haskell-ghc-mod.json
 
+# VSCode
+cardano-shell.code-workspace
+
+# GHCID Output
+ghcid.txt
+
 # Misc
 .DS_Store
 *.swp
