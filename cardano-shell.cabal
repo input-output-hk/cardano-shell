@@ -39,6 +39,7 @@ library
     , text
     , transformers
     -- json & config
+    , contravariant
     , dhall
     , ekg-core
     --, async
