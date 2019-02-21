@@ -71,12 +71,10 @@ exampleWithProcess = do
 
     void $ forkProcess $ do
         (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-
         sendMessage serverWriteHandle Ping
         let nodePort = Port 8090
         startNodeJsIPC serverReadHandle clientWriteHandle nodePort
         exitImmediately ExitSuccess
-
 
     -- Use these functions so you don't pass the wrong handle by mistake
     let readClientMessage :: IO MsgOut
