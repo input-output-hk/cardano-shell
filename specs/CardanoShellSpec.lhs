@@ -19,6 +19,8 @@
 \usepackage{verbatim}
 % for ld
 \usepackage{bussproofs}
+% for inserting images
+\usepackage{graphicx}
 
 \usetikzlibrary{calc,positioning,arrows}
 
@@ -106,14 +108,21 @@
 
 > {-# LANGUAGE PatternSynonyms #-}
 > {-# LANGUAGE StandaloneDeriving #-}
+> {-# LANGUAGE RankNTypes #-}
 > {-# OPTIONS_GHC -Wno-missing-methods #-}
 > module CardanoShellSpec where
+>
+> import Cardano.Prelude
 >
 > import Data.Map as Map
 > import Data.Set as Set
 >
+> import Cardano.Shell.Update.Types
+>
 > type List a = [a]
 > type Pair a b = (a, b)
+> 
+> pattern Pair :: forall a b. a -> b -> (a, b)
 > pattern Pair x y = (x, y)
 
 > implies :: Bool -> Bool -> Bool
@@ -134,6 +143,7 @@
 
 > instance Eq ClientMessage
 > instance Ord ClientMessage
+
 
 %endif
 
@@ -407,24 +417,59 @@ We can then consider a simple transition function for the client.
 
 % https://tex.stackexchange.com/questions/207240/drawing-simple-sequence-diagram/209079
 
+Currently, the \textit{Daedalus} and the \textit{Node} (this is what I'm calling the node, thus the uppercase) communicate via \textbf{JSON API} once they have settled in on a port via which to communicate (see \hyperref[sec:ipc]{here}). 
 First of all, we need to understand that the blocks in the blockchain contain the version of \textit{Daedalus} (the frontend).
+We can say that \textit{Daedalus}, also known as \textit{frontend} is the \textit{Server}, and that the \textit{Node}, also known as \textit{backend} is the \textit{Client}, which are the same things under different names.
 We can imagine that each block can contain a version of the frontend, which is essentially a hash signature from the installer. That is something that can change in the future, but we can simplify our life by imagining that what the blockchain contains is the link for the installer (which, when simplified, it does).
 
 Let's start simple. Let's take the blockchain and the version into consideration.
+First of all, we can consider what we have in production, since that is something we can base our assumptions on:
+\begin{itemize}
+    \item there are \textbf{101}(which is the number of epochs at the time of writing this) \textbf{epoch}s in the \textbf{blockchain}
+    \item there is 21600 \textbf{slot}s in an \textbf{epoch}
+    \item each \textbf{slot} \textit{may} contains a \textbf{block}
+    \item there could be 21600 \textbf{block}s in an \textbf{epoch}, if all \textbf{slot}s have a \textbf{block}
+    \item each \textbf{block} \textit{may} contain a \textbf{frontend version}
+    \item when a \textbf{hard fork} occurs, the update system stops working and the client needs to download he new frontend manually \textbf{(TODO: Clarify!)}
+\end{itemize}
 
-\begin{tikzpicture}[node distance=2cm,auto,>=stealth']
+We can remove other details for now and simply focus on this simple scenario. The very simple representation can be seen on Figure ~\ref{fig:blockchainEmptyFig}.\\
 
-\node[] (server) {server};
-\node[left = of server] (client) {client};
-\node[below of=server, node distance=5cm] (server_ground) {};
-\node[below of=client, node distance=5cm] (client_ground) {};
-%
-\draw (client) -- (client_ground);
-\draw (server) -- (server_ground);
-\draw[->] ($(client)!0.25!(client_ground)$) -- node[above,scale=1,midway]{Text} ($(server)!0.25!(server_ground)$);
-\draw[<-] ($(client)!0.35!(client_ground)$) -- node[below,scale=1,midway]{Hey} ($(server)!0.35!(server_ground)$);
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{images/blockchain-empty.png}
+    \caption{Empty blockchain without any notions of a version.}
+    \label{fig:blockchainEmptyFig}
+\end{figure}
 
-\end{tikzpicture}
+From there we can add the versions of the frontend installer, as seen on Figure ~\ref{fig:blockchainInstallerFig}.\\
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{images/blockchain-installer-simple.png}
+    \caption{Blockchain with installers on specific blocks.}
+    \label{fig:blockchainInstallerFig}
+\end{figure}
+
+A simple communication between the frontend and the blockchain (backend) can be described as follows.
+
+\begin{figure}[ht]
+  \centering
+
+  \begin{sequencediagram}
+    \newthread{se}{Server}{Server}
+    \newinst{cl}{Client}{Client}
+
+    \postlevel
+    \begin{call}{se}{QueryPort}{cl}{ReplyPort PORT}
+    \end{call}
+    
+  \end{sequencediagram}
+
+  \caption{Message protocol for the full IPC implementation.}
+  \label{fig:ipcFullProtocolFig}
+\end{figure}
+
 
 Let's see how that looks like:
 
