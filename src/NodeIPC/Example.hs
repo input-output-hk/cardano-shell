@@ -4,11 +4,9 @@ module NodeIPC.Example where
 
 import           Cardano.Prelude
 
-import           GHC.IO.Handle.FD (fdToHandle)
-import           Prelude (String)
-import           System.IO (BufferMode (..), hGetLine, hSetBuffering)
-import           System.Posix.Process (forkProcess)
-import           System.Process (createPipeFd)
+import           System.IO (BufferMode (..), hSetBuffering)
+import           System.Posix.Process (exitImmediately, forkProcess)
+import           System.Process (createPipe)
 
 import           NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
                               startNodeJsIPC)
@@ -17,9 +15,7 @@ import           NodeIPC.Message (ReadHandle (..), WriteHandle (..),
 
 getReadWriteHandles :: IO (ReadHandle, WriteHandle)
 getReadWriteHandles = do
-    (readFd, writeFd) <- createPipeFd
-    writeHndl         <- fdToHandle writeFd
-    readHndl          <- fdToHandle readFd
+    (readHndl, writeHndl) <- createPipe
     hSetBuffering readHndl LineBuffering
     hSetBuffering writeHndl LineBuffering
 
@@ -73,53 +69,20 @@ exampleWithProcess :: IO (MsgOut, MsgOut)
 exampleWithProcess = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
 
-    processId <- forkProcess $ do
-        (readFd, writeFd) <- createPipeFd
-        readHndl          <- fdToHandle readFd
-        hSetBuffering readHndl LineBuffering
-        let readHandle  = ReadHandle readHndl
+    void $ forkProcess $ do
+        (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
 
-        -- Pass fd to parent
-        sendToParent clientWriteHandle $ show writeFd
-
+        sendMessage serverWriteHandle Ping
         let nodePort = Port 8090
-        startNodeJsIPC readHandle clientWriteHandle nodePort
+        startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+        exitImmediately ExitSuccess
 
 
     -- Use these functions so you don't pass the wrong handle by mistake
     let readClientMessage :: IO MsgOut
         readClientMessage = readMessage clientReadHandle
 
-    -- Recieve fd from child
-    writeFd <- recieveFromChild clientReadHandle
-
-    -- Error thrown here.
-    serverWriteHandle <- either
-        (\_  -> throwIO FdReadException)
-        (\fd -> WriteHandle <$> fdToHandle fd) -- Bad file descriptor
-        (readEither writeFd)
-
-    -- let processFd = "/proc/" <> show processId <> "/fd/"
-    -- let processWriteFd = processFd <> writeFd
-
-    -- let echoMessageToProc :: String
-    --     echoMessageToProc = "echo \"Ping\" > " <> processWriteFd
-
-    -- putStrLn $ "ls " <> processFd
-    -- putStrLn $ echoMessageToProc -- yes, you can do this manually
-
-    -- Communication starts here
-    started <- readClientMessage
-    sendMessage serverWriteHandle Ping
-    pong <- readClientMessage -- Pong
-    return (started, Pong)
-  where
-    sendToParent :: WriteHandle -> String -> IO ()
-    sendToParent (WriteHandle hndl) = hPutStrLn hndl
-    recieveFromChild :: ReadHandle -> IO String
-    recieveFromChild (ReadHandle hndl) = hGetLine hndl
-
-data IPCException = FdReadException
-    deriving Show
-
-instance Exception IPCException
+    -- Recieve the messages
+    started <- readClientMessage -- Start
+    pong    <- readClientMessage -- Pong
+    return (started, pong)
