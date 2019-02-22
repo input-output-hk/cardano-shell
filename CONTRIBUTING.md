@@ -11,7 +11,7 @@ Workflow
 We maintain all work items in Github issues arranged in milestones. 
 We use `ZenHub` to track the progress of the milestone epics/issues and they can be seen on the `ZenHub` board.
 
-Work items are selected weekly into the *Selected* column of the kanban board. 
+New work items are selected when an issues/epic is completed into the *Backlog* column of the kanban board. 
 These are the items that following the grand plan will be worked on during the current week.
 
 ```
