@@ -18,6 +18,8 @@
 module NodeIPC.Example
     ( exampleWithFD
     , exampleWithProcess
+    -- * For testing
+    , getReadWriteHandles
     ) where
 
 import           Cardano.Prelude

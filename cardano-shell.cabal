@@ -111,7 +111,8 @@ test-suite cardano-shell-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
     , cardano-shell
     , cardano-prelude
     , dhall

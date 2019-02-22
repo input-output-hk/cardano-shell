@@ -32,6 +32,7 @@ import           System.Environment (lookupEnv)
 import           System.IO (hClose, hFlush, hSetNewlineMode,
                             noNewlineTranslation)
 import           System.IO.Error (IOError, isEOFError)
+import           Test.QuickCheck
 
 import           NodeIPC.Message (MessageException, ReadHandle (..),
                                   WriteHandle (..), readMessage, sendMessage)
@@ -46,6 +47,9 @@ data MsgIn
     -- ^ Ping
     deriving (Show, Eq, Generic)
 
+instance Arbitrary MsgIn where
+    arbitrary = elements [QueryPort, Ping]
+
 -- | Message which is send out from Cardano-node
 data MsgOut
     = Started
@@ -55,10 +59,23 @@ data MsgOut
     | Pong
     -- ^ Reply of Ping
     | ParseError Text
-    -- ^ Message notifying the client, that the 
+    -- ^ Message notifying the client, that the
     -- incoming message could not be parsed
     deriving (Show, Eq, Generic)
 
+instance Arbitrary MsgOut where
+    arbitrary = do
+        safeText   <- genSafeText
+        randomPort <- choose (1000,10000) 
+        elements
+            [ Started
+            , ReplyPort randomPort
+            , Pong
+            , ParseError safeText
+            ]
+        where
+          genSafeText :: Gen Text
+          genSafeText = strConv Lenient <$> listOf1 arbitraryASCIIChar
 opts :: Options
 opts = defaultOptions { sumEncoding = ObjectWithSingleField }
 
@@ -72,6 +89,9 @@ instance FromJSON MsgOut where parseJSON = genericParseJSON opts
 newtype Port = Port
     { getPort :: Word16
     }
+
+instance Arbitrary Port where
+    arbitrary = Port <$> arbitrary
 
 data NodeIPCException
     = NodeChannelNotFound
@@ -108,7 +128,7 @@ startNodeJsIPC readHandle writeHandle port =
 --
 -- when the listener recieves 'Ping' it will return 'Pong'.
 --
--- If it recieves 'QueryPort', then the listener 
+-- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
 ipcListener :: forall m . (MonadIO m, MonadCatch m)
             => ReadHandle
