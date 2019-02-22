@@ -13,13 +13,14 @@ We use `ZenHub` to track the progress of the milestone epics/issues and they can
 Work items are selected weekly into the *Selected* column of the kanban board. 
 These are the items that following the grand plan will be worked on during the current week.
 
+```
 |************| |*********| |*************| |***************| |***************|
 | New Issues | | Backlog | | In Progress | |   Review/QA   | |  Done/Closed  |
 |------------| |---------| |-------------| |---------------| |---------------|
 |            | |         | |             | |               | |               |
 |    ...    ---->   ...  --->    ...    ---->     ...     ---->      ...     |
 |____________| |_________| |_____________| |_______________| |_______________|
-
+```
 
 Submitting PRs
 --------------
