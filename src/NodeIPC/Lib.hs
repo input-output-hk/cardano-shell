@@ -76,6 +76,7 @@ instance Arbitrary MsgOut where
         where
           genSafeText :: Gen Text
           genSafeText = strConv Lenient <$> listOf1 arbitraryASCIIChar
+
 opts :: Options
 opts = defaultOptions { sumEncoding = ObjectWithSingleField }
 

@@ -1,3 +1,6 @@
+{-| Module testing Node IPC
+-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module NodeIPCSpec
@@ -17,6 +20,7 @@ import           NodeIPC.Example (exampleWithFD, exampleWithProcess,
 import           NodeIPC.Lib (MsgIn (..), MsgOut (..))
 import           NodeIPC.Message
 
+-- | Test spec for node IPC
 nodeIPCSpec :: Spec
 nodeIPCSpec = do
     describe "Message passing" $ do
@@ -38,6 +42,7 @@ nodeIPCSpec = do
                 assert $ started == Started
                 assert $ pong    == Pong
 
+-- | Test if given message can be send and recieved using 'sendMessage', 'readMessage'
 testMessage :: (FromJSON msg, ToJSON msg, Eq msg) => msg -> Property
 testMessage msg = monadicIO $ do
     (readHndl, writeHndl) <- run getReadWriteHandles
