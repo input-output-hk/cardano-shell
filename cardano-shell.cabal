@@ -23,11 +23,13 @@ library
   exposed-modules:
       Cardano.Shell.Lib
     , Cardano.Shell.Types
+    , Cardano.Shell.Presets
     , Cardano.Shell.Configuration.Types
     , Cardano.Shell.Configuration.Lib
     , NodeIPC.Message
     , NodeIPC.Lib
     , NodeIPC.Example
+    , Cardano.Shell.Constants.Types
   hs-source-dirs:
       src
   build-depends:
@@ -39,7 +41,7 @@ library
     , Cabal
     -- general util
     , directory
-    , formatting     
+    , formatting
     , safe-exceptions
     , text
     , transformers
@@ -61,7 +63,7 @@ library
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
-
+                       
   ghc-options:         -Wall
                        -Wcompat
                        -Wincomplete-record-updates
@@ -131,4 +133,3 @@ test-suite cardano-shell-test
                        -Wincomplete-uni-patterns
                        -Wredundant-constraints
                        -Wpartial-fields
-

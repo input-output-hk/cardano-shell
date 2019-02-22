@@ -1,10 +1,21 @@
 {-# LANGUAGE Rank2Types #-}
 
-module Cardano.Shell.Types where
+module Cardano.Shell.Types
+    ( CardanoEnvironment (..)
+    , CardanoFeature (..)
+    , CardanoFeatureInit (..)
+    , NoDependency (..)
+    , ApplicationEnvironment (..)
+    , CardanoApplication (..)
+    , initializeCardanoEnvironment
+    , applicationProductionMode
+    ) where
 
 import           Cardano.Prelude
 
 import           Control.Concurrent.Classy (MonadConc)
+
+import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 
 import qualified System.Metrics as Ekg
 
@@ -22,20 +33,6 @@ applicationProductionMode :: ApplicationEnvironment -> Bool
 applicationProductionMode Production = True
 applicationProductionMode _          = False
 
--- | Cardano configuration
-data CardanoConfiguration = CardanoConfiguration
-    { ccLogPath                 :: !FilePath
-    -- ^ The location of the log files on the filesystem.
-    , ccLogConfig               :: !FilePath
-    -- ^ The path to the log configuration.
-    , ccDBPath                  :: !FilePath
-    -- ^ The location of the DB on the filesystem.
-    , ccApplicationLockFile     :: !FilePath
-    -- ^ The location of the application lock file that is used
-    -- as a semaphore se we can run just one application
-    -- instance at a time.
-    }
-
 -- | The common runtime environment for all features in the server.
 -- All features have access to this environment.
 data CardanoEnvironment = CardanoEnvironment
@@ -44,7 +41,7 @@ data CardanoEnvironment = CardanoEnvironment
      -- ...
     }
 
--- | Initalise 'ServerEnv'
+-- | Initialise 'ServerEnv'
 initializeCardanoEnvironment :: IO CardanoEnvironment
 initializeCardanoEnvironment = do
     ekgStore <- Ekg.newStore
@@ -52,10 +49,6 @@ initializeCardanoEnvironment = do
         { ceLogEnv      = "To implement"
         , ceEkgStore    = ekgStore
         }
-
-loadCardanoConfiguration :: IO CardanoConfiguration
-loadCardanoConfiguration = do
-    pure $ CardanoConfiguration mempty mempty mempty mempty
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency
@@ -88,4 +81,3 @@ data CardanoFeature = CardanoFeature
     , featureShutdown :: forall m. (MonadIO m, MonadConc m) => m ()
     -- ^ What we call when we shut down the feature.
     }
-

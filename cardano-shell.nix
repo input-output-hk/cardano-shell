@@ -15,11 +15,11 @@ mkDerivation {
     transformers network Cabal process aeson
   ];
   executableHaskellDepends = [
-    base cardano-prelude safe-exceptions
+    base cardano-prelude iohk-monitoring safe-exceptions
   ];
   testHaskellDepends = [
     base cardano-prelude concurrency dejafu dhall hspec hspec-contrib
-    hunit-dejafu QuickCheck
+    hunit-dejafu QuickCheck safe-exceptions
   ];
   homepage = "https://github.com/input-output-hk/cardano-shell#readme";
   license = stdenv.lib.licenses.mit;

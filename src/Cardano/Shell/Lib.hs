@@ -9,7 +9,6 @@ module Cardano.Shell.Lib
     , runApplication
     -- * configuration for running
     , AllFeaturesInitFunction
-    , loadCardanoConfiguration
     , initializeCardanoEnvironment
     , checkIfApplicationIsRunning
     ) where
@@ -31,11 +30,13 @@ import           System.Directory (doesFileExist)
 
 import           Cardano.Shell.Types (ApplicationEnvironment (..),
                                       CardanoApplication (..),
-                                      CardanoConfiguration (..),
                                       CardanoEnvironment, CardanoFeature (..),
                                       applicationProductionMode,
-                                      initializeCardanoEnvironment,
-                                      loadCardanoConfiguration)
+                                      initializeCardanoEnvironment)
+
+import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
+
+import           Cardano.Shell.Presets (mainnetConfiguration)
 
 --------------------------------------------------------------------------------
 -- General exceptions
@@ -152,8 +153,9 @@ type AllFeaturesInitFunction = CardanoConfiguration -> CardanoEnvironment -> IO 
 -- | The wrapper for the application providing modules.
 runApplication :: forall m. (MonadIO m, MonadConc m) => AllFeaturesInitFunction -> IO () -> m ()
 runApplication initializeAllFeatures application = do
+
     -- General
-    cardanoConfiguration            <-  liftIO loadCardanoConfiguration
+    cardanoConfiguration            <-  liftIO $ pure mainnetConfiguration
     cardanoEnvironment              <-  liftIO initializeCardanoEnvironment
 
     let cardanoApplication :: CardanoApplication
@@ -164,5 +166,3 @@ runApplication initializeAllFeatures application = do
 
     -- Here we run them.
     runCardanoApplicationWithFeatures Development cardanoFeatures cardanoApplication
-
-
