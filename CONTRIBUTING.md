@@ -2,6 +2,7 @@ Contributing
 ============
 
 `develop`: development happens here; submit PRs from other branches to this branch
+
 `master` : contains versioned releases that can be referenced from other repos
 
 Workflow
