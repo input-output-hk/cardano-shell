@@ -1,4 +1,19 @@
 {-| This module provides an example of how NodeIPC works.
+--
+--
+-- We want server/client to read only the messages that each should care about
+-- In order to realize this, we need two proccesses with each of them providing
+-- read/write handle.
+--
+-- These processes will then pass each others handle respectively and use it to
+-- communicate with each other.
+--
+-- Server will take client's write handle and server's read handle.
+--
+-- Client will take server's write handle and client's read handle.
+--
+-- This allows the two proccesses to send the message to the other while
+-- reading the response that other had sent.
 -}
 module NodeIPC.Example
     ( exampleWithFD
@@ -32,20 +47,6 @@ getReadWriteHandles = do
 --------------------------------------------------------------------------------
 
 -- | Example using file descriptor
---
--- We want server/client to read only the messages that each should care about
--- In order to realize this, we need two proccesses with each of them providing
--- read/write handle.
---
--- These processes will then pass each others handle respectively and use it to
--- communicate with each other.
---
--- Server will take client's write handle and server's read handle.
---
--- Client will take server's write handle and client's read handle.
---
--- This allows the two proccesses to send the message to the other while
--- reading the response that other had sent.
 exampleWithFD :: IO (MsgOut, MsgOut)
 exampleWithFD = do
 

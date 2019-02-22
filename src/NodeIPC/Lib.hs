@@ -38,7 +38,7 @@ import           NodeIPC.Message (MessageException, ReadHandle (..),
 
 import qualified Prelude as P (Show (..))
 
--- ^ Message expecting from Daedalus
+-- | Message expecting from Daedalus
 data MsgIn
     = QueryPort
     -- ^ Ask which port to use
@@ -46,7 +46,7 @@ data MsgIn
     -- ^ Ping
     deriving (Show, Eq, Generic)
 
--- ^ Message which is send out from Cardano-node
+-- | Message which is send out from Cardano-node
 data MsgOut
     = Started
     -- ^ Notify Daedalus that the node has started
@@ -55,7 +55,8 @@ data MsgOut
     | Pong
     -- ^ Reply of Ping
     | ParseError Text
-    -- ^ Incoming message could not be parsed
+    -- ^ Message notifying the client, that the 
+    -- incoming message could not be parsed
     deriving (Show, Eq, Generic)
 
 opts :: Options
@@ -88,7 +89,7 @@ instance Show NodeIPCException where
 
 instance Exception NodeIPCException
 
--- | Acquire Handle that is used for IPC
+-- | Acquire a Handle that can be used for IPC
 getIPCHandle :: IO Handle
 getIPCHandle = do
     mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
