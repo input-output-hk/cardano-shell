@@ -1,6 +1,9 @@
 {-| This module provides an example of how NodeIPC works.
 -}
-module NodeIPC.Example where
+module NodeIPC.Example
+    ( exampleWithFD
+    , exampleWithProcess
+    ) where
 
 import           Cardano.Prelude
 
@@ -13,12 +16,13 @@ import           NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
 import           NodeIPC.Message (ReadHandle (..), WriteHandle (..),
                                   readMessage, sendMessage)
 
+-- | Create a pipe for interprocess communication and return a
+-- ('ReadHandle', 'WriteHandle') Handle pair.
 getReadWriteHandles :: IO (ReadHandle, WriteHandle)
 getReadWriteHandles = do
     (readHndl, writeHndl) <- createPipe
     hSetBuffering readHndl LineBuffering
     hSetBuffering writeHndl LineBuffering
-
     let readHandle  = ReadHandle readHndl
     let writeHandle = WriteHandle writeHndl
     return (readHandle, writeHandle)
@@ -62,21 +66,23 @@ exampleWithFD = do
     -- Communication starts here
     started <- readClientMessage
     sendServer Ping
-    pong <- readClientMessage -- Pong
+    pong    <- readClientMessage -- Pong
     return (started, pong)
 
+-- | Example of an IPC using process
 exampleWithProcess :: IO (MsgOut, MsgOut)
 exampleWithProcess = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
 
+    -- Create a child process that acts as an server
     void $ forkProcess $ do
         (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
+        -- Send message to server
         sendMessage serverWriteHandle Ping
         let nodePort = Port 8090
         startNodeJsIPC serverReadHandle clientWriteHandle nodePort
         exitImmediately ExitSuccess
 
-    -- Use these functions so you don't pass the wrong handle by mistake
     let readClientMessage :: IO MsgOut
         readClientMessage = readMessage clientReadHandle
 

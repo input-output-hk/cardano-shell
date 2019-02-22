@@ -1,3 +1,8 @@
+{-| Node IPC module. For details please read the spec:
+
+<https://github.com/input-output-hk/cardano-shell/blob/develop/specs/CardanoShellSpec.pdf>
+-}
+
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
@@ -28,8 +33,8 @@ import           System.IO (hClose, hFlush, hSetNewlineMode,
                             noNewlineTranslation)
 import           System.IO.Error (IOError, isEOFError)
 
-import           NodeIPC.Message (MessageException, ReadHandle(..), WriteHandle(..),
-                                  readMessage, sendMessage)
+import           NodeIPC.Message (MessageException, ReadHandle (..),
+                                  WriteHandle (..), readMessage, sendMessage)
 
 import qualified Prelude as P (Show (..))
 
@@ -61,14 +66,19 @@ instance FromJSON MsgIn  where parseJSON = genericParseJSON opts
 instance ToJSON   MsgOut where toEncoding = genericToEncoding opts
 instance FromJSON MsgOut where parseJSON = genericParseJSON opts
 
+-- | Port that is used to communicate between Cardano-node and Daedalus
+-- (e.g 8090)
 newtype Port = Port
     { getPort :: Word16
     }
 
 data NodeIPCException
     = NodeChannelNotFound
+    -- ^ Node channel was not found
     | UnableToParseNodeChannel Text
+    -- ^ Unable to parse given 'Text' as File descriptor
     | IPCException
+    -- ^ Exception thrown when there's something wrong with IPC
 
 instance Show NodeIPCException where
     show = \case
@@ -78,7 +88,7 @@ instance Show NodeIPCException where
 
 instance Exception NodeIPCException
 
--- | Acquire Handle for IPC communication
+-- | Acquire Handle that is used for IPC
 getIPCHandle :: IO Handle
 getIPCHandle = do
     mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
@@ -88,12 +98,17 @@ getIPCHandle = do
             Left err -> throwM $ UnableToParseNodeChannel $ toS err
             Right fd -> liftIO $ fdToHandle fd
 
--- | Start NodeJS IPC with given 'Handle' and 'Port'
+-- | Start NodeJS IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
 startNodeJsIPC :: (MonadIO m) => ReadHandle -> WriteHandle -> Port -> m ()
 startNodeJsIPC readHandle writeHandle port =
     liftIO $ void $ ipcListener readHandle writeHandle port
 
--- | Start IPC listener with given Handle and Port
+-- | Start IPC listener with given Handles and Port
+--
+-- when the listener recieves 'Ping' it will return 'Pong'.
+--
+-- If it recieves 'QueryPort', then the listener 
+-- responds with 'ReplyPort' with 'Port',
 ipcListener :: forall m . (MonadIO m, MonadCatch m)
             => ReadHandle
             -- ^ Read handle

@@ -1,3 +1,7 @@
+{-| This module introduces, low-level message handler that is used to communicate
+between Daedalus and Cardano-node
+-}
+
 module NodeIPC.Message
     ( sendMessage
     , readMessage
@@ -20,6 +24,7 @@ import           System.IO (hFlush, hGetLine)
 
 import qualified Prelude as P (Show (..))
 
+-- | Exception
 data MessageException
     = DecodeFail BSL.ByteString
 
@@ -28,16 +33,17 @@ instance Show MessageException where
 
 instance Exception MessageException
 
--- | Read handle
+-- | Read-only handle
 newtype ReadHandle = ReadHandle
     { getReadHandle :: Handle
     }
 
--- | Write handle
+-- | Write-only handle
 newtype WriteHandle = WriteHandle
     { getWriteHandle :: Handle
-    } deriving Show
+    }
 
+-- | Send JSON message with given 'WriteHandle'
 sendMessage :: (MonadIO m, ToJSON msg) => WriteHandle -> msg -> m ()
 sendMessage (WriteHandle hndl) cmd = liftIO $ send $ encode cmd
   where
@@ -47,18 +53,18 @@ sendMessage (WriteHandle hndl) cmd = liftIO $ send $ encode cmd
             then sendWindowsMessage 1 0 (blob <> "\n") -- What's with 1 and 0?
             else sendLinuxMessage blob
         hFlush hndl
-      where
-        sendWindowsMessage :: Word32 -> Word32 -> BSL.ByteString -> IO ()
-        sendWindowsMessage int1 int2 blob' =
-            BSLC.hPut hndl $ runPut $ mconcat 
-                [ putWord32le int1
-                , putWord32le int2
-                , putWord64le $ fromIntegral $ BSL.length blob'
-                , putLazyByteString blob'
-                ]
-        sendLinuxMessage :: BSL.ByteString -> IO ()
-        sendLinuxMessage = BSLC.hPutStrLn hndl
+    sendWindowsMessage :: Word32 -> Word32 -> BSL.ByteString -> IO ()
+    sendWindowsMessage int1 int2 blob' =
+        BSLC.hPut hndl $ runPut $ mconcat
+            [ putWord32le int1
+            , putWord32le int2
+            , putWord64le $ fromIntegral $ BSL.length blob'
+            , putLazyByteString blob'
+            ]
+    sendLinuxMessage :: BSL.ByteString -> IO ()
+    sendLinuxMessage = BSLC.hPutStrLn hndl
 
+-- | Read JSON message with given 'ReadHandle'
 readMessage :: (MonadIO m, MonadThrow m, FromJSON msg) => ReadHandle -> m msg
 readMessage (ReadHandle hndl) = do
     encodedMessage <- if buildOS == Windows
@@ -68,10 +74,10 @@ readMessage (ReadHandle hndl) = do
             return blob
         else
             liftIO $ linuxReadMessage
-    eitherM
+    either
         (\_ -> throwM $ DecodeFail encodedMessage)
         return
-        (return $ eitherDecode encodedMessage)
+        (eitherDecode encodedMessage)
   where
     windowsReadMessage :: IO (Word32, Word32, BSL.ByteString)
     windowsReadMessage = do
@@ -95,7 +101,3 @@ readMessage (ReadHandle hndl) = do
     readInt32 hnd = do
         bs <- BSL.hGet hnd 4
         pure $ runGet getWord32le bs
-
--- | Monadic generalisation of 'either'.
-eitherM :: Monad m => (a -> m c) -> (b -> m c) -> m (Either a b) -> m c
-eitherM l r x = either l r =<< x
