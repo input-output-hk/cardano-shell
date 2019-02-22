@@ -128,7 +128,6 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl (Port port) = do
         catches
             (do
                 msgIn <- readMessage readHndl
-                liftIO $ putTextLn $ show msgIn
                 case msgIn of
                     QueryPort -> send (ReplyPort port) >> shutdown
                     Ping      -> do
