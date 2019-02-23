@@ -89,7 +89,7 @@ instance FromJSON MsgOut where parseJSON = genericParseJSON opts
 -- (e.g 8090)
 newtype Port = Port
     { getPort :: Word16
-    }
+    } deriving Show
 
 instance Arbitrary Port where
     arbitrary = Port <$> arbitrary
@@ -170,9 +170,8 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl (Port port) = do
 
     handleMsgError :: MessageException -> m ()
     handleMsgError err = do
-        liftIO $ putTextLn "Unexpected message"
+        liftIO $ logError "Unexpected message"
         send $ ParseError $ show err
-        handleMsgIn
 
     shutdown :: m ()
     shutdown = return ()
@@ -183,4 +182,4 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl (Port port) = do
 --------------------------------------------------------------------------------
 
 logError :: Text -> IO ()
-logError = putTextLn <$> show
+logError _ = return ()
