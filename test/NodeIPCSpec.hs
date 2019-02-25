@@ -16,7 +16,8 @@ import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           NodeIPC.Example (exampleWithProcess, getReadWriteHandles)
+import           NodeIPC.Example (exampleWithFD, exampleWithProcess,
+                                  getReadWriteHandles)
 import           NodeIPC.Lib (MsgIn (..), MsgOut (..), NodeIPCException (..),
                               Port (..), startNodeJsIPC)
 import           NodeIPC.Message
@@ -80,9 +81,14 @@ nodeIPCSpec = do
                 wait as
             assert $ isLeft (eResult :: Either NodeIPCException ())
 
-        describe "Process" $ do
-            it "should return Started, Pong" $ monadicIO $ do
+        describe "Examples" $ do
+            it "should return Started, Pong with forkProcess" $ monadicIO $ do
                 (started, pong) <- run exampleWithProcess
+                assert $ started == Started
+                assert $ pong    == Pong
+
+            it "should return Started, Pong with FDs" $ monadicIO $ do
+                (started, pong) <- run exampleWithFD
                 assert $ started == Started
                 assert $ pong    == Pong
 
