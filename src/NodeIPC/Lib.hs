@@ -16,6 +16,7 @@ module NodeIPC.Lib
     , getIPCHandle
     , MsgIn(..)
     , MsgOut(..)
+    , NodeIPCException(..)
     ) where
 
 import           Cardano.Prelude hiding (catches)
@@ -139,23 +140,19 @@ ipcListener :: forall m . (MonadIO m, MonadCatch m)
             -> Port
             -- ^ Open port
             -> m ()
-ipcListener readHndl@(ReadHandle rHndl) writeHndl (Port port) = do
-    liftIO $ hSetNewlineMode rHndl noNewlineTranslation
-    send Started
-    handleMsgIn
+ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port) = do
+    catches handleMsgIn [Handler handler, Handler handleMsgError]
   where
     handleMsgIn :: m ()
-    handleMsgIn =
-        catches
-            (do
-                msgIn <- readMessage readHndl
-                case msgIn of
-                    QueryPort -> send (ReplyPort port) >> shutdown
-                    Ping      -> do
-                        send Pong
-                        shutdown
-            )
-        [Handler handler, Handler handleMsgError]
+    handleMsgIn = do
+        liftIO $ hSetNewlineMode rHndl noNewlineTranslation
+        send Started
+        msgIn <- readMessage readHndl
+        case msgIn of
+            QueryPort -> send (ReplyPort port) >> shutdown
+            Ping      -> do
+                send Pong
+                shutdown
 
     send :: MsgOut -> m ()
     send = sendMessage writeHndl
@@ -165,6 +162,7 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl (Port port) = do
     handler err = do
         liftIO $ when (isEOFError err) $ logError "its an eof"
         liftIO $ hClose rHndl
+        liftIO $ hClose wHndl
         liftIO $ hFlush stdout
         throwM IPCException
 

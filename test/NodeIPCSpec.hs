@@ -10,14 +10,15 @@ module NodeIPCSpec
 import           Cardano.Prelude
 
 import           Data.Aeson (FromJSON, ToJSON, encode)
+import           System.IO.Error (eofErrorType, mkIOError)
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import           NodeIPC.Example (exampleWithProcess, getReadWriteHandles)
-import           NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
-                              startNodeJsIPC)
+import           NodeIPC.Lib (MsgIn (..), MsgOut (..), NodeIPCException (..),
+                              Port (..), startNodeJsIPC)
 import           NodeIPC.Message
 
 -- | Test spec for node IPC
@@ -62,6 +63,22 @@ nodeIPCSpec = do
                 let errorMessage = "Failed to decode given blob: " <> toS (encode randomMsg)
                 assert $ started    == Started
                 assert $ parseError == (ParseError errorMessage)
+
+        it "should throw NodeIPCException when IOError is being thrown" $ monadicIO $ do
+            eResult <- run $ try $ do
+                let port = Port 8000
+                (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
+                (serverReadHandle, _)                 <- getReadWriteHandles
+
+                -- Start the server
+                as <- async $ startNodeJsIPC serverReadHandle clientWriteHandle port
+                (_ :: MsgOut) <- readMessage clientReadHandle
+                -- Create IOError and cancel the thread with it
+                let hndl    = getReadHandle serverReadHandle
+                let ioerror = mkIOError eofErrorType "Failed with eofe" (Just hndl) Nothing
+                cancelWith as ioerror
+                wait as
+            assert $ isLeft (eResult :: Either NodeIPCException ())
 
         describe "Process" $ do
             it "should return Started, Pong" $ monadicIO $ do
