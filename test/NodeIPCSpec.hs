@@ -29,7 +29,7 @@ nodeIPCSpec = do
                 \(randomMsg :: MsgIn) -> testMessage randomMsg
             prop "should be able to send MsgOut messages using handle pairs" $
                 \(randomMsg :: MsgOut) -> testMessage randomMsg
-            prop "should throw exception when incorrect message is sent" $
+            prop "should throw MessageException when incorrect message is sent" $
             -- Send random MsgOut, but try to decode it as MsgIn which would fail
                 \(randomMsg :: MsgOut) -> monadicIO $ do
                     eResult <- run $ try $ do
@@ -39,14 +39,14 @@ nodeIPCSpec = do
                     assert $ isLeft (eResult :: Either MessageException MsgIn)
 
     describe "startNodeJsIPC" $ do
-        it "should return Started, Pong when Ping is sent" $ monadicIO $ do
+        it "should return Started and Pong when client sends message 'Ping'" $ monadicIO $ do
             (started, pong) <- run $ do
                 let port = Port 8090
                 testStartNodeIPC port Ping
             assert $ started == Started
             assert $ pong    == Pong
 
-        prop "should return Started, ReplyPort when QueryPort is sent" $
+        prop "should return Started and ReplyPort when client sends message 'QueryPort'" $
             \(randomPort :: Port) -> monadicIO $ do
             (started, replyPort) <- run $ do
                 testStartNodeIPC randomPort QueryPort
@@ -55,7 +55,7 @@ nodeIPCSpec = do
             assert $ replyPort == (ReplyPort portNum)
 
         prop "should throw exception when incorrect message is sent" $
-        -- Sending MsgOut would fail
+        -- Sending MsgOut would fail since it expects 'MsgIn' to be sent
             \(randomMsg :: MsgOut) (randomPort :: Port) -> monadicIO $ do
                 (started, parseError) <- run $ do
                     testStartNodeIPC randomPort randomMsg

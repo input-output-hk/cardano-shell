@@ -78,6 +78,8 @@ exampleWithProcess = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
 
     -- Create a child process that acts as an server
+    -- Can't apply bracket pattern therefore vulnerable to async exception 
+    -- (e.g crash the program in the middle of process)
     void $ forkProcess $ do
         (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
         -- Send message to server
