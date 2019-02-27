@@ -171,6 +171,9 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port
         liftIO $ logError "Unexpected message"
         send $ ParseError $ show err
 
+    -- (TODO:) Exception handling on broken handles (e.g.handle is already closed etc.)
+    -- Implement here
+    
     shutdown :: m ()
     shutdown = return ()
 

@@ -43,31 +43,29 @@ nodeIPCSpec = do
     describe "startNodeJsIPC" $ do
         it "should return Started and Pong when client sends message 'Ping'" $ monadicIO $ do
             (started, pong) <- run $ do
-                let port = Port 8090
                 testStartNodeIPC port Ping
             assert $ started == Started
             assert $ pong    == Pong
 
         prop "should return Started and ReplyPort when client sends message 'QueryPort'" $
             \(randomPort :: Port) -> monadicIO $ do
-            (started, replyPort) <- run $ do
-                testStartNodeIPC randomPort QueryPort
-            let portNum = getPort randomPort
-            assert $ started   == Started
-            assert $ replyPort == (ReplyPort portNum)
+                (started, replyPort) <- run $ do
+                    testStartNodeIPC randomPort QueryPort
+                let portNum = getPort randomPort
+                assert $ started   == Started
+                assert $ replyPort == (ReplyPort portNum)
 
         prop "should throw exception when incorrect message is sent" $
         -- Sending MsgOut would fail since it expects 'MsgIn' to be sent
-            \(randomMsg :: MsgOut) (randomPort :: Port) -> monadicIO $ do
+            \(randomMsg :: MsgOut) -> monadicIO $ do
                 (started, parseError) <- run $ do
-                    testStartNodeIPC randomPort randomMsg
+                    testStartNodeIPC port randomMsg
                 let errorMessage = "Failed to decode given blob: " <> toS (encode randomMsg)
                 assert $ started    == Started
                 assert $ parseError == (ParseError errorMessage)
 
         it "should throw NodeIPCException when IOError is being thrown" $ monadicIO $ do
             eResult <- run $ try $ do
-                let port = Port 8000
                 (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
                 (serverReadHandle, _)                 <- getReadWriteHandles
 
@@ -91,6 +89,9 @@ nodeIPCSpec = do
                 (started, pong) <- run exampleWithFD
                 assert $ started == Started
                 assert $ pong    == Pong
+  where
+    port :: Port
+    port = Port 8090
 
 -- | Test if given message can be send and recieved using 'sendMessage', 'readMessage'
 testMessage :: (FromJSON msg, ToJSON msg, Eq msg) => msg -> Property
