@@ -3,17 +3,19 @@ module Main (main) where
 import           Cardano.Prelude
 
 import           Cardano.Shell.Features.Logging (LoggingLayer (..),
-                     createLoggingFeature)
+                                                 createLoggingFeature)
 import           Cardano.Shell.Features.Networking (createNetworkingFeature)
 
+import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 import           Cardano.Shell.Lib
+import           Cardano.Shell.Presets (mainnetConfiguration)
 import           Cardano.Shell.Types
 
 main :: IO ()
 main = do
 
     -- General
-    cardanoConfiguration            <-  loadCardanoConfiguration
+    cardanoConfiguration            <-  pure mainnetConfiguration
     cardanoEnvironment              <-  initializeCardanoEnvironment
 
     -- We check that the application is not already running.
@@ -79,13 +81,3 @@ initializeAllFeatures cardanoConfiguration cardanoEnvironment = do
             ]
 
     pure (allCardanoFeatures, loggingLayer)
-
--- | Load the actual configuration.
-loadCardanoConfiguration :: IO CardanoConfiguration
-loadCardanoConfiguration = pure $
-    CardanoConfiguration
-        { ccLogConfigFile       = "./configuration/log-configuration.yaml"
-        , ccDBPath              = mempty
-        , ccApplicationLockFile = mempty
-        }
-

@@ -19,8 +19,7 @@
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
 
-#resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/4b4457e75303ce352223b9723f7771fac6fe0600/snapshot.yaml
-resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/f2802079ba2c07c4d408e3c0aa000fc363792398/snapshot.yaml
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/7f8544ae9e162b6664f07093227edb148f1c8a5b/snapshot.yaml
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -85,5 +84,4 @@ extra-deps:
 # compiler-check: newer-minor
 
 nix:
-  enable: true
   shell-file: stack-shell.nix

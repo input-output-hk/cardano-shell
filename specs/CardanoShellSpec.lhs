@@ -117,7 +117,7 @@
 > import Data.Map as Map
 > import Data.Set as Set
 >
-> import Cardano.Shell.Update.Types
+> -- import Cardano.Shell.Update.Types
 >
 > type List a = [a]
 > type Pair a b = (a, b)

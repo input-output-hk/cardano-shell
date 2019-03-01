@@ -105,7 +105,7 @@ genBlockchainWithInstaller = do
 -- append it to the existing list.
 fetchUpdatesFromBlockchain :: Blockchain -> [InstallerVersion]
 fetchUpdatesFromBlockchain (Blockchain blockchain) =
-    let foldrInstallerVersions installerVersions (epoch, slots) = installerVersions <> filter isJust (map slotContainsInstaller slots)
+    let foldrInstallerVersions installerVersions (_epoch, slots) = installerVersions <> filter isJust (map slotContainsInstaller slots)
     in  catMaybes (foldl foldrInstallerVersions mempty (M.toList blockchain))
 
 -- | Fetch latest installer version, or latest update from the blockchain.

@@ -1,10 +1,21 @@
 {-# LANGUAGE Rank2Types #-}
 
-module Cardano.Shell.Types where
+module Cardano.Shell.Types
+    ( CardanoEnvironment (..)
+    , CardanoFeature (..)
+    , CardanoFeatureInit (..)
+    , NoDependency (..)
+    , ApplicationEnvironment (..)
+    , CardanoApplication (..)
+    , initializeCardanoEnvironment
+    , applicationProductionMode
+    ) where
 
 import           Cardano.Prelude
 
 import           Control.Concurrent.Classy (MonadConc)
+
+import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 
 import qualified System.Metrics as Ekg
 
@@ -22,18 +33,6 @@ applicationProductionMode :: ApplicationEnvironment -> Bool
 applicationProductionMode Production = True
 applicationProductionMode _          = False
 
--- | Cardano configuration
-data CardanoConfiguration = CardanoConfiguration
-    { ccLogConfigFile           :: !FilePath
-    -- ^ The path to the log configuration.
-    , ccDBPath                  :: !FilePath
-    -- ^ The location of the DB on the filesystem.
-    , ccApplicationLockFile     :: !FilePath
-    -- ^ The location of the application lock file that is used
-    -- as a semaphore se we can run just one application
-    -- instance at a time.
-    }
-
 -- | The common runtime environment for all features in the server.
 -- All features have access to this environment.
 data CardanoEnvironment = CardanoEnvironment
@@ -42,22 +41,13 @@ data CardanoEnvironment = CardanoEnvironment
      -- ...
     }
 
--- | Initalise 'ServerEnv'
+-- | Initialise 'ServerEnv'
 initializeCardanoEnvironment :: IO CardanoEnvironment
 initializeCardanoEnvironment = do
     ekgStore <- Ekg.newStore
     return CardanoEnvironment
         { ceLogEnv      = "To implement"
         , ceEkgStore    = ekgStore
-        }
-
--- | We don't want to import anything from other modules here, so we keep this empty.
-loadEmptyCardanoConfiguration :: IO CardanoConfiguration
-loadEmptyCardanoConfiguration = pure $
-    CardanoConfiguration
-        { ccLogConfigFile       = mempty
-        , ccDBPath              = mempty
-        , ccApplicationLockFile = mempty
         }
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
