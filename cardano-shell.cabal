@@ -27,33 +27,32 @@ library
     , Cardano.Shell.Configuration.Types
     , Cardano.Shell.Configuration.Lib
     , Cardano.Shell.Constants.Types
+    , Cardano.Shell.Features.Logging
+
   hs-source-dirs:
       src
+      app
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
     -- general util
+    , contravariant
+    , concurrency
+    , dhall
+    , ekg-core
     , directory
     , formatting
+    , iohk-monitoring
     , safe-exceptions
     , text
     , transformers
     -- json & config
-    , contravariant
-    , dhall
-    , ekg-core
-    --, async
-    --, concurrency
-    , QuickCheck
-    , text
-    , transformers
-    , concurrency
     , QuickCheck
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
-                       
+
   ghc-options:         -Wall
                        -Wcompat
                        -Wincomplete-record-updates
