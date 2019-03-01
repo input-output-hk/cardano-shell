@@ -15,7 +15,7 @@
 \usepackage{tikz}
 \usetikzlibrary{automata, positioning, arrows}
 \usepackage{pgf-umlsd}
-%\usepgflibrary{arrows} % for pgf-umlsd
+\usepgflibrary{arrows} % for pgf-umlsd
 \usepackage{verbatim}
 % for ld
 \usepackage{bussproofs}
@@ -144,6 +144,10 @@
 > instance Eq ClientMessage
 > instance Ord ClientMessage
 
+> uniqueKeys :: Ord k => Map k v -> Set k
+> uniqueKeys = Set.fromList . Map.keys
+
+
 
 %endif
 
@@ -200,7 +204,7 @@ When the \textit{Daedalus} calls and starts the \textit{Node}, it also opens up 
 First, the \textit{Node} sends the message \textbf{Started} back to the \textit{Daedalus} to inform him that the communcation can begin.
 After that, \textit{Daedalus} sends the message \textbf{QueryPort} to the \textit{Node}, and the \textit{Node} responds with the free port it found using \textbf{ReplyPort PORTNUM} that is going to be used for starting the HTTP "server" serving the \textit{JSON API} which they can then use to communicate further.\\
 
-Since the communication is bi-directional, currently the communication is using \textbf{files}.\\
+The communication is bi-directional, on Windows it is using \textbf{named pipes}.\\
 
 We can easily generalize this concept. We can say that \textit{Daedalus} is the \textit{Server}, and that the \textit{Node} is the \textit{Client}. Since the communication is bi-directional, we can say that either way, but we can presume that the \textit{Server} is the process which is started first.
 
@@ -388,12 +392,13 @@ The state machine diagram that can be used to represent this can be seen here.\\
     \newinst{cl}{Client}{Client}
 
     \postlevel
-    \begin{call}{cl}{Started}{se}{}
-    \end{call}
+    %\begin{sdloop}{Run Loop}
+        \mess{cl}{Started}{se}
 
-    \postlevel
-    \begin{call}{se}{QueryPort}{cl}{ReplyPort PORT}
-    \end{call}
+        \postlevel
+        \begin{call}{se}{QueryPort}{cl}{ReplyPort PORT}
+        \end{call}
+    %\end{sdloop}
     
   \end{sequencediagram}
 
@@ -430,7 +435,7 @@ First of all, we can consider what we have in production, since that is somethin
     \item each \textbf{slot} \textit{may} contains a \textbf{block}
     \item there could be 21600 \textbf{block}s in an \textbf{epoch}, if all \textbf{slot}s have a \textbf{block}
     \item each \textbf{block} \textit{may} contain a \textbf{frontend version}
-    \item when a \textbf{hard fork} occurs, the update system stops working and the client needs to download he new frontend manually \textbf{(TODO: Clarify!)}
+    \item when a \textbf{hard fork} occurs, the update system stops working and the client needs to download the new frontend manually, in our current versions we have that covered since the protocol version 1 and 2 will contain the information about the update
 \end{itemize}
 
 We can remove other details for now and simply focus on this simple scenario. The very simple representation can be seen on Figure ~\ref{fig:blockchainEmptyFig}.\\
@@ -451,27 +456,77 @@ From there we can add the versions of the frontend installer, as seen on Figure 
     \label{fig:blockchainInstallerFig}
 \end{figure}
 
-A simple communication between the frontend and the blockchain (backend) can be described as follows.
+\newpage 
+\section{Update mechanism with Launcher}
+\label{sec:updateWithLauncher}
+
+A simple communication between the frontend and the blockchain (backend) can be described as seen on Figure ~\ref{fig:updateFullProtocolFig}.\\
 
 \begin{figure}[ht]
   \centering
 
   \begin{sequencediagram}
-    \newthread{se}{Server}{Server}
-    \newinst{cl}{Client}{Client}
+    \newthread{us}{User}{User}
+    \newinst{cl}{Cardano launcher}{CardanoLauncher}
+    \newinst{da}{Daedalus}{Daedalus}
+    \newinst{cn}{Cardano node}{CardanoNode}
+    \newinst{bl}{Blockchain}{Blockchain}
+    
+    \postlevel
+    \mess{us}{Starts the wallet}{cl}
+    
+    \postlevel
+    \begin{callself}{cl}{Checks for presence of installer file}{}
+    \end{callself}
+    
+    \postlevel
+    \mess{cl}{Starts the Daedalus frontend with node arguments}{da}
+    
+    \postlevel
+    \mess{da}{Starts the node with node arguments from Daedalus}{cn}
 
     \postlevel
-    \begin{call}{se}{QueryPort}{cl}{ReplyPort PORT}
+    \begin{call}{cn}{Fetch blocks until we synced up 100\%}{bl}{Return missing blocks}
+    \end{call}
+
+    \postlevel
+    \begin{call}{da}{GET api/internal/next-update}{cn}{Return the applicationName and version }
+    
+        \postlevel
+        \begin{call}{cn}{Any new updates on the blockchain?}{bl}{Found new update linux64 HASH}
+        \end{call}
+        
     \end{call}
     
+    \postlevel
+    \begin{call}{da}{"An update is available - restart?"}{us}{Yes, update now}
+    \end{call}
+    
+    \postlevel
+    \begin{call}{da}{GET /api/internal/apply-update}{cn}{Exit failure 20}
+    \end{call}
+    
+    \postlevel
+    \mess{da}{Exit failure 20}{cl}
+    
+    \postlevel
+    \begin{callself}{cl}{Restart}{}
+    \end{callself}
+
   \end{sequencediagram}
 
-  \caption{Message protocol for the full IPC implementation.}
-  \label{fig:ipcFullProtocolFig}
+  \caption{Update system protocol}
+  \label{fig:updateFullProtocolFig}
 \end{figure}
 
+The specifics of how this works are a bit tricky. We use the \textbf{cardano-launcher} also known simply as \textbf{Launcher} is something we require so we can have control over the (Electron) Daedalus process and to be sure it shuts down correctly.
+The installers are different on different platforms:
+\begin{itemize}
+    \item on Windows we download and use the installer directly
+    \item on Mac we use the pkg file, which we open using an external program
+    \item on Linux we use a custom script called the \textit{update-runner}, which we build using Nix
+\end{itemize}
 
-Let's see how that looks like:
-
+For now, we can abstract over that and say that each platform has it's own specifics.
 
 \end{document}
