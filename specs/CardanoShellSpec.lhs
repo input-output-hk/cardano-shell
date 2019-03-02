@@ -46,7 +46,10 @@
 \renewcommand\Varid[1]{\mathit{#1}}
 
 %if style /= newcode
+%format Map (x) (y) = "(" x "\mapsto" y ")"
+%format Ord (x) = "\forall " x "(" x " \in Ordered)"
 %format :: = "\in"
+%format => = ". "
 %format List a = a "^{*}"
 %format Pair (a) (b) = a "\times " b
 %format Set = "\mathbb{P}"
@@ -114,10 +117,10 @@
 >
 > import Cardano.Prelude
 >
-> import Data.Map as Map
-> import Data.Set as Set
+> import qualified Data.Map as Map
+> import qualified Data.Set as Set
 >
-> -- import Cardano.Shell.Update.Types
+> import Cardano.Shell.Update.Types
 >
 > type List a = [a]
 > type Pair a b = (a, b)
@@ -144,11 +147,6 @@
 > instance Eq ClientMessage
 > instance Ord ClientMessage
 
-> uniqueKeys :: Ord k => Map k v -> Set k
-> uniqueKeys = Set.fromList . Map.keys
-
-
-
 %endif
 
 % The following are some more specific formatting directives.
@@ -158,7 +156,11 @@
 % producing LaTeX output.
 
 %if style /= newcode
+%format uniqueKeys = "\named{uniqueKeys}"
 %format fullProtocol = "\named{fullProtocol}"
+%format blockchainEpochs = "\named{blockchainEpochs}"
+%format blockchainContents = "\named{blockchainContents}"
+%format fetchUniqueUpdatesFromBlockchain = "\named{fetchUniqueUpdatesFromBlockchain}"
 %endif
 
 \begin{document}
@@ -528,5 +530,32 @@ The installers are different on different platforms:
 \end{itemize}
 
 For now, we can abstract over that and say that each platform has it's own specifics.
+
+Let's take a look at some of the key functions we will use:
+
+%It's really sad to separate the declaration from the definition, but that's what a 
+% specification is all about, isn't it!?!
+
+> uniqueKeys :: Ord k => Map k v -> Set k
+
+> blockchainContents :: Blockchain -> Map Epoch [Slot]
+
+> blockchainEpochs :: Blockchain -> Set Epoch
+> blockchainEpochs = uniqueKeys . blockchainContents
+
+> fetchUniqueUpdatesFromBlockchain :: Blockchain -> Set InstallerVersion
+
+
+%if style == newcode
+
+> uniqueKeys = Set.fromList . Map.keys
+
+> blockchainContents = getBlockchainContents
+
+> fetchUniqueUpdatesFromBlockchain (Blockchain blockchain) =
+>     let foldrInstallerVersions installerVersions (_epoch, slots) = installerVersions <> filter isJust (map slotContainsInstaller slots)
+>     in  Set.fromList $ catMaybes (foldl foldrInstallerVersions mempty (Map.toList blockchain))
+
+%endif
 
 \end{document}

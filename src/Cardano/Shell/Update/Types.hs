@@ -8,7 +8,7 @@ import           Test.QuickCheck
 
 
 -- Types we need to check the behaviour.
-data Blockchain = Blockchain (Map Epoch [Slot])
+data Blockchain = Blockchain { getBlockchainContents :: !(Map Epoch [Slot]) }
     deriving (Eq, Show)
 
 data Epoch = Epoch Int
@@ -24,10 +24,10 @@ data BlockHash = BlockHash !Text
     deriving (Eq, Show)
 
 data InstallerVersion = InstallerVersion InstallerHash
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
 
 data InstallerHash = InstallerHash !Text
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
 
 -- | The wrapper is used since this is an important distinction.
 newtype LatestInstallerVersion = LatestInstallerVersion
