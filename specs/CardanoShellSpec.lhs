@@ -9,6 +9,7 @@
 
 \usepackage{iohk}
 \usepackage{mathpazo}
+% \usepackage{amsmath}
 \usepackage{semantic}
 \usepackage{hyperref}
 % for UML
@@ -442,6 +443,30 @@ First of all, we can consider what we have in production, since that is somethin
 
 We can remove other details for now and simply focus on this simple scenario. The very simple representation can be seen on Figure ~\ref{fig:blockchainEmptyFig}.\\
 
+We then consider how to describe such a system. Since we can observe computation/digital systems as state machines, we proceed to do so.
+We can imagine a simple system that only deals with the blocks and slots in a very simple manner.
+We have the blockchain which is the collection of blocks (which then contain transactions, but we omit that since we are not really interested in them right now). The node which we run is a simple machine which reads those blocks into (local) memory so it can know at what state the whole blockchain is. Given that, we can simply imagine the node syncing blocks each "tick" (a unit of time which we are not interested in, but serves as a snapshot of state of our system in some interesting moments). We can observe such synchronization as seen here:
+
+\[
+    \centering
+    \begin{bmatrix}
+        node\_state = 0 \\
+        blockchain\_state = 234 \\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        node\_state = 6 \\
+        blockchain\_state = 234 \\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        node\_state = 23 \\
+        blockchain\_state = 234 \\
+    \end{bmatrix}
+\]
+
+In this case, we have a situation where the node synced 6 blocks after the first transition, and it synced further 17 blocks on the second transition. The blockchain state remains constants for the purpose of simplification, it would ordinarily increase.\\
+
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{images/blockchain-empty.png}
@@ -457,6 +482,38 @@ From there we can add the versions of the frontend installer, as seen on Figure 
     \caption{Blockchain with installers on specific blocks.}
     \label{fig:blockchainInstallerFig}
 \end{figure}
+
+The somewhat enriched structure requires of us to summon additional states into the process, since we do need some way of describing what happens to the machine itself with these new changes. Or, to put it simply, we need to add information about installer versions on blocks in order to check how it all fits together.
+We can simplify the idea by first imagining that we only have one update in the whole blockchain, and add additional installers as we further refine the idea.
+We can imagine that we have the installer on block 22, and that the installer is updated once we sync up to that point, as seen here:
+
+\[
+    \centering
+    \begin{bmatrix}
+        node\_state = 0 \\
+        blockchain\_state = 234 \\
+        installer\_version\_block = 22 \\
+        latest\_installer\_version = 0 \\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        node\_state = 6 \\
+        blockchain\_state = 234 \\
+        installer\_version\_block = 22 \\
+        latest\_installer\_version = 0 \\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        node\_state = 23 \\
+        blockchain\_state = 234 \\
+        installer\_version\_block = 22 \\
+        \textbf{latest\_installer\_version = 22}  \\
+    \end{bmatrix}
+\]
+
+As you can imagine, this fits very nicely into testing, for example \textbf{state-machine-quickcheck} (or similar), using Haskell.\\
+
+We can advance such idea by increasing the number of updates in the blockchain and by asssigning different versions of the installers to each update.
 
 \newpage 
 \section{Update mechanism with Launcher}
@@ -557,5 +614,7 @@ Let's take a look at some of the key functions we will use:
 >     in  Set.fromList $ catMaybes (foldl foldrInstallerVersions mempty (Map.toList blockchain))
 
 %endif
+
+If we take a look at the typical state transition of such a system, we can easily imagine something like this.
 
 \end{document}
