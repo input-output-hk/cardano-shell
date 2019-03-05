@@ -67,7 +67,7 @@ data MsgOut
 instance Arbitrary MsgOut where
     arbitrary = do
         safeText   <- genSafeText
-        randomPort <- choose (1000,10000) 
+        randomPort <- choose (1000,10000)
         elements
             [ Started
             , ReplyPort randomPort
@@ -81,10 +81,17 @@ instance Arbitrary MsgOut where
 opts :: Options
 opts = defaultOptions { sumEncoding = ObjectWithSingleField }
 
-instance ToJSON   MsgIn  where toEncoding = genericToEncoding opts
-instance FromJSON MsgIn  where parseJSON = genericParseJSON opts
-instance ToJSON   MsgOut where toEncoding = genericToEncoding opts
-instance FromJSON MsgOut where parseJSON = genericParseJSON opts
+instance ToJSON   MsgIn  where
+    toEncoding = genericToEncoding opts
+
+instance FromJSON MsgIn  where
+    parseJSON = genericParseJSON opts
+
+instance ToJSON   MsgOut where
+    toEncoding = genericToEncoding opts
+
+instance FromJSON MsgOut where
+    parseJSON = genericParseJSON opts
 
 -- | Port that is used to communicate between Cardano-node and Daedalus
 -- (e.g 8090)
@@ -132,14 +139,7 @@ startNodeJsIPC readHandle writeHandle port =
 --
 -- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
-ipcListener :: forall m . (MonadIO m, MonadCatch m)
-            => ReadHandle
-            -- ^ Read handle
-            -> WriteHandle
-            -- ^ Write handle
-            -> Port
-            -- ^ Open port
-            -> m ()
+ipcListener :: forall m . (MonadIO m, MonadCatch m) => ReadHandle -> WriteHandle -> Port -> m ()
 ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port) = do
     catches handleMsgIn [Handler handler, Handler handleMsgError]
   where
@@ -160,10 +160,11 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port
     -- Huge catch all, fix this:
     handler :: IOError -> m ()
     handler err = do
-        liftIO $ when (isEOFError err) $ logError "its an eof"
-        liftIO $ hClose rHndl
-        liftIO $ hClose wHndl
-        liftIO $ hFlush stdout
+        liftIO $ do
+            when (isEOFError err) $ logError "its an eof"
+            hClose rHndl
+            hClose wHndl
+            hFlush stdout
         throwM IPCException
 
     handleMsgError :: MessageException -> m ()
@@ -173,7 +174,6 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port
 
     -- (TODO:) Exception handling on broken handles (e.g.handle is already closed etc.)
     -- Implement here
-    
     shutdown :: m ()
     shutdown = return ()
 
