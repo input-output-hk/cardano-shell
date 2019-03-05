@@ -26,13 +26,18 @@ library
     , Cardano.Shell.Presets
     , Cardano.Shell.Configuration.Types
     , Cardano.Shell.Configuration.Lib
+    -- update system
+    , CardanoShellSpec
+    , Cardano.Shell.Update.Types
     , Cardano.Shell.Constants.Types
   hs-source-dirs:
       src
+    , specs
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
     -- general util
+    , containers
     , directory
     , formatting
     , safe-exceptions
