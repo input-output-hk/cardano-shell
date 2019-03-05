@@ -478,7 +478,7 @@ A simple communication between the frontend and the blockchain (backend) can be 
     \mess{us}{Starts the wallet}{cl}
     
     \postlevel
-    \begin{callself}{cl}{Checks for presence of installer file}{}
+    \begin{callself}{cl}{Checks for presence of installer file, if available then start the update installer}{}
     \end{callself}
     
     \postlevel
