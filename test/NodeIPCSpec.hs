@@ -19,7 +19,7 @@ import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 import           NodeIPC.Example (exampleWithFD, exampleWithProcess,
                                   getReadWriteHandles)
 import           NodeIPC.Lib (MsgIn (..), MsgOut (..), NodeIPCException (..),
-                              Port (..), startNodeJsIPC)
+                              Port (..), startNodeJsIPC, MessageSendFailure(..))
 import           NodeIPC.Message
 
 -- | Test spec for node IPC
@@ -62,7 +62,7 @@ nodeIPCSpec = do
                     testStartNodeIPC port randomMsg
                 let errorMessage = "Failed to decode given blob: " <> toS (encode randomMsg)
                 assert $ started    == Started
-                assert $ parseError == (ParseError errorMessage)
+                assert $ parseError == (MessageOutFailure $ ParseError errorMessage)
 
         it "should throw NodeIPCException when IOError is being thrown" $ monadicIO $ do
             eResult <- run $ try $ do

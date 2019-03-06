@@ -111,3 +111,5 @@ exchange-topology.yaml
 launch_*
 result*
 cabal.config
+
+test-state
