@@ -29,9 +29,13 @@ library
     , NodeIPC.Message
     , NodeIPC.Lib
     , NodeIPC.Example
+    -- update system
+    , CardanoShellSpec
+    , Cardano.Shell.Update.Types
     , Cardano.Shell.Constants.Types
   hs-source-dirs:
       src
+    , specs
   build-depends:
       aeson
     , base >=4.7 && <5
@@ -40,6 +44,7 @@ library
     , cardano-prelude
     , Cabal
     -- general util
+    , containers
     , directory
     , formatting
     , safe-exceptions

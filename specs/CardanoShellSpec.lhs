@@ -9,16 +9,19 @@
 
 \usepackage{iohk}
 \usepackage{mathpazo}
+% \usepackage{amsmath}
 \usepackage{semantic}
 \usepackage{hyperref}
 % for UML
 \usepackage{tikz}
 \usetikzlibrary{automata, positioning, arrows}
 \usepackage{pgf-umlsd}
-%\usepgflibrary{arrows} % for pgf-umlsd
+\usepgflibrary{arrows} % for pgf-umlsd
 \usepackage{verbatim}
 % for ld
 \usepackage{bussproofs}
+% for inserting images
+\usepackage{graphicx}
 
 \usetikzlibrary{calc,positioning,arrows}
 
@@ -44,7 +47,10 @@
 \renewcommand\Varid[1]{\mathit{#1}}
 
 %if style /= newcode
+%format Map (x) (y) = "(" x "\mapsto" y ")"
+%format Ord (x) = "\forall " x "(" x " \in Ordered)"
 %format :: = "\in"
+%format => = ". "
 %format List a = a "^{*}"
 %format Pair (a) (b) = a "\times " b
 %format Set = "\mathbb{P}"
@@ -106,14 +112,21 @@
 
 > {-# LANGUAGE PatternSynonyms #-}
 > {-# LANGUAGE StandaloneDeriving #-}
+> {-# LANGUAGE RankNTypes #-}
 > {-# OPTIONS_GHC -Wno-missing-methods #-}
 > module CardanoShellSpec where
 >
-> import Data.Map as Map
-> import Data.Set as Set
+> import Cardano.Prelude
+>
+> import qualified Data.Map as Map
+> import qualified Data.Set as Set
+>
+> import Cardano.Shell.Update.Types
 >
 > type List a = [a]
 > type Pair a b = (a, b)
+> 
+> pattern Pair :: forall a b. a -> b -> (a, b)
 > pattern Pair x y = (x, y)
 
 > implies :: Bool -> Bool -> Bool
@@ -144,7 +157,11 @@
 % producing LaTeX output.
 
 %if style /= newcode
+%format uniqueKeys = "\named{uniqueKeys}"
 %format fullProtocol = "\named{fullProtocol}"
+%format blockchainEpochs = "\named{blockchainEpochs}"
+%format blockchainContents = "\named{blockchainContents}"
+%format fetchUniqueUpdatesFromBlockchain = "\named{fetchUniqueUpdatesFromBlockchain}"
 %endif
 
 \begin{document}
@@ -190,7 +207,7 @@ When the \textit{Daedalus} calls and starts the \textit{Node}, it also opens up 
 First, the \textit{Node} sends the message \textbf{Started} back to the \textit{Daedalus} to inform him that the communcation can begin.
 After that, \textit{Daedalus} sends the message \textbf{QueryPort} to the \textit{Node}, and the \textit{Node} responds with the free port it found using \textbf{ReplyPort PORTNUM} that is going to be used for starting the HTTP "server" serving the \textit{JSON API} which they can then use to communicate further.\\
 
-Since the communication is bi-directional, currently the communication is using \textbf{files}.\\
+The communication is bi-directional, on Windows it is using \textbf{named pipes}.\\
 
 We can easily generalize this concept. We can say that \textit{Daedalus} is the \textit{Server}, and that the \textit{Node} is the \textit{Client}. Since the communication is bi-directional, we can say that either way, but we can presume that the \textit{Server} is the process which is started first.
 
@@ -378,12 +395,13 @@ The state machine diagram that can be used to represent this can be seen here.\\
     \newinst{cl}{Client}{Client}
 
     \postlevel
-    \begin{call}{cl}{Started}{se}{}
-    \end{call}
+    %\begin{sdloop}{Run Loop}
+        \mess{cl}{Started}{se}
 
-    \postlevel
-    \begin{call}{se}{QueryPort}{cl}{ReplyPort PORT}
-    \end{call}
+        \postlevel
+        \begin{call}{se}{QueryPort}{cl}{ReplyPort PORT}
+        \end{call}
+    %\end{sdloop}
     
   \end{sequencediagram}
 
@@ -407,26 +425,196 @@ We can then consider a simple transition function for the client.
 
 % https://tex.stackexchange.com/questions/207240/drawing-simple-sequence-diagram/209079
 
+Currently, the \textit{Daedalus} and the \textit{Node} (this is what I'm calling the node, thus the uppercase) communicate via \textbf{JSON API} once they have settled in on a port via which to communicate (see \hyperref[sec:ipc]{here}). 
 First of all, we need to understand that the blocks in the blockchain contain the version of \textit{Daedalus} (the frontend).
+We can say that \textit{Daedalus}, also known as \textit{frontend} is the \textit{Server}, and that the \textit{Node}, also known as \textit{backend} is the \textit{Client}, which are the same things under different names.
 We can imagine that each block can contain a version of the frontend, which is essentially a hash signature from the installer. That is something that can change in the future, but we can simplify our life by imagining that what the blockchain contains is the link for the installer (which, when simplified, it does).
 
 Let's start simple. Let's take the blockchain and the version into consideration.
+First of all, we can consider what we have in production, since that is something we can base our assumptions on:
+\begin{itemize}
+    \item there are \textbf{101}(which is the number of epochs at the time of writing this) \textbf{epoch}s in the \textbf{blockchain}
+    \item there is 21600 \textbf{slot}s in an \textbf{epoch}
+    \item each \textbf{slot} \textit{may} contains a \textbf{block}
+    \item there could be 21600 \textbf{block}s in an \textbf{epoch}, if all \textbf{slot}s have a \textbf{block}
+    \item each \textbf{block} \textit{may} contain a \textbf{frontend version}
+    \item when a \textbf{hard fork} occurs, the update system stops working and the client needs to download the new frontend manually, in our current versions we have that covered since the protocol version 1 and 2 will contain the information about the update
+\end{itemize}
 
-\begin{tikzpicture}[node distance=2cm,auto,>=stealth']
+We can remove other details for now and simply focus on this simple scenario. The very simple representation can be seen on Figure ~\ref{fig:blockchainEmptyFig}.\\
 
-\node[] (server) {server};
-\node[left = of server] (client) {client};
-\node[below of=server, node distance=5cm] (server_ground) {};
-\node[below of=client, node distance=5cm] (client_ground) {};
-%
-\draw (client) -- (client_ground);
-\draw (server) -- (server_ground);
-\draw[->] ($(client)!0.25!(client_ground)$) -- node[above,scale=1,midway]{Text} ($(server)!0.25!(server_ground)$);
-\draw[<-] ($(client)!0.35!(client_ground)$) -- node[below,scale=1,midway]{Hey} ($(server)!0.35!(server_ground)$);
+We then consider how to describe such a system. Since we can observe computation/digital systems as state machines, we proceed to do so.
+We can imagine a simple system that only deals with the blocks and slots in a very simple manner.
+We have the blockchain which is the collection of blocks (which then contain transactions, but we omit that since we are not really interested in them right now). The node which we run is a simple machine which reads those blocks into (local) memory so it can know at what state the whole blockchain is. Given that, we can simply imagine the node syncing blocks each "tick" (a unit of time which we are not interested in, but serves as a snapshot of state of our system in some interesting moments). We can observe such synchronization as seen here:
 
-\end{tikzpicture}
+\[
+    \centering
+    \begin{bmatrix}
+        node\_state = 0 \\
+        blockchain\_state = 234 \\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        node\_state = 6 \\
+        blockchain\_state = 234 \\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        node\_state = 23 \\
+        blockchain\_state = 234 \\
+    \end{bmatrix}
+\]
 
-Let's see how that looks like:
+In this case, we have a situation where the node synced 6 blocks after the first transition, and it synced further 17 blocks on the second transition. The blockchain state remains constants for the purpose of simplification, it would ordinarily increase.\\
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{images/blockchain-empty.png}
+    \caption{Empty blockchain without any notions of a version.}
+    \label{fig:blockchainEmptyFig}
+\end{figure}
+
+From there we can add the versions of the frontend installer, as seen on Figure ~\ref{fig:blockchainInstallerFig}.\\
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{images/blockchain-installer-simple.png}
+    \caption{Blockchain with installers on specific blocks.}
+    \label{fig:blockchainInstallerFig}
+\end{figure}
+
+The somewhat enriched structure requires of us to summon additional states into the process, since we do need some way of describing what happens to the machine itself with these new changes. Or, to put it simply, we need to add information about installer versions on blocks in order to check how it all fits together.
+We can simplify the idea by first imagining that we only have one update in the whole blockchain, and add additional installers as we further refine the idea.
+We can imagine that we have the installer on block 22, and that the installer is updated once we sync up to that point, as seen here:
+
+\[
+    \centering
+    \begin{bmatrix}
+        node\_state = 0 \\
+        blockchain\_state = 234 \\
+        installer\_version\_block = 22 \\
+        latest\_installer\_version = 0 \\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        node\_state = 6 \\
+        blockchain\_state = 234 \\
+        installer\_version\_block = 22 \\
+        latest\_installer\_version = 0 \\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        node\_state = 23 \\
+        blockchain\_state = 234 \\
+        installer\_version\_block = 22 \\
+        \textbf{latest\_installer\_version = 22}  \\
+    \end{bmatrix}
+\]
+
+As you can imagine, this fits very nicely into testing, for example \textbf{state-machine-quickcheck} (or similar), using Haskell.\\
+
+We can advance such idea by increasing the number of updates in the blockchain and by asssigning different versions of the installers to each update.
+
+\newpage 
+\section{Update mechanism with Launcher}
+\label{sec:updateWithLauncher}
+
+A simple communication between the frontend and the blockchain (backend) can be described as seen on Figure ~\ref{fig:updateFullProtocolFig}.\\
+
+\begin{figure}[ht]
+  \centering
+
+  \begin{sequencediagram}
+    \newthread{us}{User}{User}
+    \newinst{cl}{Cardano launcher}{CardanoLauncher}
+    \newinst{da}{Daedalus}{Daedalus}
+    \newinst{cn}{Cardano node}{CardanoNode}
+    \newinst{bl}{Blockchain}{Blockchain}
+    
+    \postlevel
+    \mess{us}{Starts the wallet}{cl}
+    
+    \postlevel
+    \begin{callself}{cl}{Checks for presence of installer file, if available then start the update installer}{}
+    \end{callself}
+    
+    \postlevel
+    \mess{cl}{Starts the Daedalus frontend with node arguments}{da}
+    
+    \postlevel
+    \mess{da}{Starts the node with node arguments from Daedalus}{cn}
+
+    \postlevel
+    \begin{call}{cn}{Fetch blocks until we synced up 100\%}{bl}{Return missing blocks}
+    \end{call}
+
+    \postlevel
+    \begin{call}{da}{GET api/internal/next-update}{cn}{Return the applicationName and version }
+    
+        \postlevel
+        \begin{call}{cn}{Any new updates on the blockchain?}{bl}{Found new update linux64 HASH}
+        \end{call}
+        
+    \end{call}
+    
+    \postlevel
+    \begin{call}{da}{"An update is available - restart?"}{us}{Yes, update now}
+    \end{call}
+    
+    \postlevel
+    \begin{call}{da}{GET /api/internal/apply-update}{cn}{Exit failure 20}
+    \end{call}
+    
+    \postlevel
+    \mess{da}{Exit failure 20}{cl}
+    
+    \postlevel
+    \begin{callself}{cl}{Restart}{}
+    \end{callself}
+
+  \end{sequencediagram}
+
+  \caption{Update system protocol}
+  \label{fig:updateFullProtocolFig}
+\end{figure}
+
+The specifics of how this works are a bit tricky. We use the \textbf{cardano-launcher} also known simply as \textbf{Launcher} is something we require so we can have control over the (Electron) Daedalus process and to be sure it shuts down correctly.
+The installers are different on different platforms:
+\begin{itemize}
+    \item on Windows we download and use the installer directly
+    \item on Mac we use the pkg file, which we open using an external program
+    \item on Linux we use a custom script called the \textit{update-runner}, which we build using Nix
+\end{itemize}
+
+For now, we can abstract over that and say that each platform has it's own specifics.
+
+Let's take a look at some of the key functions we will use:
+
+%It's really sad to separate the declaration from the definition, but that's what a 
+% specification is all about, isn't it!?!
+
+> uniqueKeys :: Ord k => Map k v -> Set k
+
+> blockchainContents :: Blockchain -> Map Epoch [Slot]
+
+> blockchainEpochs :: Blockchain -> Set Epoch
+> blockchainEpochs = uniqueKeys . blockchainContents
+
+> fetchUniqueUpdatesFromBlockchain :: Blockchain -> Set InstallerVersion
+
+
+%if style == newcode
+
+> uniqueKeys = Set.fromList . Map.keys
+
+> blockchainContents = getBlockchainContents
+
+> fetchUniqueUpdatesFromBlockchain (Blockchain blockchain) =
+>     let foldrInstallerVersions installerVersions (_epoch, slots) = installerVersions <> filter isJust (map slotContainsInstaller slots)
+>     in  Set.fromList $ catMaybes (foldl foldrInstallerVersions mempty (Map.toList blockchain))
+
+%endif
+
+If we take a look at the typical state transition of such a system, we can easily imagine something like this.
 
 \end{document}
