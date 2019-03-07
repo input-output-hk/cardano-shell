@@ -17,4 +17,3 @@ main = do
     let writeHndl = WriteHandle hndl
     let port = Port 8090
     startNodeJsIPC readHndl writeHndl port
-    

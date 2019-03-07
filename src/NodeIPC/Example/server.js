@@ -4,13 +4,14 @@
 // On console, run: "node src/NodeIPC/Example/server.js"
 
 // This process implicitly sets env varibale "NODE_CHANNEL_FD" with a fd it currently uses
+// Hakell node will then fetch that fd, and use it to communicate with this script.
 const child_process = require("child_process");
 const fs            = require('fs');
 
 // Filepath to resources
 const parentPath = "./src/NodeIPC/Example";
 const testDir = `${parentPath}/test-state`;
-const logPath = `${parentPath}/test-state/cardano-node.log`;
+const logPath = `${testDir}/cardano-node.log`;
 
 // Acquiring resources
 function acquire () {
@@ -67,7 +68,6 @@ function getSubProcess(writeStream, timerid) {
 
 // Actual process
 // I honestly don't know if this can clean-up the resources if async exception occurs
-console.log(new Date(), "in parent")
 let logfile = acquire ();
 
 logfile.on("open", function () {
@@ -75,6 +75,7 @@ logfile.on("open", function () {
   let subprocess = getSubProcess(logfile, timerid);
 
   // Action
+  console.log(new Date(), "in parent");
   console.log(new Date(), "log file opened");
   subprocess.send({QueryPort:[]});
   
