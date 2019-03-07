@@ -3,8 +3,9 @@ const child_process = require("child_process");
 const fs            = require('fs');
 
 // Filepath to resources
-const testDir = "test-state";
-const logPath = "test-state/cardano-node.log"
+const parentPath = "./src/NodeIPC/Example";
+const testDir = `${parentPath}/test-state`;
+const logPath = `${parentPath}/test-state/cardano-node.log`;
 
 // Acquiring resources
 function acquire () {
@@ -25,8 +26,10 @@ function cleanup () {
 // Return Subprocess with given writeStream and timerid
 function getSubProcess(writeStream, timerid) {
   const subproc = child_process.spawn("stack", [
-        "exec"
-      , "node-ipc"
+        "runghc"
+      , "--package=cardano-shell"
+      , "--package=cardano-prelude"
+      , "src/NodeIPC/Example/Node.hs"
     ], {
       stdio: [ "inherit", writeStream, writeStream, "ipc" ]
     });
