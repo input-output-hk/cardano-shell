@@ -30,12 +30,11 @@ library
     -- NodeIPC
     , Cardano.Shell.NodeIPC.Message
     , Cardano.Shell.NodeIPC.Lib
+    , Cardano.Shell.NodeIPC.Example
     -- Update system
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
     , Cardano.Shell.Constants.Types
-  other-modules:
-      Cardano.Shell.NodeIPC.Example
   hs-source-dirs:
       src
     , specs
