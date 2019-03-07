@@ -23,18 +23,21 @@ library
   exposed-modules:
       Cardano.Shell.Lib
     , Cardano.Shell.Types
-    , Cardano.Shell.Presets
     -- Configuration
     , Cardano.Shell.Configuration.Types
     , Cardano.Shell.Configuration.Lib
     -- NodeIPC
-    , Cardano.Shell.NodeIPC.Message
-    , Cardano.Shell.NodeIPC.Lib
-    , Cardano.Shell.NodeIPC.Example
+    , Cardano.Shell.NodeIPC
     -- Update system
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
+    -- Constants
     , Cardano.Shell.Constants.Types
+    , Cardano.Shell.Presets
+  other-modules:
+      Cardano.Shell.NodeIPC.Example
+    , Cardano.Shell.NodeIPC.Lib
+    , Cardano.Shell.NodeIPC.Message
   hs-source-dirs:
       src
     , specs

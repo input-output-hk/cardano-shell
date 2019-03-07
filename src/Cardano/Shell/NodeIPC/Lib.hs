@@ -105,7 +105,7 @@ instance ToJSON MessageSendFailure where
     toEncoding = genericToEncoding opts
 
 -- | Port that is used to communicate between Cardano-node and Daedalus
--- (e.g 8090)
+-- (e.g @8090@)
 newtype Port = Port
     { getPort :: Word16
     } deriving Show
