@@ -57,7 +57,7 @@ exampleWithFD = do
 
     -- Start the server
     let nodePort = Port 8090
-    void $ async $ startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+    _ <- async $ startNodeJsIPC serverReadHandle clientWriteHandle nodePort
 
     -- Use these functions so you don't pass the wrong handle by mistake
     let readClientMessage :: IO MsgOut
@@ -80,7 +80,7 @@ exampleWithProcess = do
     -- Create a child process that acts as an server
     -- Can't apply bracket pattern therefore vulnerable to async exception 
     -- (e.g crash the program in the middle of process)
-    void $ forkProcess $ do
+    _ <- forkProcess $ do
         (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
         -- Send message to server
         sendMessage serverWriteHandle Ping

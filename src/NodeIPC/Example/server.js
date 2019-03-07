@@ -1,7 +1,7 @@
 // How to run the script:
 // Node JS version: v11.10.1
-// Have everything built beforehand.
-// on console, run: "node src/NodeIPC/Example/server.js"
+// Have everything built beforehand
+// On console, run: "node src/NodeIPC/Example/server.js"
 
 // This process implicitly sets env varibale "NODE_CHANNEL_FD" with a fd it currently uses
 const child_process = require("child_process");
