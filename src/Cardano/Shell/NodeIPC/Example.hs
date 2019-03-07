@@ -15,7 +15,7 @@
 -- This allows the two proccesses to send the message to the other while
 -- reading the response that other had sent.
 -}
-module NodeIPC.Example
+module Cardano.Shell.NodeIPC.Example
     ( exampleWithFD
     , exampleWithProcess
     -- * For testing
@@ -28,10 +28,11 @@ import           System.IO (BufferMode (..), hSetBuffering)
 import           System.Posix.Process (exitImmediately, forkProcess)
 import           System.Process (createPipe)
 
-import           NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
-                              startNodeJsIPC)
-import           NodeIPC.Message (ReadHandle (..), WriteHandle (..),
-                                  readMessage, sendMessage)
+import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
+                                            startNodeJsIPC)
+import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
+                                                WriteHandle (..), readMessage,
+                                                sendMessage)
 
 -- | Create a pipe for interprocess communication and return a
 -- ('ReadHandle', 'WriteHandle') Handle pair.

@@ -7,8 +7,8 @@
 module Node where
 
 import           Cardano.Prelude
-import           NodeIPC.Lib (Port (..), getIPCHandle, startNodeJsIPC)
-import           NodeIPC.Message (ReadHandle (..), WriteHandle (..))
+import           Cardano.Shell.NodeIPC.Lib (Port (..), getIPCHandle, startNodeJsIPC)
+import           Cardano.Shell.NodeIPC.Message (ReadHandle (..), WriteHandle (..))
 
 main :: IO ()
 main = do

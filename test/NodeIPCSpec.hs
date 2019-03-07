@@ -16,11 +16,11 @@ import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           NodeIPC.Example (exampleWithFD, exampleWithProcess,
+import           Cardano.Shell.NodeIPC.Example (exampleWithFD, exampleWithProcess,
                                   getReadWriteHandles)
-import           NodeIPC.Lib (MsgIn (..), MsgOut (..), NodeIPCException (..),
+import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..), NodeIPCException (..),
                               Port (..), startNodeJsIPC, MessageSendFailure(..))
-import           NodeIPC.Message
+import           Cardano.Shell.NodeIPC.Message
 
 -- | Test spec for node IPC
 nodeIPCSpec :: Spec

@@ -1,7 +1,7 @@
 // How to run the script:
 // Node JS version: v11.10.1
 // Have everything built beforehand
-// On console, run: "node src/NodeIPC/Example/server.js"
+// On console, run: "node src/Cardano/Shell/NodeIPC/Example/server.js"
 
 // This process implicitly sets env varibale "NODE_CHANNEL_FD" with a fd it currently uses
 // Hakell node will then fetch that fd, and use it to communicate with this script.
@@ -9,9 +9,9 @@ const child_process = require("child_process");
 const fs            = require('fs');
 
 // Filepath to resources
-const parentPath = "./src/NodeIPC/Example";
-const testDir = `${parentPath}/test-state`;
-const logPath = `${testDir}/cardano-node.log`;
+const parentPath = "./src/Cardano/Shell/NodeIPC/Example";
+const testDir    = `${parentPath}/test-state`;
+const logPath    = `${testDir}/cardano-node.log`;
 
 // Acquiring resources
 function acquire () {
@@ -35,7 +35,7 @@ function getSubProcess(writeStream, timerid) {
         "runghc"
       , "--package=cardano-shell"
       , "--package=cardano-prelude"
-      , "src/NodeIPC/Example/Node.hs"
+      , `${parentPath}/Node.hs`
     ], {
       stdio: [ "inherit", writeStream, writeStream, "ipc" ]
     });

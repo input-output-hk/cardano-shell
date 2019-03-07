@@ -26,9 +26,9 @@ library
     , Cardano.Shell.Presets
     , Cardano.Shell.Configuration.Types
     , Cardano.Shell.Configuration.Lib
-    , NodeIPC.Message
-    , NodeIPC.Lib
-    , NodeIPC.Example
+    , Cardano.Shell.NodeIPC.Message
+    , Cardano.Shell.NodeIPC.Lib
+    , Cardano.Shell.NodeIPC.Example
     -- update system
     , CardanoShellSpec
     , Cardano.Shell.Update.Types

@@ -9,7 +9,7 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module NodeIPC.Lib
+module Cardano.Shell.NodeIPC.Lib
     ( startNodeJsIPC
     , Port (..)
     -- * Testing
@@ -36,7 +36,7 @@ import           System.IO (hClose, hFlush, hSetNewlineMode,
 import           System.IO.Error (IOError, isEOFError)
 import           Test.QuickCheck
 
-import           NodeIPC.Message (MessageException, ReadHandle (..),
+import           Cardano.Shell.NodeIPC.Message (MessageException, ReadHandle (..),
                                   WriteHandle (..), readMessage, sendMessage)
 
 import qualified Prelude as P (Show (..))
