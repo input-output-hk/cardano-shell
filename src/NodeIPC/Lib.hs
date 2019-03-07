@@ -12,7 +12,7 @@
 module NodeIPC.Lib
     ( startNodeJsIPC
     , Port (..)
-    -- * For testing
+    -- * Testing
     , getIPCHandle
     , MsgIn(..)
     , MsgOut(..)
@@ -164,6 +164,7 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port
             Ping      -> do
                 send Pong
                 shutdown
+            -- TODO:Handle them nicely
             MessageInFailure _ -> shutdown
 
     send :: MsgOut -> m ()
