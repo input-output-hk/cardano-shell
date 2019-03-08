@@ -23,16 +23,21 @@ library
   exposed-modules:
       Cardano.Shell.Lib
     , Cardano.Shell.Types
-    , Cardano.Shell.Presets
+    -- Configuration
     , Cardano.Shell.Configuration.Types
     , Cardano.Shell.Configuration.Lib
-    , NodeIPC.Message
-    , NodeIPC.Lib
-    , NodeIPC.Example
-    -- update system
+    -- NodeIPC
+    , Cardano.Shell.NodeIPC
+    -- Update system
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
+    -- Constants
     , Cardano.Shell.Constants.Types
+    , Cardano.Shell.Presets
+  other-modules:
+      Cardano.Shell.NodeIPC.Example
+    , Cardano.Shell.NodeIPC.Lib
+    , Cardano.Shell.NodeIPC.Message
   hs-source-dirs:
       src
     , specs
@@ -93,6 +98,29 @@ executable cardano-shell-exe
     , safe-exceptions
     -- features
     , iohk-monitoring
+  default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
+                       OverloadedStrings
+
+  ghc-options:         -Wall
+                       -Werror
+                       -Wcompat
+                       -Wincomplete-record-updates
+                       -Wincomplete-uni-patterns
+                       -Wredundant-constraints
+                       -Wpartial-fields
+
+executable node-ipc
+  main-is: Main.hs
+  other-modules:
+      Paths_cardano_shell
+  hs-source-dirs:
+      app/NodeIPC
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , cardano-shell
+    , cardano-prelude
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings

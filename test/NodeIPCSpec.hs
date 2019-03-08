@@ -16,11 +16,13 @@ import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           NodeIPC.Example (exampleWithFD, exampleWithProcess,
-                                  getReadWriteHandles)
-import           NodeIPC.Lib (MsgIn (..), MsgOut (..), NodeIPCException (..),
-                              Port (..), startNodeJsIPC)
-import           NodeIPC.Message
+import           Cardano.Shell.NodeIPC (MessageException,
+                                        MessageSendFailure (..), MsgIn (..),
+                                        MsgOut (..), NodeIPCException (..),
+                                        Port (..), ReadHandle (..),
+                                        exampleWithFD, exampleWithProcess,
+                                        getReadWriteHandles, readMessage,
+                                        sendMessage, startNodeJsIPC)
 
 -- | Test spec for node IPC
 nodeIPCSpec :: Spec
@@ -62,7 +64,7 @@ nodeIPCSpec = do
                     testStartNodeIPC port randomMsg
                 let errorMessage = "Failed to decode given blob: " <> toS (encode randomMsg)
                 assert $ started    == Started
-                assert $ parseError == (ParseError errorMessage)
+                assert $ parseError == (MessageOutFailure $ ParseError errorMessage)
 
         it "should throw NodeIPCException when IOError is being thrown" $ monadicIO $ do
             eResult <- run $ try $ do

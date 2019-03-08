@@ -15,7 +15,7 @@
 -- This allows the two proccesses to send the message to the other while
 -- reading the response that other had sent.
 -}
-module NodeIPC.Example
+module Cardano.Shell.NodeIPC.Example
     ( exampleWithFD
     , exampleWithProcess
     -- * For testing
@@ -28,10 +28,11 @@ import           System.IO (BufferMode (..), hSetBuffering)
 import           System.Posix.Process (exitImmediately, forkProcess)
 import           System.Process (createPipe)
 
-import           NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
-                              startNodeJsIPC)
-import           NodeIPC.Message (ReadHandle (..), WriteHandle (..),
-                                  readMessage, sendMessage)
+import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
+                                            startNodeJsIPC)
+import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
+                                                WriteHandle (..), readMessage,
+                                                sendMessage)
 
 -- | Create a pipe for interprocess communication and return a
 -- ('ReadHandle', 'WriteHandle') Handle pair.
@@ -57,7 +58,7 @@ exampleWithFD = do
 
     -- Start the server
     let nodePort = Port 8090
-    void $ async $ startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+    _ <- async $ startNodeJsIPC serverReadHandle clientWriteHandle nodePort
 
     -- Use these functions so you don't pass the wrong handle by mistake
     let readClientMessage :: IO MsgOut
@@ -78,9 +79,9 @@ exampleWithProcess = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
 
     -- Create a child process that acts as an server
-    -- Can't apply bracket pattern therefore vulnerable to async exception 
+    -- Can't apply bracket pattern therefore vulnerable to async exception
     -- (e.g crash the program in the middle of process)
-    void $ forkProcess $ do
+    _ <- forkProcess $ do
         (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
         -- Send message to server
         sendMessage serverWriteHandle Ping
