@@ -2,10 +2,10 @@
 between Daedalus and Cardano-node
 -}
 
-module NodeIPC.Message
+module Cardano.Shell.NodeIPC.Message
     ( sendMessage
     , readMessage
-    , MessageException
+    , MessageException(..)
     , ReadHandle(..)
     , WriteHandle(..)
     ) where

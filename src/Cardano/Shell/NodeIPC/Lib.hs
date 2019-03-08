@@ -9,14 +9,15 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module NodeIPC.Lib
+module Cardano.Shell.NodeIPC.Lib
     ( startNodeJsIPC
     , Port (..)
-    -- * For testing
+    -- * Testing
     , getIPCHandle
     , MsgIn(..)
     , MsgOut(..)
     , NodeIPCException(..)
+    , MessageSendFailure(..)
     ) where
 
 import           Cardano.Prelude hiding (catches)
@@ -35,7 +36,7 @@ import           System.IO (hClose, hFlush, hSetNewlineMode,
 import           System.IO.Error (IOError, isEOFError)
 import           Test.QuickCheck
 
-import           NodeIPC.Message (MessageException, ReadHandle (..),
+import           Cardano.Shell.NodeIPC.Message (MessageException, ReadHandle (..),
                                   WriteHandle (..), readMessage, sendMessage)
 
 import qualified Prelude as P (Show (..))
@@ -46,6 +47,7 @@ data MsgIn
     -- ^ Ask which port to use
     | Ping
     -- ^ Ping
+    | MessageInFailure MessageSendFailure
     deriving (Show, Eq, Generic)
 
 instance Arbitrary MsgIn where
@@ -59,9 +61,12 @@ data MsgOut
     -- ^ Reply of QueryPort
     | Pong
     -- ^ Reply of Ping
-    | ParseError Text
-    -- ^ Message notifying the client, that the
-    -- incoming message could not be parsed
+    | MessageOutFailure MessageSendFailure
+    deriving (Show, Eq, Generic)
+
+data MessageSendFailure
+    = ParseError Text
+    | GeneralFailure
     deriving (Show, Eq, Generic)
 
 instance Arbitrary MsgOut where
@@ -72,7 +77,7 @@ instance Arbitrary MsgOut where
             [ Started
             , ReplyPort randomPort
             , Pong
-            , ParseError safeText
+            , MessageOutFailure $ ParseError safeText
             ]
         where
           genSafeText :: Gen Text
@@ -93,8 +98,14 @@ instance ToJSON   MsgOut where
 instance FromJSON MsgOut where
     parseJSON = genericParseJSON opts
 
+instance FromJSON MessageSendFailure where
+    parseJSON = genericParseJSON opts
+
+instance ToJSON MessageSendFailure where
+    toEncoding = genericToEncoding opts
+
 -- | Port that is used to communicate between Cardano-node and Daedalus
--- (e.g 8090)
+-- (e.g @8090@)
 newtype Port = Port
     { getPort :: Word16
     } deriving Show
@@ -153,6 +164,8 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port
             Ping      -> do
                 send Pong
                 shutdown
+            -- TODO:Handle them nicely
+            MessageInFailure _ -> shutdown
 
     send :: MsgOut -> m ()
     send = sendMessage writeHndl
@@ -170,7 +183,7 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port
     handleMsgError :: MessageException -> m ()
     handleMsgError err = do
         liftIO $ logError "Unexpected message"
-        send $ ParseError $ show err
+        send $ MessageOutFailure $ ParseError $ show err
 
     -- (TODO:) Exception handling on broken handles (e.g.handle is already closed etc.)
     -- Implement here
