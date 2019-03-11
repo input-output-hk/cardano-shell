@@ -79,15 +79,16 @@ exampleWithProcess = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
 
     -- Create a child process that acts as an server
-    -- Can't apply bracket pattern therefore vulnerable to async exception
-    -- (e.g crash the program in the middle of process)
-    _ <- forkProcess $ do
-        (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-        -- Send message to server
-        sendMessage serverWriteHandle Ping
-        let nodePort = Port 8090
-        startNodeJsIPC serverReadHandle clientWriteHandle nodePort
-        exitImmediately ExitSuccess
+    _ <- finally  
+            (forkProcess $ do
+                (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
+                -- Send message to server
+                sendMessage serverWriteHandle Ping
+                let nodePort = Port 8090
+                startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+                exitImmediately ExitSuccess
+            )
+            (return ())
 
     let readClientMessage :: IO MsgOut
         readClientMessage = readMessage clientReadHandle
