@@ -1,40 +1,64 @@
----- MODULE IPCProtocol ----
+------------------------------ MODULE IPCProtocol -------------------------
 
-VARIABLES pc   
+(* 
 
-\* All the states that exist. 
-\* Don't forget to uncheck "Deadlock" since this is a long-running program!
-TypeOK      ==     pc \in {"Started", "Ping", "Pong", "QueryPort", "ReplyPort"}
+In Linux versions before 2.6.11, the capacity of a pipe was the same as 
+the system page size (e.g., 4096 bytes on i386). Since Linux 2.6.11, 
+the pipe capacity is 16 pages (i.e., 65,536 bytes in a system with a 
+page size of 4096 bytes).
 
-\* Initial state.
-Init        ==     pc = "Started"
+*)
 
-\* These definitions are about the simple ping-pong protocol.
-InitToPing  ==  /\ pc  = "Started"
-                /\ pc' = "Ping"
-                
-PingPong    ==  /\ pc  = "Ping"
-                /\ pc' = "Pong"
-                
-PongInit    ==  /\ pc  = "Pong"
-                /\ pc' = "Started"
+EXTENDS Naturals, Sequences
 
-\* These definitions are about the port communication.
-InitToQuery ==  /\ pc  = "Started"
-                /\ pc' = "QueryPort"
+VARIABLES   inQueueIn, inQueueOut, inQueue, 
+            outQueueIn, outQueueOut, outQueue
             
-QueryPort   ==  /\ pc  = "QueryPort"
-                /\ pc' = "ReplyPort"
-                
-ReplyInit   ==  /\ pc  = "ReplyPort"
-                /\ pc' = "Started"
-            
-\* Transitions.
-Next        ==  TypeOK /\
-                \/ InitToPing 
-                \/ InitToQuery 
-                \/ PingPong 
-                \/ QueryPort
-                \/ ReplyInit
+CONSTANT Message, MessagePairs, N
+ASSUME (N \in Nat) /\ (N > 0) \* Both queues have the same number of messages
+ASSUME (MessagePairs \in [msgIn: Message, msgOut: Message]) 
 
-==============================
+\* A simple type invariant
+TypeOK   == /\ MessagePairs \in [msgIn: Message, msgOut: Message]
+            /\ \A msgPair   \in MessagePairs: msgPair.msgIn /= msgPair.msgOut
+            /\ inQueue      \in Seq(Message)
+            /\ outQueue     \in Seq(Message)
+
+\* Util function
+Last(s)  == s[Len(s)]
+
+---------------------------------------------------------------------------
+
+InQueue  == INSTANCE BoundedFIFO WITH in <- inQueueIn, out <- inQueueOut, q <- inQueue
+OutQueue == INSTANCE BoundedFIFO WITH in <- outQueueIn, out <- outQueueOut, q <- outQueue
+
+\* Make sure that if the in queue is non-empty, given some length in queue of x, 
+\* out queue will eventually reach a point where it will be at least that size, if not greater
+MsgTrans ==
+  \A x \in Nat :
+    (Len(inQueue) > 0) => Len(inQueue) = x ~> Len(outQueue) >= x
+    
+    
+\* Make sure that once the message goes in, it must go out as it's pair
+MsgIncl  ==
+  \A msgPair \in MessagePairs :
+    (Len(inQueue) > 0) => Last(inQueue) = msgPair.msgIn ~> Head(outQueue) = msgPair.msgOut
+    
+---------------------------------------------------------------------------
+
+Init     == /\ InQueue!Init
+            /\ OutQueue!Init
+
+BNext    == /\ InQueue!BNext
+            /\ OutQueue!BNext
+           
+Spec     == /\ MsgTrans 
+            /\ MsgIncl 
+            /\ Init 
+            /\ [][BNext]_<<inQueueIn,inQueueOut,inQueue,outQueueIn,outQueueOut,outQueue>>
+
+----------------------------------------------------------------------------
+
+THEOREM Spec => []TypeOK
+
+============================================================================
