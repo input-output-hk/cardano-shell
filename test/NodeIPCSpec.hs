@@ -10,6 +10,7 @@ module NodeIPCSpec
 import           Cardano.Prelude
 
 import           Data.Aeson (FromJSON, ToJSON, encode)
+import           System.IO (hClose)
 import           System.IO.Error (eofErrorType, mkIOError)
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.QuickCheck (prop)
@@ -20,9 +21,9 @@ import           Cardano.Shell.NodeIPC (MessageException,
                                         MessageSendFailure (..), MsgIn (..),
                                         MsgOut (..), NodeIPCException (..),
                                         Port (..), ReadHandle (..),
-                                        exampleWithFD, exampleWithProcess,
-                                        getReadWriteHandles, readMessage,
-                                        sendMessage, startIPC)
+                                        WriteHandle (..), exampleWithFD,
+                                        exampleWithProcess, getReadWriteHandles,
+                                        readMessage, sendMessage, startIPC, startNodeJsIPC)
 
 -- | Test spec for node IPC
 nodeIPCSpec :: Spec
@@ -81,6 +82,27 @@ nodeIPCSpec = do
                 wait as
             assert $ isLeft (eResult :: Either NodeIPCException ())
 
+        it "should throw NodeIPCException when closed handle is given" $ monadicIO $ do
+            eResult <- run $ try $ do
+                (readHandle, writeHandle) <- getReadWriteHandles
+                closedReadHandle <- (\(ReadHandle hndl) -> hClose hndl >> return (ReadHandle hndl)) readHandle
+                startIPC closedReadHandle writeHandle port
+            assert $ isLeft (eResult :: Either NodeIPCException ())
+
+        it "should throw NodeIPCException when unreadable handle is given" $ monadicIO $ do
+            eResult <- run $ try $ do
+                (readHandle, writeHandle) <- getReadWriteHandles
+                let (unReadableHandle, _) = swapHandles readHandle writeHandle
+                startIPC unReadableHandle writeHandle port
+            assert $ isLeft (eResult :: Either NodeIPCException ())
+
+        it "should throw NodeIPCException when unwritable handle is given" $ monadicIO $ do
+            eResult <- run $ try $ do
+                (readHandle, writeHandle) <- getReadWriteHandles
+                let (_, unWritableHandle) = swapHandles readHandle writeHandle
+                startIPC readHandle unWritableHandle port
+            assert $ isLeft (eResult :: Either NodeIPCException ())
+
         describe "Examples" $ do
             it "should return Started, Pong with forkProcess" $ monadicIO $ do
                 (started, pong) <- run exampleWithProcess
@@ -91,9 +113,17 @@ nodeIPCSpec = do
                 (started, pong) <- run exampleWithFD
                 assert $ started == Started
                 assert $ pong    == Pong
+
+    describe "startNodeJsIPC" $
+        it "should throw NodeIPCException when it is not spawned by NodeJS process" $ monadicIO $ do
+            eResult <- run $ try $ startNodeJsIPC port
+            assert $ isLeft (eResult :: Either NodeIPCException ())
   where
     port :: Port
     port = Port 8090
+
+    swapHandles :: ReadHandle -> WriteHandle -> (ReadHandle, WriteHandle)
+    swapHandles (ReadHandle rHandle) (WriteHandle wHandle) = (ReadHandle wHandle, WriteHandle rHandle)
 
 -- | Test if given message can be send and recieved using 'sendMessage', 'readMessage'
 testMessage :: (FromJSON msg, ToJSON msg, Eq msg) => msg -> Property
