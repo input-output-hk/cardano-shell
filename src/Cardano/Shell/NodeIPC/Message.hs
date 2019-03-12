@@ -70,7 +70,6 @@ readMessage (ReadHandle hndl) = do
     encodedMessage <- if buildOS == Windows
         then do
             (_, _, blob) <- liftIO $ windowsReadMessage
-          --  logInfo $ "int is: " <> (show [int1, int2]) <> " and blob is: " <> (show blob)
             return blob
         else
             liftIO $ linuxReadMessage
