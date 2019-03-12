@@ -45,6 +45,11 @@ Next       ==   \/ \E msg \in Message: InSend(msg)
                 \/ BufReceive
                 \/ BufSend
                 \/ OutReceive 
+                
+\* We don't automatically add the message...
+PassNext   ==   \/ BufReceive
+                \/ BufSend
+                \/ OutReceive 
              
               
 Spec    == Init /\ [][Next]_<<in, out, q>>

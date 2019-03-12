@@ -23,8 +23,12 @@ Inner    == INSTANCE InnerFIFO WITH in <- in, out <- out, q <- q
 
 Init     == Inner!Init
 
+InSend(msg) == Inner!InSend(msg)
+
 BNext    == /\ Inner!Next 
             /\ Inner!BufReceive => (Len(q) < N)
+            
+BPassNext == Inner!PassNext
             
 Spec     == Init /\ [][BNext]_<<in,out,q>>
 

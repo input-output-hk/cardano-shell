@@ -204,7 +204,7 @@ Currently, the \textit{Deadalus} starts the \textit{Node} (we will ignore the \t
 The initial simplified communication protocol can be seen on Figure ~\ref{fig:ipcSimpleFig}.\\
 
 When the \textit{Daedalus} calls and starts the \textit{Node}, it also opens up the \textbf{IPC} protocol to enable communication between the two.
-First, the \textit{Node} sends the message \textbf{Started} back to the \textit{Daedalus} to inform him that the communcation can begin.
+First, the \textit{Node} sends the message \textbf{Started} back to the \textit{Daedalus} to inform him that the communication can begin.
 After that, \textit{Daedalus} sends the message \textbf{QueryPort} to the \textit{Node}, and the \textit{Node} responds with the free port it found using \textbf{ReplyPort PORTNUM} that is going to be used for starting the HTTP "server" serving the \textit{JSON API} which they can then use to communicate further.\\
 
 The communication is bi-directional, on Windows it is using \textbf{named pipes}.\\
@@ -417,6 +417,54 @@ We can then consider a simple transition function for the client.
 > fullProtocol Ping       =  Pong
 > fullProtocol QueryPort  =  ReplyPort 0
 
+So what we really have, when speaking about actual state transitions is an asynchronous interface between two "devices" (of any sort). So we can use two channels between the two "devices" (in our case the server and the client). One channel for communicating via server-client direction and the other one for the client-server direction.\\
+
+On both of these we can use a simple 2-phase handshaking protocol.\\
+
+Of course, we can build on top of that, and actually implement a \textbf{FIFO} structure between the two, that is identical to the mechanism we will actually use in the implementation, which are named pipes (bi-directional). There are some specifics for Windows when using node.js, but we can ignore that in the spec. For bidirectional communication, you need two FIFOs, one for the server-client and the other for client-server.\\
+
+We can imagine looking at just one process and seeing the input \textbf{FIFO} and the output \textbf{FIFO}. That simplifies the story and the specification, observe it as an input queue of messages and an output queue of messages for \textit{a single process}, and simply composing two of these together yields a full communication. We can imagine that the process in this protocol is a simple \textit{mapping} we mentioned above which just converts a \textbf{InMsg} to a \textbf{OutMsg} from the input \textbf{FIFO} to the output \textbf{FIFO}.
+The example of the communication can be as presented on the next state transition diagram.
+
+For example, for the \textbf{Ping-Pong} protocol:
+
+\[
+    \centering
+    \begin{bmatrix}
+        inQueue = []\\
+        outQueue = []\\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        inQueue = [\textbf{Ping}]\\
+        outQueue = []\\
+    \end{bmatrix}
+    \Longrightarrow
+    \begin{bmatrix}
+        inQueue = []\\
+        outQueue = [\textbf{Pong}]\\
+    \end{bmatrix}
+\]
+
+For example, for the \textbf{QueryPort-ReplyPort} protocol:
+
+\[
+    \centering
+    \begin{bmatrix}
+        inQueue = []\\
+        outQueue = []\\
+    \end{bmatrix}
+    \Rightarrow
+    \begin{bmatrix}
+        inQueue = [\textbf{QueryPort}]\\
+        outQueue = []\\
+    \end{bmatrix}
+    \Longrightarrow
+    \begin{bmatrix}
+        inQueue = []\\
+        outQueue = [\textbf{ReplyPort}]\\
+    \end{bmatrix}
+\]
 
 \newpage
 \newpage 
