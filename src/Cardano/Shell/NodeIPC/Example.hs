@@ -56,9 +56,9 @@ exampleWithFD = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
     (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
 
-    -- Start the server
     let nodePort = Port 8090
-    _ <- async $ startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+    asyncServer <- async $ startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+    link asyncServer
 
     -- Use these functions so you don't pass the wrong handle by mistake
     let readClientMessage :: IO MsgOut
@@ -67,7 +67,7 @@ exampleWithFD = do
     let sendServer :: MsgIn -> IO ()
         sendServer = sendMessage serverWriteHandle
 
-    -- Communication starts here
+    -- -- Communication starts here
     started <- readClientMessage
     sendServer Ping
     pong    <- readClientMessage -- Pong

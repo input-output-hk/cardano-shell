@@ -20,7 +20,7 @@ module Cardano.Shell.NodeIPC.Lib
     , MessageSendFailure(..)
     ) where
 
-import           Cardano.Prelude hiding (catches)
+import           Cardano.Prelude hiding (catches, handle)
 
 import           Control.Exception.Safe (Handler (..), MonadCatch, catches,
                                          throwM)
@@ -29,6 +29,7 @@ import           Data.Aeson (FromJSON (parseJSON), ToJSON (toEncoding),
                              genericToEncoding)
 import           Data.Aeson.Types (Options, SumEncoding (ObjectWithSingleField),
                                    sumEncoding)
+import           GHC.IO.Handle
 import           GHC.IO.Handle.FD (fdToHandle)
 import           System.Environment (lookupEnv)
 import           System.IO (hClose, hFlush, hSetNewlineMode,
@@ -36,8 +37,10 @@ import           System.IO (hClose, hFlush, hSetNewlineMode,
 import           System.IO.Error (IOError, isEOFError)
 import           Test.QuickCheck
 
-import           Cardano.Shell.NodeIPC.Message (MessageException, ReadHandle (..),
-                                  WriteHandle (..), readMessage, sendMessage)
+import           Cardano.Shell.NodeIPC.Message (MessageException,
+                                                ReadHandle (..),
+                                                WriteHandle (..), readMessage,
+                                                sendMessage)
 
 import qualified Prelude as P (Show (..))
 
@@ -120,12 +123,21 @@ data NodeIPCException
     -- ^ Unable to parse given 'Text' as File descriptor
     | IPCException
     -- ^ Exception thrown when there's something wrong with IPC
+    | HandleClosed Handle
+    -- ^ Given handle is closed therefore cannot be used
+    | UnreadableHandle Handle
+    -- ^ Given handle cannot be used to read
+    | UnwritableHandle Handle
+    -- ^ Given handle cannot be used to write
 
 instance Show NodeIPCException where
     show = \case
         NodeChannelNotFound          -> "Env variable NODE_CHANNEL_FD cannot be found"
         UnableToParseNodeChannel err -> "Unable to parse NODE_CHANNEL_FD: " <> show err
         IPCException                 -> "IOError has occured"
+        HandleClosed h               -> "Given handle is closed: " <> show h
+        UnreadableHandle h           -> "Unable to read with given handle: " <> show h
+        UnwritableHandle h           -> "Unable to write with given handle: " <> show h
 
 instance Exception NodeIPCException
 
@@ -140,9 +152,8 @@ getIPCHandle = do
             Right fd -> liftIO $ fdToHandle fd
 
 -- | Start NodeJS IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
-startNodeJsIPC :: (MonadIO m) => ReadHandle -> WriteHandle -> Port -> m ()
-startNodeJsIPC readHandle writeHandle port =
-    liftIO $ void $ ipcListener readHandle writeHandle port
+startNodeJsIPC :: forall m. (MonadIO m) => ReadHandle -> WriteHandle -> Port -> m ()
+startNodeJsIPC readHandle writeHandle port = liftIO $ void $ ipcListener readHandle writeHandle port
 
 -- | Start IPC listener with given Handles and Port
 --
@@ -151,14 +162,15 @@ startNodeJsIPC readHandle writeHandle port =
 -- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
 ipcListener :: forall m . (MonadIO m, MonadCatch m) => ReadHandle -> WriteHandle -> Port -> m ()
-ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port) = do
+ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port port) = do
+    checkHandles readHandle writeHandle
     catches handleMsgIn [Handler handler, Handler handleMsgError]
   where
     handleMsgIn :: m ()
     handleMsgIn = do
         liftIO $ hSetNewlineMode rHndl noNewlineTranslation
         send Started
-        msgIn <- readMessage readHndl
+        msgIn <- readMessage readHandle
         case msgIn of
             QueryPort -> send (ReplyPort port) >> shutdown
             Ping      -> do
@@ -168,7 +180,7 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port
             MessageInFailure _ -> shutdown
 
     send :: MsgOut -> m ()
-    send = sendMessage writeHndl
+    send = sendMessage writeHandle
 
     -- Huge catch all, fix this:
     handler :: IOError -> m ()
@@ -185,11 +197,22 @@ ipcListener readHndl@(ReadHandle rHndl) writeHndl@(WriteHandle wHndl) (Port port
         liftIO $ logError "Unexpected message"
         send $ MessageOutFailure $ ParseError $ show err
 
-    -- (TODO:) Exception handling on broken handles (e.g.handle is already closed etc.)
     -- Implement here
     shutdown :: m ()
     shutdown = return ()
 
+    checkHandles :: ReadHandle -> WriteHandle -> m ()
+    checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = liftIO $ do
+        checkHandle rHandle hIsOpen (HandleClosed rHandle)
+        checkHandle wHandle hIsOpen (HandleClosed wHandle)
+        checkHandle rHandle hIsReadable (UnreadableHandle rHandle)
+        checkHandle wHandle hIsWritable (UnwritableHandle wHandle)
+
+    checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCException -> IO ()
+    checkHandle handle pre exception = do
+        is <- pre handle
+        when (not is) $ throwM exception
+        return ()
 
 --------------------------------------------------------------------------------
 -- placeholder
