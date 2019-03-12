@@ -22,7 +22,7 @@ import           Cardano.Shell.NodeIPC (MessageException,
                                         Port (..), ReadHandle (..),
                                         exampleWithFD, exampleWithProcess,
                                         getReadWriteHandles, readMessage,
-                                        sendMessage, startNodeJsIPC)
+                                        sendMessage, startIPC)
 
 -- | Test spec for node IPC
 nodeIPCSpec :: Spec
@@ -42,7 +42,7 @@ nodeIPCSpec = do
                         readMessage readHndl :: (IO MsgIn)
                     assert $ isLeft (eResult :: Either MessageException MsgIn)
 
-    describe "startNodeJsIPC" $ do
+    describe "startIPC" $ do
         it "should return Started and Pong when client sends message 'Ping'" $ monadicIO $ do
             (started, pong) <- run $ do
                 testStartNodeIPC port Ping
@@ -72,7 +72,7 @@ nodeIPCSpec = do
                 (serverReadHandle, _)                 <- getReadWriteHandles
 
                 -- Start the server
-                as <- async $ startNodeJsIPC serverReadHandle clientWriteHandle port
+                as <- async $ startIPC serverReadHandle clientWriteHandle port
                 (_ :: MsgOut) <- readMessage clientReadHandle
                 -- Create IOError and cancel the thread with it
                 let hndl    = getReadHandle serverReadHandle
@@ -105,14 +105,14 @@ testMessage msg = monadicIO $ do
 
     assert $ response == msg
 
--- | Test 'startNodeJsIPC'
+-- | Test 'startIPC'
 testStartNodeIPC :: forall msg. (ToJSON msg) => Port -> msg -> IO (MsgOut, MsgOut)
 testStartNodeIPC port msg = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
     (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
 
     -- Start the server
-    void $ async $ startNodeJsIPC serverReadHandle clientWriteHandle port
+    void $ async $ startIPC serverReadHandle clientWriteHandle port
 
     -- Use these functions so you don't pass the wrong handle by mistake
     let readClientMessage :: IO MsgOut

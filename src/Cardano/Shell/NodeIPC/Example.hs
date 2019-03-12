@@ -29,7 +29,7 @@ import           System.Posix.Process (exitImmediately, forkProcess)
 import           System.Process (createPipe)
 
 import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
-                                            startNodeJsIPC)
+                                            startIPC)
 import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
@@ -57,7 +57,7 @@ exampleWithFD = do
     (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
 
     let nodePort = Port 8090
-    asyncServer <- async $ startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+    asyncServer <- async $ startIPC serverReadHandle clientWriteHandle nodePort
     link asyncServer
 
     -- Use these functions so you don't pass the wrong handle by mistake
@@ -85,7 +85,7 @@ exampleWithProcess = do
                 -- Send message to server
                 sendMessage serverWriteHandle Ping
                 let nodePort = Port 8090
-                startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+                startIPC serverReadHandle clientWriteHandle nodePort
                 exitImmediately ExitSuccess
             )
             (return ())

@@ -11,6 +11,7 @@
 
 module Cardano.Shell.NodeIPC.Lib
     ( startNodeJsIPC
+    , startIPC
     , Port (..)
     -- * Testing
     , getIPCHandle
@@ -67,6 +68,7 @@ data MsgOut
     | MessageOutFailure MessageSendFailure
     deriving (Show, Eq, Generic)
 
+-- | Message that can be used to let the other know the that exception had occured
 data MessageSendFailure
     = ParseError Text
     | GeneralFailure
@@ -116,6 +118,7 @@ newtype Port = Port
 instance Arbitrary Port where
     arbitrary = Port <$> arbitrary
 
+-- | Exception thrown from Node IPC protocol
 data NodeIPCException
     = NodeChannelNotFound
     -- ^ Node channel was not found
@@ -151,13 +154,24 @@ getIPCHandle = do
             Left err -> throwM $ UnableToParseNodeChannel $ toS err
             Right fd -> liftIO $ fdToHandle fd
 
--- | Start NodeJS IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
-startNodeJsIPC :: forall m. (MonadIO m) => ReadHandle -> WriteHandle -> Port -> m ()
-startNodeJsIPC readHandle writeHandle port = liftIO $ void $ ipcListener readHandle writeHandle port
+-- | Start IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
+startIPC :: forall m. (MonadIO m) => ReadHandle -> WriteHandle -> Port -> m ()
+startIPC readHandle writeHandle port = liftIO $ void $ ipcListener readHandle writeHandle port
+
+-- | Start IPC with NodeJS
+--
+-- This only works if NodeJS spawns the Haskell executable as child process 
+-- (See @server.js@ as an example)
+startNodeJsIPC :: forall m. (MonadIO m) => Port -> m ()
+startNodeJsIPC port = do
+    handle <- liftIO $ getIPCHandle
+    let readHandle = ReadHandle handle
+    let writeHandle = WriteHandle handle
+    liftIO $ void $ ipcListener readHandle writeHandle port
 
 -- | Start IPC listener with given Handles and Port
 --
--- when the listener recieves 'Ping' it will return 'Pong'.
+-- When the listener recieves 'Ping' it will return 'Pong'.
 --
 -- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
@@ -172,12 +186,10 @@ ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port 
         send Started
         msgIn <- readMessage readHandle
         case msgIn of
-            QueryPort -> send (ReplyPort port) >> shutdown
-            Ping      -> do
-                send Pong
-                shutdown
+            QueryPort -> send (ReplyPort port)
+            Ping      -> send Pong
             -- TODO:Handle them nicely
-            MessageInFailure _ -> shutdown
+            MessageInFailure _ -> return ()
 
     send :: MsgOut -> m ()
     send = sendMessage writeHandle
@@ -197,10 +209,7 @@ ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port 
         liftIO $ logError "Unexpected message"
         send $ MessageOutFailure $ ParseError $ show err
 
-    -- Implement here
-    shutdown :: m ()
-    shutdown = return ()
-
+    -- | Check if given two handles are usable (i.e. Handle is open, can be used to read/write)
     checkHandles :: ReadHandle -> WriteHandle -> m ()
     checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = liftIO $ do
         checkHandle rHandle hIsOpen (HandleClosed rHandle)
@@ -210,9 +219,8 @@ ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port 
 
     checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCException -> IO ()
     checkHandle handle pre exception = do
-        is <- pre handle
-        when (not is) $ throwM exception
-        return ()
+        result <- pre handle
+        when (not result) $ throwM exception
 
 --------------------------------------------------------------------------------
 -- placeholder
