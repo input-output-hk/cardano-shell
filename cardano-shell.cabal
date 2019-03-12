@@ -34,12 +34,14 @@ library
     -- Constants
     , Cardano.Shell.Constants.Types
     , Cardano.Shell.Presets
+    , Cardano.Shell.Features.Logging
   other-modules:
       Cardano.Shell.NodeIPC.Example
     , Cardano.Shell.NodeIPC.Lib
     , Cardano.Shell.NodeIPC.Message
   hs-source-dirs:
-      src
+      app
+    , src
     , specs
   build-depends:
       aeson
@@ -48,10 +50,12 @@ library
     , bytestring
     , cardano-prelude
     , Cabal
+    , concurrency
     -- general util
     , containers
     , directory
     , formatting
+    , iohk-monitoring
     , safe-exceptions
     , text
     , transformers
@@ -60,20 +64,16 @@ library
     , contravariant
     , dhall
     , ekg-core
-    --, async
-    --, concurrency
+    , process
     , QuickCheck
     , text
     , transformers
-    , concurrency
-    , QuickCheck
-    , process
     , unix
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
-                       
+
   ghc-options:         -Wall
                        -Wcompat
                        -Wincomplete-record-updates
