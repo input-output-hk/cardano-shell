@@ -81,6 +81,7 @@ nodeIPCSpec = do
                 cancelWith as ioerror
                 wait as
             assert $ isLeft (eResult :: Either NodeIPCException ())
+            whenLeft eResult $ \exception -> assert $ isIPCException exception
 
         it "should throw NodeIPCException when closed handle is given" $ monadicIO $ do
             eResult <- run $ try $ do
@@ -88,6 +89,7 @@ nodeIPCSpec = do
                 closedReadHandle <- (\(ReadHandle hndl) -> hClose hndl >> return (ReadHandle hndl)) readHandle
                 startIPC closedReadHandle writeHandle port
             assert $ isLeft (eResult :: Either NodeIPCException ())
+            whenLeft eResult $ \exception -> assert $ isHandleClosed exception
 
         it "should throw NodeIPCException when unreadable handle is given" $ monadicIO $ do
             eResult <- run $ try $ do
@@ -95,6 +97,7 @@ nodeIPCSpec = do
                 let (unReadableHandle, _) = swapHandles readHandle writeHandle
                 startIPC unReadableHandle writeHandle port
             assert $ isLeft (eResult :: Either NodeIPCException ())
+            whenLeft eResult $ \exception -> assert $ isUnreadableHandle exception
 
         it "should throw NodeIPCException when unwritable handle is given" $ monadicIO $ do
             eResult <- run $ try $ do
@@ -102,6 +105,7 @@ nodeIPCSpec = do
                 let (_, unWritableHandle) = swapHandles readHandle writeHandle
                 startIPC readHandle unWritableHandle port
             assert $ isLeft (eResult :: Either NodeIPCException ())
+            whenLeft eResult $ \exception -> assert $ isUnwritableHandle exception
 
         describe "Examples" $ do
             it "should return Started, Pong with forkProcess" $ monadicIO $ do
@@ -118,6 +122,7 @@ nodeIPCSpec = do
         it "should throw NodeIPCException when it is not spawned by NodeJS process" $ monadicIO $ do
             eResult <- run $ try $ startNodeJsIPC port
             assert $ isLeft (eResult :: Either NodeIPCException ())
+            whenLeft eResult $ \exception -> assert $ isNodeChannelCannotBeFound exception
   where
     port :: Port
     port = Port 8090
@@ -156,3 +161,31 @@ testStartNodeIPC port msg = do
     sendServer msg
     response <- readClientMessage
     return (started, response)
+
+whenLeft :: Applicative m => Either a b -> (a -> m ()) -> m ()
+whenLeft (Left x) f = f x
+whenLeft _        _ = pure ()
+
+--------------------------------------------------------------------------------
+-- Predicates
+--------------------------------------------------------------------------------
+
+isIPCException :: NodeIPCException -> Bool
+isIPCException IPCException = True
+isIPCException _            = False
+
+isHandleClosed :: NodeIPCException -> Bool
+isHandleClosed (HandleClosed _) = True
+isHandleClosed _                = False
+
+isUnreadableHandle :: NodeIPCException -> Bool
+isUnreadableHandle (UnreadableHandle _) = True
+isUnreadableHandle _                    = False
+
+isUnwritableHandle :: NodeIPCException -> Bool
+isUnwritableHandle (UnwritableHandle _) = True
+isUnwritableHandle _                    = False
+
+isNodeChannelCannotBeFound :: NodeIPCException -> Bool
+isNodeChannelCannotBeFound NodeChannelNotFound = True
+isNodeChannelCannotBeFound _                   = False
