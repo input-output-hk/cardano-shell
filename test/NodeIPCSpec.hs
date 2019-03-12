@@ -23,7 +23,11 @@ import           Cardano.Shell.NodeIPC (MessageException,
                                         Port (..), ReadHandle (..),
                                         WriteHandle (..), exampleWithFD,
                                         exampleWithProcess, getReadWriteHandles,
-                                        readMessage, sendMessage, startIPC, startNodeJsIPC)
+                                        isHandleClosed, isIPCException,
+                                        isNodeChannelCannotBeFound,
+                                        isUnreadableHandle, isUnwritableHandle,
+                                        readMessage, sendMessage, startIPC,
+                                        startNodeJsIPC)
 
 -- | Test spec for node IPC
 nodeIPCSpec :: Spec
@@ -165,27 +169,3 @@ testStartNodeIPC port msg = do
 whenLeft :: Applicative m => Either a b -> (a -> m ()) -> m ()
 whenLeft (Left x) f = f x
 whenLeft _        _ = pure ()
-
---------------------------------------------------------------------------------
--- Predicates
---------------------------------------------------------------------------------
-
-isIPCException :: NodeIPCException -> Bool
-isIPCException IPCException = True
-isIPCException _            = False
-
-isHandleClosed :: NodeIPCException -> Bool
-isHandleClosed (HandleClosed _) = True
-isHandleClosed _                = False
-
-isUnreadableHandle :: NodeIPCException -> Bool
-isUnreadableHandle (UnreadableHandle _) = True
-isUnreadableHandle _                    = False
-
-isUnwritableHandle :: NodeIPCException -> Bool
-isUnwritableHandle (UnwritableHandle _) = True
-isUnwritableHandle _                    = False
-
-isNodeChannelCannotBeFound :: NodeIPCException -> Bool
-isNodeChannelCannotBeFound NodeChannelNotFound = True
-isNodeChannelCannotBeFound _                   = False

@@ -19,6 +19,12 @@ module Cardano.Shell.NodeIPC.Lib
     , MsgOut(..)
     , NodeIPCException(..)
     , MessageSendFailure(..)
+    -- * Predicates
+    , isIPCException
+    , isHandleClosed
+    , isUnreadableHandle
+    , isUnwritableHandle
+    , isNodeChannelCannotBeFound
     ) where
 
 import           Cardano.Prelude hiding (catches, handle)
@@ -228,3 +234,32 @@ ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port 
 
 logError :: Text -> IO ()
 logError _ = return ()
+
+--------------------------------------------------------------------------------
+-- Predicates
+--------------------------------------------------------------------------------
+
+-- | Checks if given 'NodeIPCException' is 'IPCException'
+isIPCException :: NodeIPCException -> Bool
+isIPCException IPCException = True
+isIPCException _            = False
+
+-- | Checks if given 'NodeIPCException' is 'HandleClosed'
+isHandleClosed :: NodeIPCException -> Bool
+isHandleClosed (HandleClosed _) = True
+isHandleClosed _                = False
+
+-- | Checks if given 'NodeIPCException' is 'UnreadableHandle'
+isUnreadableHandle :: NodeIPCException -> Bool
+isUnreadableHandle (UnreadableHandle _) = True
+isUnreadableHandle _                    = False
+
+-- | Checks if given 'NodeIPCException' is 'UnwritableHandle'
+isUnwritableHandle :: NodeIPCException -> Bool
+isUnwritableHandle (UnwritableHandle _) = True
+isUnwritableHandle _                    = False
+
+-- | Checks if given 'NodeIPCException' is 'NodeChannelNotFound'
+isNodeChannelCannotBeFound :: NodeIPCException -> Bool
+isNodeChannelCannotBeFound NodeChannelNotFound = True
+isNodeChannelCannotBeFound _                   = False
