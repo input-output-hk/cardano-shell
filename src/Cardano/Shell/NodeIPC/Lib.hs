@@ -27,22 +27,23 @@ module Cardano.Shell.NodeIPC.Lib
     , isNodeChannelCannotBeFound
     ) where
 
-import           Cardano.Prelude hiding (catches, handle)
+import           Cardano.Prelude hiding (catches, finally, handle)
 
-import           Control.Exception.Safe (Handler (..), MonadCatch, catches,
-                                         throwM)
+import           Control.Exception.Safe (Handler (..), MonadCatch, MonadMask,
+                                         catches, finally, throwM)
 import           Data.Aeson (FromJSON (parseJSON), ToJSON (toEncoding),
                              defaultOptions, genericParseJSON,
                              genericToEncoding)
 import           Data.Aeson.Types (Options, SumEncoding (ObjectWithSingleField),
                                    sumEncoding)
-import           GHC.IO.Handle
+import           GHC.IO.Handle (hIsOpen, hIsReadable, hIsWritable)
 import           GHC.IO.Handle.FD (fdToHandle)
 import           System.Environment (lookupEnv)
 import           System.IO (hClose, hFlush, hSetNewlineMode,
                             noNewlineTranslation)
 import           System.IO.Error (IOError, isEOFError)
-import           Test.QuickCheck
+import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
+                                  choose, elements, listOf1)
 
 import           Cardano.Shell.NodeIPC.Message (MessageException,
                                                 ReadHandle (..),
@@ -166,7 +167,7 @@ startIPC readHandle writeHandle port = liftIO $ void $ ipcListener readHandle wr
 
 -- | Start IPC with NodeJS
 --
--- This only works if NodeJS spawns the Haskell executable as child process 
+-- This only works if NodeJS spawns the Haskell executable as child process
 -- (See @server.js@ as an example)
 startNodeJsIPC :: forall m. (MonadIO m) => Port -> m ()
 startNodeJsIPC port = do
@@ -181,10 +182,14 @@ startNodeJsIPC port = do
 --
 -- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
-ipcListener :: forall m . (MonadIO m, MonadCatch m) => ReadHandle -> WriteHandle -> Port -> m ()
-ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port port) = do
-    checkHandles readHandle writeHandle
-    catches handleMsgIn [Handler handler, Handler handleMsgError]
+ipcListener :: forall m . (MonadIO m, MonadCatch m, MonadMask m) => ReadHandle -> WriteHandle -> Port -> m ()
+ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port port) =
+    finally
+        (do
+            checkHandles readHandle writeHandle
+            catches handleMsgIn [Handler handler, Handler handleMsgError]
+        )
+        shutdown
   where
     handleMsgIn :: m ()
     handleMsgIn = do
@@ -192,23 +197,24 @@ ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port 
         send Started
         msgIn <- readMessage readHandle
         case msgIn of
-            QueryPort -> send (ReplyPort port)
-            Ping      -> send Pong
+            QueryPort          -> send (ReplyPort port)
+            Ping               -> send Pong
             -- TODO:Handle them nicely
             MessageInFailure _ -> return ()
 
     send :: MsgOut -> m ()
     send = sendMessage writeHandle
 
-    -- Huge catch all, fix this:
     handler :: IOError -> m ()
     handler err = do
-        liftIO $ do
-            when (isEOFError err) $ logError "its an eof"
-            hClose rHndl
-            hClose wHndl
-            hFlush stdout
+        liftIO $ when (isEOFError err) $ logError "its an eof"
         throwM IPCException
+
+    shutdown :: m ()
+    shutdown = liftIO $ do
+        hClose rHndl
+        hClose wHndl
+        hFlush stdout
 
     handleMsgError :: MessageException -> m ()
     handleMsgError err = do
@@ -229,9 +235,10 @@ ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port 
         when (not result) $ throwM exception
 
 --------------------------------------------------------------------------------
--- placeholder
+-- Placeholder
 --------------------------------------------------------------------------------
 
+-- | Use this until we find suitable logging library
 logError :: Text -> IO ()
 logError _ = return ()
 

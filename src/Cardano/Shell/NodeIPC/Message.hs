@@ -19,7 +19,7 @@ import           Data.Binary.Put (putLazyByteString, putWord32le, putWord64le,
                                   runPut)
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSLC
-import           Distribution.System (OS (Windows, Linux), buildOS)
+import           Distribution.System (OS (Windows), buildOS)
 import           System.IO (hFlush, hGetLine)
 
 import qualified Prelude as P (Show (..))
