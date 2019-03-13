@@ -79,7 +79,7 @@ exampleWithProcess = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
 
     -- Create a child process that acts as an server
-    _ <- finally  
+    _ <- finally
             (forkProcess $ do
                 (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
                 -- Send message to server

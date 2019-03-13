@@ -10,13 +10,13 @@ module NodeIPCSpec
 import           Cardano.Prelude
 
 import           Data.Aeson (FromJSON, ToJSON, encode)
+import           GHC.IO.Handle (hIsOpen)
 import           System.IO (hClose)
 import           System.IO.Error (eofErrorType, mkIOError)
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
-import           GHC.IO.Handle (hIsOpen)
 
 import           Cardano.Shell.NodeIPC (MessageException,
                                         MessageSendFailure (..), MsgIn (..),
@@ -115,7 +115,7 @@ nodeIPCSpec = do
                     areHandlesClosed readHandle writeHandle
                 assert handlesClosed
 
-            prop "should close used handles when the process is finished" $ 
+            prop "should close used handles when the process is finished" $
                 \(msg :: MsgIn) -> monadicIO $ do
                     handlesClosed <- run $ do
                         (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
