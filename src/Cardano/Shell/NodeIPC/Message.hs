@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {-| This module introduces, low-level message handler that is used to communicate
 between Daedalus and Cardano-node
 -}
@@ -45,14 +47,14 @@ newtype WriteHandle = WriteHandle
 
 -- | Send JSON message with given 'WriteHandle'
 sendMessage :: (MonadIO m, ToJSON msg) => WriteHandle -> msg -> m ()
-sendMessage (WriteHandle hndl) cmd = liftIO $ send $ encode cmd
+sendMessage (WriteHandle hndl) cmd = liftIO $ do
+    send buildOS $ encode cmd
+    hFlush hndl
   where
-    send :: BSL.ByteString -> IO ()
-    send blob = do
-        if buildOS == Windows
-            then sendWindowsMessage 1 0 (blob <> "\n") -- What's with 1 and 0?
-            else sendLinuxMessage blob
-        hFlush hndl
+    send :: OS -> BSL.ByteString -> IO ()
+    send Windows blob = sendWindowsMessage 1 0 (blob <> "\n") -- What's with 1 and 0?
+    send _       blob = sendLinuxMessage blob
+
     sendWindowsMessage :: Word32 -> Word32 -> BSL.ByteString -> IO ()
     sendWindowsMessage int1 int2 blob' =
         BSLC.hPut hndl $ runPut $ mconcat
@@ -67,17 +69,19 @@ sendMessage (WriteHandle hndl) cmd = liftIO $ send $ encode cmd
 -- | Read JSON message with given 'ReadHandle'
 readMessage :: (MonadIO m, MonadThrow m, FromJSON msg) => ReadHandle -> m msg
 readMessage (ReadHandle hndl) = do
-    encodedMessage <- if buildOS == Windows
-        then do
-            (_, _, blob) <- liftIO $ windowsReadMessage
-            return blob
-        else
-            liftIO $ linuxReadMessage
+    encodedMessage <- liftIO $ readMessageFromHandle buildOS
     either
         (\_ -> throwM $ DecodeFail encodedMessage)
         return
         (eitherDecode encodedMessage)
   where
+    readMessageFromHandle :: OS -> IO BSL.ByteString
+    readMessageFromHandle = \case
+        Windows -> do
+            (_, _, blob) <- windowsReadMessage
+            return blob
+        _       -> linuxReadMessage
+
     windowsReadMessage :: IO (Word32, Word32, BSL.ByteString)
     windowsReadMessage = do
         int1 <- readInt32 hndl
