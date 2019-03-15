@@ -77,18 +77,15 @@ readMessage (ReadHandle hndl) = do
   where
     readMessageFromHandle :: OS -> IO BSL.ByteString
     readMessageFromHandle = \case
-        Windows -> do
-            (_, _, blob) <- windowsReadMessage
-            return blob
+        Windows -> windowsReadMessage
         _       -> linuxReadMessage
 
-    windowsReadMessage :: IO (Word32, Word32, BSL.ByteString)
+    windowsReadMessage :: IO BSL.ByteString
     windowsReadMessage = do
-        int1 <- readInt32 hndl
-        int2 <- readInt32 hndl
+        _ <- readInt32 hndl
+        _ <- readInt32 hndl
         size <- readInt64 hndl
-        blob <- BSL.hGet hndl $ fromIntegral size
-        return (int1, int2, blob)
+        BSL.hGet hndl $ fromIntegral size
 
     linuxReadMessage :: IO BSL.ByteString
     linuxReadMessage = do
