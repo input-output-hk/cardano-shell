@@ -184,12 +184,11 @@ startNodeJsIPC port = do
 -- responds with 'ReplyPort' with 'Port',
 ipcListener :: forall m . (MonadIO m, MonadCatch m, MonadMask m) => ReadHandle -> WriteHandle -> Port -> m ()
 ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port port) =
-    finally
-        (do
-            checkHandles readHandle writeHandle
-            catches handleMsgIn [Handler handler, Handler handleMsgError]
-        )
-        shutdown
+    do
+        checkHandles readHandle writeHandle
+        catches handleMsgIn [Handler handler, Handler handleMsgError]
+    `finally`
+    shutdown
   where
     handleMsgIn :: m ()
     handleMsgIn = do

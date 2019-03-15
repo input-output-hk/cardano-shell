@@ -185,20 +185,23 @@ testStartNodeIPC port msg = do
     (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
 
     -- Start the server
-    void $ async $ startIPC serverReadHandle clientWriteHandle port
+    (_, responses) <-
+        startIPC serverReadHandle clientWriteHandle port
+        `concurrently`
+        do
+            -- Use these functions so you don't pass the wrong handle by mistake
+            let readClientMessage :: IO MsgOut
+                readClientMessage = readMessage clientReadHandle
 
-    -- Use these functions so you don't pass the wrong handle by mistake
-    let readClientMessage :: IO MsgOut
-        readClientMessage = readMessage clientReadHandle
+            let sendServer :: msg -> IO ()
+                sendServer = sendMessage serverWriteHandle
 
-    let sendServer :: msg -> IO ()
-        sendServer = sendMessage serverWriteHandle
-
-    -- Communication starts here
-    started <- readClientMessage
-    sendServer msg
-    response <- readClientMessage
-    return (started, response)
+            -- Communication starts here
+            started <- readClientMessage
+            sendServer msg
+            response <- readClientMessage
+            return (started, response)
+    return responses
 
 whenLeft :: Applicative m => Either a b -> (a -> m ()) -> m ()
 whenLeft (Left x) f = f x
