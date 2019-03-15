@@ -24,12 +24,13 @@ module Cardano.Shell.NodeIPC.Example
 
 import           Cardano.Prelude
 
+import           Data.Aeson (ToJSON)
 import           System.IO (BufferMode (..), hSetBuffering)
 import           System.Posix.Process (exitImmediately, forkProcess)
 import           System.Process (createPipe)
 
 import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
-                                            startNodeJsIPC)
+                                            startIPC)
 import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
@@ -49,29 +50,21 @@ getReadWriteHandles = do
 -- Testing
 --------------------------------------------------------------------------------
 
+nodePort :: Port
+nodePort = Port 8090
+
 -- | Example using file descriptor
 exampleWithFD :: IO (MsgOut, MsgOut)
 exampleWithFD = do
 
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
-    (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
 
-    -- Start the server
-    let nodePort = Port 8090
-    _ <- async $ startNodeJsIPC serverReadHandle clientWriteHandle nodePort
+    (_, responses) <-
+        ipcServer clientWriteHandle Ping
+        `concurrently`
+        receieveMessages clientReadHandle
 
-    -- Use these functions so you don't pass the wrong handle by mistake
-    let readClientMessage :: IO MsgOut
-        readClientMessage = readMessage clientReadHandle
-
-    let sendServer :: MsgIn -> IO ()
-        sendServer = sendMessage serverWriteHandle
-
-    -- Communication starts here
-    started <- readClientMessage
-    sendServer Ping
-    pong    <- readClientMessage -- Pong
-    return (started, pong)
+    return responses
 
 -- | Example of an IPC using process
 exampleWithProcess :: IO (MsgOut, MsgOut)
@@ -79,20 +72,29 @@ exampleWithProcess = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
 
     -- Create a child process that acts as an server
-    -- Can't apply bracket pattern therefore vulnerable to async exception
-    -- (e.g crash the program in the middle of process)
-    _ <- forkProcess $ do
-        (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-        -- Send message to server
-        sendMessage serverWriteHandle Ping
-        let nodePort = Port 8090
-        startNodeJsIPC serverReadHandle clientWriteHandle nodePort
-        exitImmediately ExitSuccess
 
+    _ <- forkProcess $ do
+            ipcServer clientWriteHandle Ping
+            exitImmediately ExitSuccess
+        `finally`
+        return ()
+
+    receieveMessages clientReadHandle
+
+-- | IPC server
+ipcServer :: (ToJSON msg) => WriteHandle -> msg -> IO ()
+ipcServer clientWriteHandle msgin = do
+    (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
+    -- Send message to server
+    sendMessage serverWriteHandle msgin
+    startIPC serverReadHandle clientWriteHandle nodePort
+
+-- | Read message wigh given 'ReadHandle'
+receieveMessages :: ReadHandle -> IO (MsgOut, MsgOut)
+receieveMessages clientReadHandle = do
     let readClientMessage :: IO MsgOut
         readClientMessage = readMessage clientReadHandle
 
-    -- Recieve the messages
-    started <- readClientMessage -- Start
+    started <- readClientMessage
     pong    <- readClientMessage -- Pong
     return (started, pong)

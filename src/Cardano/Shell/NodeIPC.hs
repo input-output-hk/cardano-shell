@@ -11,8 +11,8 @@ module Cardano.Shell.NodeIPC
     , ReadHandle(..)
     , WriteHandle(..)
      -- * IPC protocol
-    , getIPCHandle
     , startNodeJsIPC
+    , startIPC
      -- ** Exceptions
     , NodeIPCException(..)
     , MessageSendFailure(..)
@@ -23,6 +23,12 @@ module Cardano.Shell.NodeIPC
     , exampleWithFD
     , exampleWithProcess
     , getReadWriteHandles
+    -- * Predicates
+    , isIPCException
+    , isHandleClosed
+    , isUnreadableHandle
+    , isUnwritableHandle
+    , isNodeChannelCannotBeFound
     ) where
 
 import           Cardano.Shell.NodeIPC.Example (exampleWithFD,
@@ -30,9 +36,13 @@ import           Cardano.Shell.NodeIPC.Example (exampleWithFD,
                                                 getReadWriteHandles)
 import           Cardano.Shell.NodeIPC.Lib (MessageSendFailure (..), MsgIn (..),
                                             MsgOut (..), NodeIPCException (..),
-                                            Port (..), getIPCHandle,
+                                            Port (..), isHandleClosed,
+                                            isIPCException,
+                                            isNodeChannelCannotBeFound,
+                                            isUnreadableHandle,
+                                            isUnwritableHandle, startIPC,
                                             startNodeJsIPC)
-import           Cardano.Shell.NodeIPC.Message (MessageException(..),
+import           Cardano.Shell.NodeIPC.Message (MessageException (..),
                                                 ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
