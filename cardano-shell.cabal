@@ -45,6 +45,7 @@ library
     , specs
   build-depends:
       aeson
+    , basic-tracer
     , base >=4.7 && <5
     , binary
     , bytestring

@@ -12,7 +12,7 @@ import           Cardano.Prelude hiding (trace)
 
 import           Cardano.BM.Configuration (Configuration)
 import qualified Cardano.BM.Configuration as Config
-import           Cardano.BM.Setup (setupTrace, shutdownTrace)
+import           Cardano.BM.Setup (setupTrace)
 import           Cardano.BM.Trace (Trace)
 import qualified Cardano.BM.Trace as Trace
 
@@ -46,13 +46,13 @@ data LoggingParameters = LoggingParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { llBasicTrace :: forall m. (MonadIO m) => Trace m
-    , llLogDebug   :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llLogInfo    :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llLogNotice  :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llLogWarning :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llLogError   :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llAppendName :: forall m. (MonadIO m) => Text     -> Trace m -> m (Trace m)
+    { llBasicTrace :: forall m. (MonadIO m) => Trace m Text
+    , llLogDebug   :: forall m. (MonadIO m) => Trace m Text -> Text -> m ()
+    , llLogInfo    :: forall m. (MonadIO m) => Trace m Text -> Text -> m ()
+    , llLogNotice  :: forall m. (MonadIO m) => Trace m Text -> Text -> m ()
+    , llLogWarning :: forall m. (MonadIO m) => Trace m Text -> Text -> m ()
+    , llLogError   :: forall m. (MonadIO m) => Trace m Text -> Text -> m ()
+    , llAppendName :: forall m. (MonadIO m) => Text         -> Trace m Text -> m (Trace m Text)
     }
 
 --------------------------------
@@ -100,8 +100,10 @@ loggingCardanoFeatureInit = CardanoFeatureInit
                 , llLogError    = Trace.logError
                 , llAppendName  = Trace.appendName
                 }
+
+    -- cleaned up automatically when using `withTrace`
     cleanupLogging :: LoggingLayer -> IO ()
-    cleanupLogging loggingLayer = shutdownTrace $ llBasicTrace loggingLayer
+    cleanupLogging _ = pure ()
 
 loggingCardanoFeature :: LoggingCardanoFeature -> LoggingLayer -> CardanoFeature
 loggingCardanoFeature loggingCardanoFeature' loggingLayer = CardanoFeature

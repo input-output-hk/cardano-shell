@@ -5,6 +5,7 @@
         cardano-prelude   = haskellPackagesNew.callPackage ./cardano-prelude.nix {};
         canonical-json    = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./canonical-json.nix {});
 
+        basic-tracer      = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./basic-tracer.nix {});
         iohk-monitoring   = haskellPackagesNew.callPackage ./iohk-monitoring.nix { };
         cardano-shell     = haskellPackagesNew.callPackage ./cardano-shell.nix { };
         stack-hpc-coveralls = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./stack-hpc-coveralls.nix {});
