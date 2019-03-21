@@ -139,6 +139,7 @@ runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardano
 
     -- And we are done! Or are we? A simple idea is to restart the application if it's
     -- in production.
+    -- Maybe the user would like to have more control then this, systemd?
     when (applicationProductionMode applicationEnvironment) $
        runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardanoApplication
 
@@ -166,3 +167,4 @@ runApplication initializeAllFeatures application = do
 
     -- Here we run them.
     runCardanoApplicationWithFeatures Development cardanoFeatures cardanoApplication
+
