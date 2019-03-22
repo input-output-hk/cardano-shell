@@ -5,11 +5,13 @@
         cardano-prelude   = haskellPackagesNew.callPackage ./cardano-prelude.nix {};
         canonical-json    = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./canonical-json.nix {});
 
-
-        libyaml           = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./libyaml.nix {});
-        iohk-monitoring   = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./iohk-monitoring.nix { });
+        # Pain in the ass
+        iohk-monitoring   = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./iohk-monitoring.nix { 
+          libyaml           = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./libyaml.nix {});
+        });
 
         basic-tracer      = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./iohk-monitoring-basic-tracer.nix { });
+
         cardano-shell     = haskellPackagesNew.callPackage ./cardano-shell.nix { };
         stack-hpc-coveralls = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./stack-hpc-coveralls.nix {});
       };
