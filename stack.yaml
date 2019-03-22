@@ -53,10 +53,13 @@ extra-deps:
     subdirs:
       - hedgehog
 
+  # Be sure to point to a release version of iohk-monitoring-framework
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
-    commit: 95a19ed4b01522793b71968b047c69d832b5663e
+    commit: b937c17ad5b74233821f6c29bca393b7e8cb0062
     subdirs:
-      - .
+      - basic-tracer
+      - iohk-monitoring
+
 
   - katip-0.7.0.0@sha256:4b30d0643e18d01a3fd264d3d75921b49b2f464336a52fa46fa049107ebbfe04
 
