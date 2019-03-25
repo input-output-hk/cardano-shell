@@ -1,38 +1,49 @@
-{-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Main where
 
 import           Cardano.Prelude
+import qualified Prelude
 
-import           System.Directory
-import           System.FilePath
+import           System.Directory (createDirectoryIfMissing, doesFileExist)
+import           System.FilePath ((</>))
 
-import           Formatting (bprint, build, string)
+import           Formatting (build, bprint, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
-import Control.Exception.Safe
+import           Control.Exception.Safe (throwM)
 
-{-
+import           Cardano.Shell.Configuration.Types (LauncherConfig (..))
 
--- TODO(KS): Move this to another module.
--}
+import           Cardano.X509.Configuration (ConfigurationKey (..),
+                                             DirConfiguration (..), certChecks,
+                                             certFilename, certOutDir,
+                                             decodeConfigFile,
+                                             fromConfiguration, genCertificate)
+import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
+                                  validateCertificate, writeCertificate,
+                                  writeCredentials)
 
-import           Cardano.X509.Configuration
-import           Data.X509.Extra
-
-import qualified System.Process as Process
-
-#ifndef mingw32_HOST_OS
-import           System.Posix.Signals (sigKILL, signalProcess)
-import qualified System.Process.Internals as Process
-#else
-import qualified System.Win32.Process as Process
-#endif
+--------------------------------------------------------------------------------
+-- Main
+--------------------------------------------------------------------------------
 
 main :: IO ()
-main = return ()
+main = do
 
+    let launcherConfig :: LauncherConfig
+        launcherConfig = LauncherConfig
+            { lcfgFilePath    = "./configuration/"
+            , lcfgKey         = "develop"
+            , lcfgSystemStart = Nothing
+            , lcfgSeed        = Nothing
+            }
+
+    generateTlsCertificates launcherConfig (TLSPath "./configuration/")
+
+--------------------------------------------------------------------------------
+-- Types
+--------------------------------------------------------------------------------
 
 newtype X509ToolPath = X509ToolPath { getX509ToolPath :: FilePath }
     deriving (Eq, Show)
@@ -40,29 +51,26 @@ newtype X509ToolPath = X509ToolPath { getX509ToolPath :: FilePath }
 newtype TLSPath = TLSPath { getTLSFilePath :: FilePath }
     deriving (Eq, Show)
 
-
-
-
-createProc :: Process.StdStream -> FilePath -> [Text] -> Process.CreateProcess
-createProc stdStream path args =
-    (Process.proc path (map toS args))
-            { Process.std_in = Process.CreatePipe
-            , Process.std_out = stdStream
-            , Process.std_err = stdStream
-            }
+--------------------------------------------------------------------------------
+-- Exceptions
+--------------------------------------------------------------------------------
 
 data LauncherExceptions
     = CannotGenerateTLS
-    deriving (Eq, Show)
-
-
-instance Exception LauncherExceptions
+    deriving (Eq)
 
 instance Buildable LauncherExceptions where
     build = \case
         CannotGenerateTLS -> bprint "Couldn't generate TLS certificates; Daedalus wallet won't work without TLS. Please check your configuration and make sure you aren't already running an instance of Daedalus wallet."
 
+instance Show LauncherExceptions where
+    show = formatToString Formatting.build
 
+instance Exception LauncherExceptions
+
+--------------------------------------------------------------------------------
+-- Functions
+--------------------------------------------------------------------------------
 
 --data ExternalDependencies = ExternalDependencies
 logInfo :: Text -> IO ()
@@ -71,70 +79,75 @@ logInfo = putTextLn
 logError :: Text -> IO ()
 logError = putTextLn
 
+-- | Utility function.
+textToFilePath :: Text -> FilePath
+textToFilePath = strConv Strict
+
 -- | Generation of the TLS certificates.
-generateTlsCertificates :: X509ToolPath -> TLSPath -> IO ()
-generateTlsCertificates (X509ToolPath x509ToolPath) (TLSPath tlsPath) = do
+-- This just covers the generation of the TLS certificates and nothing else.
+generateTlsCertificates :: LauncherConfig -> TLSPath -> IO ()
+generateTlsCertificates (LauncherConfig cfgFilePath cfgKey _ _) (TLSPath tlsPath) = do --TODO(KS): Fix positional params
 
-    let outDirectories :: DirConfiguration -- ^ Output directories configuration
-        outDirectories = panic "!"
+    alreadyExists <- liftIO . doesFileExist $ tlsPath
 
-    let configKey :: ConfigurationKey -- ^ Configuration key within the config file
-        configKey = panic "!"
+    let tlsServer = tlsPath </> "server"
+    let tlsClient = tlsPath </> "client"
 
-    let configFile :: FilePath
-        configFile = panic "!"
+    -- If there is no existing file
+    unless alreadyExists $ do
+        logInfo "Testing"
 
-    tlsConfig <-
-        decodeConfigFile configKey configFile
+        createDirectoryIfMissing True tlsServer
+        createDirectoryIfMissing True tlsClient
+        --phvar <- newEmptyMVar
+        --system' phvar process mempty ECertGen
+        generateCertificates tlsServer tlsClient
+            `onException` throwM CannotGenerateTLS
 
-    (caDesc, descs) <-
-        fromConfiguration tlsConfig outDirectories genRSA256KeyPair <$> genRSA256KeyPair
+  where
+    generateCertificates :: FilePath -> FilePath -> IO ()
+    generateCertificates tlsServer' tlsClient = do
+        let outDirectories :: DirConfiguration -- ^ Output directories configuration
+            outDirectories = DirConfiguration
+                { outDirServer  = tlsServer'
+                , outDirClients = tlsClient
+                , outDirCA      = Just . textToFilePath $ cfgFilePath -- TODO(KS): Maybe?!!
+                }
 
-    let caName =
-            certFilename caDesc
+        -- | Configuration key within the config file
+        let configKey :: ConfigurationKey
+            configKey = ConfigurationKey . textToFilePath $ cfgKey
 
-    let (serverHost, serverPort) = ("", "")
-            --(NonEmpty.head $ serverAltNames $ tlsServer tlsConfig, "")
+        let configFile :: FilePath
+            configFile = tlsPath
 
-    (caKey, caCert) <-
-        genCertificate caDesc
+        tlsConfig <-
+            decodeConfigFile configKey configFile
 
-    case certOutDir caDesc of
-        Nothing  -> return ()
-        Just dir -> writeCredentials (dir </> caName) (caKey, caCert)
+        (caDesc, descs) <-
+            fromConfiguration tlsConfig outDirectories genRSA256KeyPair <$> genRSA256KeyPair
 
-    forM_ descs $ \desc -> do
-        (key, cert) <- genCertificate desc
-        failIfReasons =<< validateCertificate
-            caCert
-            (certChecks desc)
-            (serverHost, serverPort)
-            cert
-        writeCredentials (certOutDir desc </> certFilename desc) (key, cert)
-        writeCertificate (certOutDir desc </> caName) caCert
+        let caName =
+                certFilename caDesc
 
-    -- WTF?
-    --alreadyExists <- and <$> mapM (liftIO . doesFileExist) [tlsPath]
+        let serverHost = "localhost"
+        let serverPort = ""
 
-    --let tlsServer = tlsPath </> "server"
-    --let tlsClient = tlsPath </> "client"
+        (caKey, caCert) <-
+            genCertificate caDesc
 
-    --unless alreadyExists $ do
-    --    logInfo $ "Generating new TLS certificates in " <> show tlsPath
+        case certOutDir caDesc of
+            Nothing  -> return ()
+            Just dir -> writeCredentials (dir </> caName) (caKey, caCert)
 
-    --    let process = createProc Process.Inherit x509ToolPath
-    --            [ "--server-out-dir"     , show tlsServer
-    --            , "--clients-out-dir"    , show tlsClient
-    --            , "--configuration-file" , show cfoFilePath
-    --            , "--configuration-key"  , cfoKey
-    --            ]
+        forM_ descs $ \desc -> do
+            (key, cert) <- genCertificate desc
+            failIfReasons =<< validateCertificate
+                caCert
+                (certChecks desc)
+                (serverHost, serverPort)
+                cert
+            writeCredentials (certOutDir desc </> certFilename desc) (key, cert)
+            writeCertificate (certOutDir desc </> caName) caCert
 
-    --    exitCode <- liftIO $ do
-    --        createDirectoryIfMissing True tlsServer
-    --        createDirectoryIfMissing True tlsClient
-    --        phvar <- newEmptyMVar
-    --        system' phvar process mempty ECertGen
 
-    --    when (exitCode /= ExitSuccess) $ do
-    --        logError "Couldn't generate TLS certificates for Wallet"
-    --        liftIO . throwM $ CannotGenerateTLS

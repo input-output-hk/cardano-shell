@@ -59,7 +59,7 @@ import           Cardano.Prelude hiding (evalState, maybe)
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
 import qualified Data.Text as T
-import           Dhall (GenericInject, Inject (..), InputType, Interpret (..),
+import           Dhall (GenericInject, Inject (..), InputType (..), Interpret (..),
                         InterpretOptions (..), auto, field, genericInjectWith,
                         record)
 import           GHC.Generics (from)
@@ -262,7 +262,7 @@ instance Arbitrary Param where
 
 -- | Launcher configuration
 data LauncherConfig = LauncherConfig
-    { lcfgFilePath    :: !Text
+    { lcfgFilePath    :: !Text -- We really need @FilePath@ here.
     , lcfgKey         :: !Text
     , lcfgSystemStart :: !(Maybe Integer)
     , lcfgSeed        :: !(Maybe Integer)
