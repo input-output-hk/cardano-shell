@@ -120,12 +120,13 @@ nodeIPCSpec = do
                     handlesClosed <- run $ do
                         (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
                         (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-                        void $ async $ startIPC serverReadHandle clientWriteHandle port
+                        as <- async $ startIPC serverReadHandle clientWriteHandle port
                         let readClientMessage = readMessage clientReadHandle
                             sendServer        = sendMessage serverWriteHandle
                         _ <- readClientMessage
                         sendServer msg
                         (_ :: MsgOut) <- readClientMessage
+                        wait as
                         areHandlesClosed serverReadHandle clientWriteHandle
                     assert handlesClosed
 
