@@ -21,12 +21,11 @@ import           Control.Exception.Safe (throwM)
 import           Control.Concurrent.Classy hiding (catch)
 import           Control.Concurrent.Classy.Async (async, cancel)
 
-import           GHC.IO.Handle.Lock (LockMode (..), hTryLock)
-
 import           Formatting (bprint, build, formatToString, stext, (%))
 import           Formatting.Buildable (Buildable (..))
 
 import           System.Directory (doesFileExist)
+import           System.FileLock (SharedExclusive (..), tryLockFile)
 
 import           Cardano.Shell.Types (ApplicationEnvironment (..),
                                       CardanoApplication (..),
@@ -99,8 +98,7 @@ checkIfApplicationIsRunning cardanoConfiguration = do
     whenM (not <$> doesFileExist lockFilePath) $ do
         throwM $ LockFileDoesNotExist lockFilePath
 
-    lockfileHandle      <- openFile lockFilePath ReadMode
-    isAlreadyRunning    <- hTryLock lockfileHandle ExclusiveLock
+    isAlreadyRunning    <- isJust <$> tryLockFile lockFilePath Exclusive
 
     -- We need to inform the user if the application version is already running.
     when (not isAlreadyRunning) $

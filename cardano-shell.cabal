@@ -69,6 +69,7 @@ library
     , text
     , transformers
     , unix
+    , filelock
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
