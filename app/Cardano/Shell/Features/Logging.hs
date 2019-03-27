@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Rank2Types        #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE Rank2Types          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.Shell.Features.Logging
     ( LoggingLayer (..)
@@ -12,7 +13,8 @@ import           Cardano.Prelude hiding (trace)
 
 import           Cardano.BM.Configuration (Configuration)
 import qualified Cardano.BM.Configuration as Config
-import           Cardano.BM.Setup (setupTrace, shutdownTrace)
+import           Cardano.BM.Data.LogItem (LoggerName)
+import           Cardano.BM.Setup (setupTrace_, shutdown)
 import           Cardano.BM.Trace (Trace)
 import qualified Cardano.BM.Trace as Trace
 
@@ -46,13 +48,13 @@ data LoggingParameters = LoggingParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { llBasicTrace :: forall m. (MonadIO m) => Trace m
-    , llLogDebug   :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llLogInfo    :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llLogNotice  :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llLogWarning :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llLogError   :: forall m. (MonadIO m) => Trace m  -> Text -> m ()
-    , llAppendName :: forall m. (MonadIO m) => Text     -> Trace m -> m (Trace m)
+    { llBasicTrace :: forall m . MonadIO m => Trace m Text
+    , llLogDebug   :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogInfo    :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogNotice  :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogWarning :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogError   :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llAppendName :: forall m a. (MonadIO m, Show a) => LoggerName -> Trace m a -> m (Trace m a)
     }
 
 --------------------------------
@@ -69,45 +71,52 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration = do
     loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ ccLogConfig cardanoConfiguration)
 
     -- we construct the layer
-    loggingLayer            <- (featureInit loggingCardanoFeatureInit)
+    logCardanoFeat <- loggingCardanoFeatureInit loggingConfiguration
+
+    loggingLayer            <- (featureInit logCardanoFeat)
                                cardanoEnvironment
                                NoDependency
                                cardanoConfiguration
                                loggingConfiguration
 
     -- we construct the cardano feature
-    let cardanoFeature      = loggingCardanoFeature loggingCardanoFeatureInit loggingLayer
+    let cardanoFeature      = createCardanoFeature logCardanoFeat loggingLayer
 
     -- we return both
     pure (loggingLayer, cardanoFeature)
 
-loggingCardanoFeatureInit :: LoggingCardanoFeature
-loggingCardanoFeatureInit = CardanoFeatureInit
-    { featureType    = "LoggingMonitoringFeature"
-    , featureInit    = initLogging
-    , featureCleanup = cleanupLogging
-    }
-  where
-    initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
-    initLogging _ _ _ loggingParameters = do
-        baseTrace <- setupTrace (Right (lpConfiguration loggingParameters)) "cardano"
-        pure $ LoggingLayer
-                { llBasicTrace  = Trace.natTrace liftIO baseTrace
-                , llLogDebug    = Trace.logDebug
-                , llLogInfo     = Trace.logInfo
-                , llLogNotice   = Trace.logNotice
-                , llLogWarning  = Trace.logWarning
-                , llLogError    = Trace.logError
-                , llAppendName  = Trace.appendName
-                }
-    cleanupLogging :: LoggingLayer -> IO ()
-    cleanupLogging loggingLayer = shutdownTrace $ llBasicTrace loggingLayer
+-- | Initialize `LoggingCardanoFeature`
+loggingCardanoFeatureInit :: LoggingParameters -> IO LoggingCardanoFeature
+loggingCardanoFeatureInit loggingConfig = do
 
-loggingCardanoFeature :: LoggingCardanoFeature -> LoggingLayer -> CardanoFeature
-loggingCardanoFeature loggingCardanoFeature' loggingLayer = CardanoFeature
-    { featureName       = featureType loggingCardanoFeature'
+    (baseTrace, switchBoard) <- setupTrace_ (lpConfiguration loggingConfig) "cardano"
+
+    let initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
+        initLogging _ _ _ _ = do
+            pure $ LoggingLayer
+                    { llBasicTrace  = Trace.natTrace liftIO baseTrace
+                    , llLogDebug    = Trace.logDebug
+                    , llLogInfo     = Trace.logInfo
+                    , llLogNotice   = Trace.logNotice
+                    , llLogWarning  = Trace.logWarning
+                    , llLogError    = Trace.logError
+                    , llAppendName  = Trace.appendName
+                    }
+    let cleanupLogging :: LoggingLayer -> IO ()
+        cleanupLogging _ = shutdown switchBoard
+
+    pure $ CardanoFeatureInit
+             { featureType    = "LoggingMonitoringFeature"
+             , featureInit    = initLogging
+             , featureCleanup = cleanupLogging
+             }
+
+-- | Create `CardanoFeature`
+createCardanoFeature :: LoggingCardanoFeature -> LoggingLayer -> CardanoFeature
+createCardanoFeature loggingCardanoFeature loggingLayer = CardanoFeature
+    { featureName       = "LoggingMonitoringFeature"
     , featureStart      = liftIO $ do
         void $ pure loggingLayer
     , featureShutdown   = liftIO $ do
-        (featureCleanup loggingCardanoFeature') loggingLayer
+        (featureCleanup loggingCardanoFeature) loggingLayer
     }
