@@ -5,7 +5,7 @@ module Main where
 import           Cardano.Prelude
 import qualified Prelude
 
-import           System.Directory (createDirectoryIfMissing, doesFileExist)
+import           System.Directory (createDirectoryIfMissing)
 import           System.FilePath ((</>))
 
 import           Formatting (build, bprint, formatToString)
@@ -33,17 +33,35 @@ main = do
 
     let launcherConfig :: LauncherConfig
         launcherConfig = LauncherConfig
-            { lcfgFilePath    = "./configuration/"
-            , lcfgKey         = "develop"
+            { lcfgFilePath    = "./configuration/cert-configuration.yaml"
+            , lcfgKey         = "dev"
             , lcfgSystemStart = Nothing
             , lcfgSeed        = Nothing
             }
 
-    generateTlsCertificates launcherConfig (TLSPath "./configuration/")
+    -- | Yes, this is something we probably need to replace with actual loggging.
+    let externalDependencies :: ExternalDependencies
+        externalDependencies = ExternalDependencies
+            { logInfo       = putTextLn
+            , logError      = putTextLn
+            }
+
+    -- | If we need to, we first check if there are certificates so we don't have
+    -- to generate them. Since the function is called `generate...`, that's what
+    -- it does, it generates the certificates.
+    generateTlsCertificates
+        externalDependencies
+        launcherConfig
+        (TLSPath "./configuration/") -- where to generate the certificates
 
 --------------------------------------------------------------------------------
 -- Types
 --------------------------------------------------------------------------------
+
+data ExternalDependencies = ExternalDependencies
+    { logInfo       :: Text -> IO ()
+    , logError      :: Text -> IO ()
+    }
 
 newtype X509ToolPath = X509ToolPath { getX509ToolPath :: FilePath }
     deriving (Eq, Show)
@@ -61,7 +79,9 @@ data LauncherExceptions
 
 instance Buildable LauncherExceptions where
     build = \case
-        CannotGenerateTLS -> bprint "Couldn't generate TLS certificates; Daedalus wallet won't work without TLS. Please check your configuration and make sure you aren't already running an instance of Daedalus wallet."
+        CannotGenerateTLS -> bprint "Couldn't generate TLS certificates; \
+            \ Daedalus wallet won't work without TLS. Please check your configuration \
+            \ and make sure you aren't already running an instance of Daedalus wallet."
 
 instance Show LauncherExceptions where
     show = formatToString Formatting.build
@@ -72,46 +92,44 @@ instance Exception LauncherExceptions
 -- Functions
 --------------------------------------------------------------------------------
 
---data ExternalDependencies = ExternalDependencies
-logInfo :: Text -> IO ()
-logInfo = putTextLn
-
-logError :: Text -> IO ()
-logError = putTextLn
-
 -- | Utility function.
 textToFilePath :: Text -> FilePath
 textToFilePath = strConv Strict
 
 -- | Generation of the TLS certificates.
 -- This just covers the generation of the TLS certificates and nothing else.
-generateTlsCertificates :: LauncherConfig -> TLSPath -> IO ()
-generateTlsCertificates (LauncherConfig cfgFilePath cfgKey _ _) (TLSPath tlsPath) = do --TODO(KS): Fix positional params
-
-    alreadyExists <- liftIO . doesFileExist $ tlsPath
+generateTlsCertificates :: ExternalDependencies -> LauncherConfig -> TLSPath -> IO ()
+generateTlsCertificates externalDependencies launcherConfig (TLSPath tlsPath) = do
 
     let tlsServer = tlsPath </> "server"
     let tlsClient = tlsPath </> "client"
 
-    -- If there is no existing file
-    unless alreadyExists $ do
-        logInfo "Testing"
+    logInfo externalDependencies $ "Generating the certificates!"
 
-        createDirectoryIfMissing True tlsServer
-        createDirectoryIfMissing True tlsClient
-        --phvar <- newEmptyMVar
-        --system' phvar process mempty ECertGen
-        generateCertificates tlsServer tlsClient
-            `onException` throwM CannotGenerateTLS
+    -- Create the directories.
+    createDirectoryIfMissing True tlsServer
+    createDirectoryIfMissing True tlsClient
+
+    -- Generate the certificates.
+    generateCertificates launcherConfig tlsServer tlsClient
+        `onException` throwM CannotGenerateTLS
+        -- ^ unfortunate since we gobble up the real cause,
+        -- but we want the client to have a nice message
 
   where
-    generateCertificates :: FilePath -> FilePath -> IO ()
-    generateCertificates tlsServer' tlsClient = do
+    -- | The generation of the certificates. More or less copied from
+    -- `cardano-sl`.
+    generateCertificates :: LauncherConfig -> FilePath -> FilePath -> IO ()
+    generateCertificates launcherConfig' tlsServer' tlsClient = do
+
+        let cfgFilePath = lcfgFilePath launcherConfig'
+        let cfgKey      = lcfgKey launcherConfig'
+
         let outDirectories :: DirConfiguration -- ^ Output directories configuration
             outDirectories = DirConfiguration
                 { outDirServer  = tlsServer'
                 , outDirClients = tlsClient
-                , outDirCA      = Just . textToFilePath $ cfgFilePath -- TODO(KS): Maybe?!!
+                , outDirCA      = Nothing -- TODO(KS): AFAIK, we don't output the CA.
                 }
 
         -- | Configuration key within the config file
@@ -119,22 +137,22 @@ generateTlsCertificates (LauncherConfig cfgFilePath cfgKey _ _) (TLSPath tlsPath
             configKey = ConfigurationKey . textToFilePath $ cfgKey
 
         let configFile :: FilePath
-            configFile = tlsPath
+            configFile = textToFilePath cfgFilePath
 
-        tlsConfig <-
-            decodeConfigFile configKey configFile
+        -- | TLS configuration
+        tlsConfig <- decodeConfigFile configKey configFile
 
+        -- | From configuraiton
         (caDesc, descs) <-
             fromConfiguration tlsConfig outDirectories genRSA256KeyPair <$> genRSA256KeyPair
 
-        let caName =
-                certFilename caDesc
+        let caName      = certFilename caDesc
 
-        let serverHost = "localhost"
-        let serverPort = ""
+        let serverHost  = "localhost"
+        let serverPort  = ""
 
-        (caKey, caCert) <-
-            genCertificate caDesc
+        -- | Generation of the certificate
+        (caKey, caCert) <- genCertificate caDesc
 
         case certOutDir caDesc of
             Nothing  -> return ()
