@@ -47,9 +47,11 @@ extra-deps:
       - test
 
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
-    commit: 95a19ed4b01522793b71968b047c69d832b5663e
+    commit: b937c17ad5b74233821f6c29bca393b7e8cb0062
     subdirs:
-      - .
+      - basic-tracer
+      - iohk-monitoring
+
 
   # Extracted from cardano-sl since it's quite useful
   - git: https://github.com/input-output-hk/cardano-sl-x509
