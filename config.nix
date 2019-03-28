@@ -12,6 +12,8 @@
 
         basic-tracer      = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./iohk-monitoring-basic-tracer.nix { });
 
+        cardano-sl-x509   = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./cardano-sl-x509.nix { });
+
         cardano-shell     = haskellPackagesNew.callPackage ./cardano-shell.nix { };
         stack-hpc-coveralls = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./stack-hpc-coveralls.nix {});
       };
