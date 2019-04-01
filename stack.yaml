@@ -41,25 +41,23 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
   - git: https://github.com/input-output-hk/cardano-prelude
-    commit: ff5fd5f33849be8a826506c34e5b0278f267f804
+    commit: 2256fd727c5f92e6218afdcf8cddf6e01c4a9dcd
     subdirs:
       - .
       - test
 
-  # Exposes a custom discovery function so you can specify the prefix.
-  # https://github.com/hedgehogqa/haskell-hedgehog/compare/master...input-output-hk:master
-  - git: https://github.com/input-output-hk/haskell-hedgehog.git
-    commit: e63fb354bfbad07f3befdd43b382c655944218be
-    subdirs:
-      - hedgehog
-
-  # Be sure to point to a release version of iohk-monitoring-framework
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
     commit: b937c17ad5b74233821f6c29bca393b7e8cb0062
     subdirs:
       - basic-tracer
       - iohk-monitoring
 
+
+  # Extracted from cardano-sl since it's quite useful
+  - git: https://github.com/input-output-hk/cardano-sl-x509
+    commit: 71115d199368f1cc969a4936a856808539063253
+    subdirs:
+      - .
 
   - katip-0.7.0.0@sha256:4b30d0643e18d01a3fd264d3d75921b49b2f464336a52fa46fa049107ebbfe04
 
