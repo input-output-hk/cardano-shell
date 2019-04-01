@@ -26,7 +26,7 @@ The shell will act as an **glue** of these features. It provides required resour
 
 There are **dependencies** between the features meaning some of the features depend on others. For example,
 
-* `networking` feature requires `logging/monitoring`
+* `networking` feature requires `logging` and `monitoring`
 * `blockchain` feature `logging` and `networking`
 
 and so on.
@@ -35,7 +35,7 @@ The shell will resolve these dependencies by having each of the features to prod
 
 ### Layer
 
-To put it simple, **layers are list of functions which the feature provides**. For example, logging feature will produce logging layer when initialized. The logging layer will have a list of functions related to logging such as `logError`, `logNotice` which the other features can use.
+To put it simple, **a layer is a list of functions that each feature generates whn initialized.**. For example, logging feature will produce logging layer when initialized. The logging layer will have a list of functions related to logging such as `logError`, `logNotice` which the other features can use.
 
 Dependencies between the features are resolved by passing these layers. 
 
