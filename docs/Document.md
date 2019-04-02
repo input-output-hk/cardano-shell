@@ -1,8 +1,9 @@
  # Overview
 
-`cardano-shell` is an thin layer which brings all the other modules working together and makes sure that they have the required resources (configuration, exception handling, monitoring, logging, ...).
+`cardano-shell` is an thin interface which brings all the other modules working together and makes sure that they have the required resources (configuration, exception handling, monitoring, logging, ...).
 
 The shell is also responsible for:
+
 * Logging
 * Monitoring
 * Configuration
@@ -13,14 +14,16 @@ The shell is also responsible for:
 
 Various **features** are required for the cardano node to operate.
 
-* Blockchain
-* Ledger
-* Logging
-* Monitoring
-* Network
-* Wallet backend
+* Blockchain layer
+* Ledger layer
+* Logging layer
+* Monitoring layer
+* Network layer
+* Wallet backend layer
 
 The shell will act as a **glue** of these features. It provides required resources/configurations to each of these features as well as resolving its dependencies.
+
+![shell-diagram](https://user-images.githubusercontent.com/6264437/47286815-88df4100-d5f0-11e8-92a7-c807b6d3b47a.jpg)
 
 ## Resolving dependencies between the features
 
@@ -31,15 +34,22 @@ There are **dependencies** between the features meaning some of the features dep
 
 and so on.
 
-The shell will resolve these dependencies by having each of the features to produce a `layer` and distributing them to other features that depend on it.
+The shell will resolve these dependencies by having each of the features to produce a `interface` and distributing them to other features that depend on it.
 
-### Layer
+### Interface
 
-To put it simple, **a layer is a list of functions that each feature generates when initialized.**. For example, logging feature will produce logging layer when initialized. The logging layer will have a list of functions related to logging such as `logError`, `logNotice` which the other features can use.
+To put it simple, **an interface is a list of functions that each feature generates when initialized.**. For example, logging feature will produce logging interface when initialized. The logging interface will have a list of functions related to logging such as `logInfo`, `logDebug` which the other features can use.
 
-Dependencies between the features are resolved by passing these layers. 
+![interface](https://user-images.githubusercontent.com/15665039/55371524-7f5fea80-5539-11e9-9153-f24379a92936.jpg)
 
-- If `networking` feature requires `logging` features, then it will have logging layer as a dependency when initializing.
-- If `blockchain` feature requires `logging` and `network`, then shell will provide those layers as dependencies.
+Dependencies between the features are resolved by passing these interfaces. 
 
-Layers are defined in such a way that it can be **stubbed**. This will enable the developer to implement test each of the features with ease.
+- If `networking` feature requires `logging`, then it will have logging interface as a dependency when initializing.
+
+![network](https://user-images.githubusercontent.com/15665039/55374019-09ac4c80-5542-11e9-90c7-725843ff94c5.jpg)
+
+- If `blockchain` feature requires `logging` and `network`, then shell will provide those interfaces as dependencies.
+
+![blockchain](https://user-images.githubusercontent.com/15665039/55373871-8559c980-5541-11e9-8a4f-ad040d825f92.jpg)
+
+Interfaces are defined in such a way that it can be **stubbed**. This will enable the developer to implement test each of the features with ease.
