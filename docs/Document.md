@@ -43,10 +43,10 @@ The shell will resolve these dependencies by having each of the features to
 
 ### Layer
 
-To put it simple, **a layer is a list of functions that each feature generates when initialized.**. 
+To put it simple, **a layer is a record of functions that each feature generates when initialized**. 
 For example, logging feature will produce logging layer when initialized.
- The logging layer will have a list of functions related to logging such as
-  `logInfo`, `logDebug` which the other features can use.
+The logging layer will have a list of functions related to logging such as
+`logInfo`, `logDebug` which the other features can use.
 
 ![layer](https://user-images.githubusercontent.com/15665039/55375129-e1bee800-5545-11e9-82c0-f7bef87deaf3.jpg)
 
@@ -63,4 +63,5 @@ provide those layers as dependencies.
 ![blockchain](https://user-images.githubusercontent.com/15665039/55375281-8a6d4780-5546-11e9-9240-21d9ca8cbc46.jpg)
 
 Layers are defined in such a way that it can be **stubbed**. This will 
-enable the developer to implement test each of the features with ease.
+allow the developer to write test cases on each features with ease.
+
