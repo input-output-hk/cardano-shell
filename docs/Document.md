@@ -1,6 +1,6 @@
  # `cardano-shell` overview
 
-`cardano-shell` is an thin interface which brings all the other modules working
+`cardano-shell` is an thin layer which brings all the other modules working
  together and makes sure that they have the required resources 
  (configuration, exception handling, monitoring, logging, ...).
 
@@ -39,28 +39,28 @@ There are **dependencies** between the features meaning some of the features
 and so on.
 
 The shell will resolve these dependencies by having each of the features to
- produce a `interface` and distributing them to other features that depend on it.
+ produce a `layer` and distributing them to other features that depend on it.
 
-### Interface
+### Layer
 
-To put it simple, **an interface is a list of functions that each feature generates when initialized.**. 
-For example, logging feature will produce logging interface when initialized.
- The logging interface will have a list of functions related to logging such as
+To put it simple, **a layer is a list of functions that each feature generates when initialized.**. 
+For example, logging feature will produce logging layer when initialized.
+ The logging layer will have a list of functions related to logging such as
   `logInfo`, `logDebug` which the other features can use.
 
-![interface](https://user-images.githubusercontent.com/15665039/55371524-7f5fea80-5539-11e9-9153-f24379a92936.jpg)
+![layer](https://user-images.githubusercontent.com/15665039/55375129-e1bee800-5545-11e9-82c0-f7bef87deaf3.jpg)
 
-Dependencies between the features are resolved by passing these interfaces. 
+Dependencies between the features are resolved by passing these layers. 
 
 - If `networking` feature requires `logging`, then it will have logging
-interface as a dependency when initializing.
+layer as a dependency when initializing.
 
-![network](https://user-images.githubusercontent.com/15665039/55374019-09ac4c80-5542-11e9-90c7-725843ff94c5.jpg)
+![network](https://user-images.githubusercontent.com/15665039/55375015-7f65e780-5545-11e9-9fd8-ca2d37d7cc28.jpg)
 
 - If `blockchain` feature requires `logging` and `network`, then shell will
-provide those interfaces as dependencies.
+provide those layers as dependencies.
 
-![blockchain](https://user-images.githubusercontent.com/15665039/55373871-8559c980-5541-11e9-8a4f-ad040d825f92.jpg)
+![blockchain](https://user-images.githubusercontent.com/15665039/55375281-8a6d4780-5546-11e9-9240-21d9ca8cbc46.jpg)
 
-Interfaces are defined in such a way that it can be **stubbed**. This will 
+Layers are defined in such a way that it can be **stubbed**. This will 
 enable the developer to implement test each of the features with ease.
