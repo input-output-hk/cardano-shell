@@ -20,7 +20,7 @@ Various **features** are required for the cardano node to operate.
 * Network
 * Wallet backend
 
-The shell will act as an **glue** of these features. It provides required resources/configurations to each of these features as well as resolving its dependencies.
+The shell will act as a **glue** of these features. It provides required resources/configurations to each of these features as well as resolving its dependencies.
 
 ## Resolving dependencies between the features
 
