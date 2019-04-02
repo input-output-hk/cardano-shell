@@ -1,6 +1,8 @@
 let
   hsPkgs = import ./default.nix {};
   mainShell = hsPkgs.haskellPackages.cardano-shell.components.all;
+
+  # fixme: get shc from iohk-nix
   pkgs = import (import ./nixpkgs.nix) { config = import ./config.nix; };
   runCoveralls = pkgs.stdenv.mkDerivation {
     name = "run-coveralls";

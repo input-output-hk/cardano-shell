@@ -6,14 +6,20 @@
 }:
 
 let
-  haskellPackages = import ./nix/pkgs.nix {
-    inherit pkgs;
-    src = iohkLib.cleanSourceHaskell ./.;
+  haskell = iohkLib.nix-tools.haskell { inherit pkgs; };
+
+  pkgSet = haskell.mkStackPkgSet {
+    stack-pkgs = import ./nix/pkgs.nix;
+    pkg-def-extras = [];
+    modules = [ {
+      packages.cardano-shell.src = iohkLib.cleanSourceHaskell ./.;
+    } ];
   };
+  haskellPackages = pkgSet.config.hsPkgs;
 
 in {
-  inherit haskellPackages;
+  inherit haskellPackages iohkLib;
 
   inherit (haskellPackages.cardano-shell.components)
-    benchmarks exes library tests;
+    all benchmarks exes library tests;
 }
