@@ -26,10 +26,7 @@
           (hsPkgs.cborg)
           (hsPkgs.containers)
           (hsPkgs.formatting)
-<<<<<<< HEAD
           (hsPkgs.ghc-heap)
-=======
->>>>>>> Update build to use nix-tools.
           (hsPkgs.ghc-prim)
           (hsPkgs.hashable)
           (hsPkgs.integer-gmp)
@@ -42,7 +39,6 @@
           (hsPkgs.vector)
           ];
         };
-<<<<<<< HEAD
       tests = {
         "cardano-prelude-test" = {
           depends = [
@@ -69,18 +65,11 @@
             ];
           };
         };
-=======
->>>>>>> Update build to use nix-tools.
       };
     } // {
     src = (pkgs.lib).mkDefault (pkgs.fetchgit {
       url = "https://github.com/input-output-hk/cardano-prelude";
-<<<<<<< HEAD
       rev = "892661cc3951e0d3a385c49c4563b2ae1cf9a4c2";
       sha256 = "0nnplb68q18bcbgl49dh0m3lppm7v5ys1svk9q3kpl0yihydh9s5";
-=======
-      rev = "2256fd727c5f92e6218afdcf8cddf6e01c4a9dcd";
-      sha256 = "0fdwlhkpc7inkqflcdzinx9qr5g3i34clzhl6iiagj851c3jcgsn";
->>>>>>> Update build to use nix-tools.
       });
     }
