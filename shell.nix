@@ -1,6 +1,13 @@
 let
-  mainShell = (import ./release.nix).cardano-shell.env;
-  pkgs = import (import ./nixpkgs.nix) { config = import ./config.nix; };
+  commonLib = import ./nix/iohk-common.nix;
+in
+{ system ? builtins.currentSystem
+, config ? {}
+, localPkgs ? import ./. { inherit config system; }
+, pkgs ? commonLib.getPkgs { inherit config system; }
+}:
+let
+  mainShell = localPkgs.nix-tools.libs.cardano-shell.env;
   runCoveralls = pkgs.stdenv.mkDerivation {
     name = "run-coveralls";
     buildInputs = [ pkgs.haskellPackages.stack-hpc-coveralls pkgs.stack ];
