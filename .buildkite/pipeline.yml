@@ -1,24 +1,9 @@
 steps:
-
-  - label: 'stack coveralls coverage'
-    command:
-      - 'nix-shell -A runCoveralls'
+  - label: 'check-hydra'
+    command: 'ci/check-hydra.sh'
     agents:
       system: x86_64-linux
-
-  - label: 'nix build'
-    command: 'nix-build release.nix'
-    agents:
-      system: x86_64-linux
-
-  - label: 'stack rebuild'
-    env:
-      AWS_REGION: us-west-1
-      S3_BUCKET: appveyor-ci-cache
-      CACHE_S3_MAX_SIZE: 2500MB
-      STACK_ROOT: "/build/cardano-shell.stack"
-    command:
-      - "nix-build scripts/buildkite -o stack-rebuild"
-      - "./stack-rebuild --build-dir /build/cardano-shell --base-branch develop"
+  - label: 'stack2nix'
+    command: 'ci/check-regenerate-nix.sh'
     agents:
       system: x86_64-linux

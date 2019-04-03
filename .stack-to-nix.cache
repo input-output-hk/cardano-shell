@@ -1,0 +1,10 @@
+https://github.com/input-output-hk/cardano-prelude 2256fd727c5f92e6218afdcf8cddf6e01c4a9dcd . 0fdwlhkpc7inkqflcdzinx9qr5g3i34clzhl6iiagj851c3jcgsn cardano-prelude cardano-prelude.nix
+https://github.com/input-output-hk/cardano-prelude 2256fd727c5f92e6218afdcf8cddf6e01c4a9dcd test 0fdwlhkpc7inkqflcdzinx9qr5g3i34clzhl6iiagj851c3jcgsn cardano-prelude-test cardano-prelude-test.nix
+https://github.com/input-output-hk/iohk-monitoring-framework 8fb87e83468831289820ef9edb3d5ef912b0db0f contra-tracer 16sxwx8y2wg8kws15ybhk9vkq6crs5bp7ky37x1vrvpvb3ilc5x0 contra-tracer contra-tracer.nix
+https://github.com/input-output-hk/iohk-monitoring-framework 8fb87e83468831289820ef9edb3d5ef912b0db0f iohk-monitoring 16sxwx8y2wg8kws15ybhk9vkq6crs5bp7ky37x1vrvpvb3ilc5x0 iohk-monitoring iohk-monitoring.nix
+https://github.com/input-output-hk/cardano-sl-x509 71115d199368f1cc969a4936a856808539063253 . 16npjbnwiwvslc6fxamg84q31f0wsl01g9yr3nkmymvnk4lff2g3 cardano-sl-x509 cardano-sl-x509.nix
+https://github.com/well-typed/cborg 80fbe0ee5e67a5622e2cb9eaa9d8594a2214322d cborg 1khd1v9yh6jdkcvzvknvhxpc1qvxvww0pp7c43w4hbvdyhs1q8wh cborg cborg.nix
+https://github.com/input-output-hk/cardano-crypto 3c707936ba0a665375acf5bd240dc4b6eaa6c0bc . 0g8ln8k8wx4csdv92bz09pr7v9dp4lcyv1334b09c9rgwdwhqg1b cardano-crypto cardano-crypto.nix
+https://github.com/avieth/plutus-prototype d094be301195fcd8ab864d793f114970426a4478 . 1s932rghn4zn441waansp408b5bwk20rc1wsa5693a2nwnp4dijw plutus-prototype plutus-prototype.nix
+https://github.com/input-output-hk/haskell-hedgehog.git 2e741bb53afb085741807018948ae17d956c53af hedgehog 0l0d1n2b68m0628j4yi214q5fy6pz777qfj1bc1lrra8scs5gcxh hedgehog hedgehog.nix
+http://github.com/nc6/canonical-json a9dc9b893649bc2e2a770ab22d278a780f7e3a3c . 0alwbi9xqaj6fmwzs6lr2drqrnhlnp13d9k2qkl5ga7h4grz9zcr canonical-json canonical-json.nix
