@@ -35,10 +35,10 @@ commonLib.nix-tools.release-nix {
   #
   # Example:
   #
-  #   nix-tools.libs.iohk-monitoring.x86_64-darwin -- will build the iohk-monitoring library on and for macOS
-  #   nix-tools.libs.x86_64-pc-mingw32-iohk-monitoring.x86_64-linux -- will build the iohk-monitoring library on linux for windows.
-  #   nix-tools.tests.iohk-monitoring.tests.x86_64-linux -- will build and run the tests from the
-  #                                                          iohk-monitoring package on linux.
+  #   nix-tools.libs.cardano-shell.x86_64-darwin -- will build the cardano-shell library on and for macOS
+  #   nix-tools.libs.x86_64-pc-mingw32-cardano-shell.x86_64-linux -- will build the cardano-shell library on linux for windows.
+  #   nix-tools.tests.cardano-shell.cardano-shell-test.x86_64-linux -- will build and run the tests from the
+  #                                                                    cardano-shell package on linux.
 
   # The required jobs that must pass for ci not to fail:
   required-name = "cardano-shell-required-checks";
