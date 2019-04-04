@@ -31,7 +31,6 @@
           (hsPkgs.safe-exceptions)
           (hsPkgs.text)
           (hsPkgs.transformers)
-          (hsPkgs.unix)
           (hsPkgs.contravariant)
           (hsPkgs.dhall)
           (hsPkgs.ekg-core)
@@ -39,8 +38,9 @@
           (hsPkgs.QuickCheck)
           (hsPkgs.text)
           (hsPkgs.transformers)
-          (hsPkgs.unix)
-          ];
+          ] ++ (if system.isWindows
+          then [ (hsPkgs.Win32) ]
+          else [ (hsPkgs.unix) ]);
         };
       exes = {
         "cardano-shell-exe" = {
@@ -66,12 +66,13 @@
             (hsPkgs.cardano-prelude)
             (hsPkgs.cardano-sl-x509)
             (hsPkgs.process)
-            (hsPkgs.unix)
             (hsPkgs.directory)
             (hsPkgs.filepath)
             (hsPkgs.formatting)
             (hsPkgs.safe-exceptions)
-            ];
+            ] ++ (if system.isWindows
+            then [ (hsPkgs.Win32) ]
+            else [ (hsPkgs.unix) ]);
           };
         };
       tests = {
