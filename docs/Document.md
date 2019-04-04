@@ -24,7 +24,7 @@ each of which is responsible for developing specific features.
 * [network layer](https://github.com/input-output-hk/ouroboros-network)
 * [wallet backend layer](https://github.com/input-output-hk/cardano-wallet)
 
-### Multiple modules are being developed on seperate repository
+### Features are being developed on seperate repository
 
 The thing to note is that all these features are being worked on **seperate**
 repository. We need these module working together to act as a node.
