@@ -8,12 +8,12 @@ together and makes sure that they have the required resources
 
 For cardano-node to operate as an peer, various **features** are required:
 
-* Logging, to let the developer know what's going on
+* Logging, to let the user know what's going on
 * Block validation
-* Managing blockchain
-* Communicate with other peers
-* Submit transaction
-* Provide an interface/API so that the user can interact with the node
+* Managing blockchain/stake
+* Communicating with other peers
+* Submitting transaction
+* Providing interface/API so that the user can interact with the node
 
 and so on. Because of this, IOHK currently has multiple development teams, 
 each of which is responsible for developing specific features.
