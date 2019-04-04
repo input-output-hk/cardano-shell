@@ -1,30 +1,37 @@
- # `cardano-shell` overview
+# Overview
 
 `cardano-shell` is an thin layer which brings all the other modules working
- together and makes sure that they have the required resources 
- (configuration, exception handling, monitoring, logging, ...).
+together and makes sure that they have the required resources 
+(configuration, exception handling, ...).
 
-The shell is also responsible for:
+## For cardano-node to operate as an peer
 
-* Logging
-* Monitoring
-* Configuration
-* Exception handling
-* Launcher
+For cardano-node to operate as an peer, various **features** are required:
 
-## Features
+* Logging, to let the developer know what's going on
+* Block validation
+* Managing blockchain
+* Communicate with other peers
+* Submit transaction
+* Provide an interface/API so that the user can interact with the node
 
-Various **features** are required for the cardano node to operate.
+and so on. Because of this, IOHK currently has multiple development teams, 
+each of which is responsible for developing specific features.
 
-* Blockchain layer
-* Ledger layer
-* Logging layer
-* Monitoring layer
-* Network layer
-* Wallet backend layer
+* [blockchain layer](https://github.com/input-output-hk/cardano-ledger)
+* [ledger layer](https://github.com/input-output-hk/cardano-ledger)
+* [logging/monitoring layer](https://github.com/input-output-hk/iohk-monitoring-framework)
+* [network layer](https://github.com/input-output-hk/ouroboros-network)
+* [wallet backend layer](https://github.com/input-output-hk/cardano-wallet)
 
-The shell will act as a **glue** of these features. It provides required
- resources/configurations to each of these features as well as resolving its dependencies.
+### Multiple modules are being developed on seperate repository
+
+The thing to note is that all these features are being worked on **seperate**
+repository. We need these module working together to act as a node.
+
+This is where `cardano-shell` comes in. The shell will act as a **glue** of these
+features, providing required resources/configurations to each of these features
+as well as resolving its dependencies.
 
 ![shell-diagram](https://user-images.githubusercontent.com/6264437/47286815-88df4100-d5f0-11e8-92a7-c807b6d3b47a.jpg)
 
@@ -64,4 +71,3 @@ provide those layers as dependencies.
 
 Layers are defined in such a way that it can be **stubbed**. This will 
 allow the developer to write test cases on each features with ease.
-
