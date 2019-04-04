@@ -3,10 +3,10 @@
 # buildables (see release.nix for nomenclature, excluding
 # the "build machine" last part, specific to release.nix), eg.:
 #
-# - nix build -f default.nix nix-tools.tests.iohk-monitoring # All `iohk-monitoring` tests
-# - nix build -f default.nix nix-tools.tests.iohk-monitoring.tests
-# - nix build -f default.nix nix-tools.exes.iohk-monitoring # All `iohk-monitoring` executables
-# - nix build -f default.nix nix-tools.cexes.iohk-monitoring.example-simple
+# - nix build -f default.nix nix-tools.tests.cardano-shell # All `cardano-shell` tests
+# - nix build -f default.nix nix-tools.tests.cardano-shell.tests
+# - nix build -f default.nix nix-tools.exes.cardano-shell # All `cardano-shell` executables
+# - nix build -f default.nix nix-tools.cexes.cardano-shell.cardano-launcher
 #
 # Generated targets include anything from stack.yaml (via
 # nix-tools:stack-to-nix and the nix/regenerate.sh script)
