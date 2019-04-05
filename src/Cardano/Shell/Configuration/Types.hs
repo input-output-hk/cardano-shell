@@ -44,6 +44,7 @@ module Cardano.Shell.Configuration.Types
     , Tlsca(..)
     , Tlscert(..)
     , Tlskey(..)
+    , WalletArguments(..)
     , WalletDbPath(..)
     , WalletPath(..)
     , WalletLogging(..)
@@ -59,9 +60,9 @@ import           Cardano.Prelude hiding (evalState, maybe)
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Data.Functor.Contravariant (contramap)
 import qualified Data.Text as T
-import           Dhall (GenericInject, Inject (..), InputType (..), Interpret (..),
-                        InterpretOptions (..), auto, field, genericInjectWith,
-                        record)
+import           Dhall (GenericInject, Inject (..), InputType (..),
+                        Interpret (..), InterpretOptions (..), auto, field,
+                        genericInjectWith, record)
 import           GHC.Generics (from)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
                                   elements, listOf, listOf1)
@@ -629,6 +630,16 @@ instance Inject Tlskey
 instance Arbitrary Tlskey where
     arbitrary = Tlskey <$> genSafeText
 
+newtype WalletArguments = WalletArguments
+    { getWalletArguments :: [Text]
+    } deriving (Eq, Show, Generic)
+
+instance Interpret WalletArguments
+instance Inject WalletArguments
+
+instance Arbitrary WalletArguments where
+    arbitrary = WalletArguments <$> listOf1 genSafeText
+
 newtype WalletDbPath = WalletDbPath {
     getDbPath :: Text
     } deriving (Eq, Show, Generic)
@@ -816,14 +827,15 @@ instance Arbitrary NetworkConfig where
             }
 
 data WalletConfig = WalletConfig
-    { walletDbPath   :: !WalletDbPath
-    , walletPath     :: !WalletPath
-    , walletLogging  :: !WalletLogging
-    , walletPort     :: !WalletPort
-    , walletAddress  :: !WalletAddress
-    , walletRelays   :: !WalletRelays
-    , walletFallback :: !WalletFallback
-    , walletValency  :: !WalletValency
+    { walletDbPath      :: !WalletDbPath
+    , walletPath        :: !WalletPath
+    , walletArguments   :: !WalletArguments
+    , walletLogging     :: !WalletLogging
+    , walletPort        :: !WalletPort
+    , walletAddress     :: !WalletAddress
+    , walletRelays      :: !WalletRelays
+    , walletFallback    :: !WalletFallback
+    , walletValency     :: !WalletValency
     } deriving (Eq, Generic, Show)
 
 instance Interpret WalletConfig
@@ -831,24 +843,26 @@ instance Inject WalletConfig
 
 instance Arbitrary WalletConfig where
     arbitrary = do
-        dbpath   <- arbitrary
-        path     <- arbitrary
-        logging  <- arbitrary
-        port     <- arbitrary
-        address  <- arbitrary
-        relays   <- arbitrary
-        fallback <- arbitrary
-        valency  <- arbitrary
+        dbpath              <- arbitrary
+        walletArguments'    <- arbitrary
+        path                <- arbitrary
+        logging             <- arbitrary
+        port                <- arbitrary
+        address             <- arbitrary
+        relays              <- arbitrary
+        fallback            <- arbitrary
+        valency             <- arbitrary
 
         pure $ WalletConfig
-            { walletDbPath   = dbpath
-            , walletPath     = path
-            , walletLogging  = logging
-            , walletPort     = port
-            , walletAddress  = address
-            , walletRelays   = relays
-            , walletFallback = fallback
-            , walletValency  = valency
+            { walletDbPath      = dbpath
+            , walletArguments   = walletArguments'
+            , walletPath        = path
+            , walletLogging     = logging
+            , walletPort        = port
+            , walletAddress     = address
+            , walletRelays      = relays
+            , walletFallback    = fallback
+            , walletValency     = valency
             }
 
 --------------------------------------------------------------------------------

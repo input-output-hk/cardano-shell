@@ -1,9 +1,9 @@
-{ mkDerivation, aeson, base, binary, bytestring, Cabal
+{ mkDerivation, aeson, async, base, binary, bytestring, Cabal
 , cardano-prelude, cardano-sl-x509, concurrency, containers
 , contravariant, dejafu, dhall, directory, ekg-core, filepath
 , formatting, hspec, hspec-contrib, hunit-dejafu, iohk-monitoring
 , process, QuickCheck, safe-exceptions, stdenv, text, transformers
-, unix
+, turtle, unix
 }:
 mkDerivation {
   pname = "cardano-shell";
@@ -18,8 +18,8 @@ mkDerivation {
     transformers unix
   ];
   executableHaskellDepends = [
-    base cardano-prelude cardano-sl-x509 directory filepath formatting
-    iohk-monitoring process safe-exceptions unix
+    async base cardano-prelude cardano-sl-x509 directory filepath
+    formatting iohk-monitoring process safe-exceptions turtle unix
   ];
   testHaskellDepends = [
     aeson base cardano-prelude concurrency dejafu dhall hspec

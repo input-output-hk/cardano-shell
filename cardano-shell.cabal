@@ -145,9 +145,12 @@ executable cardano-launcher
     , cardano-shell
     , cardano-prelude
     , cardano-sl-x509
+    -- conccurency
+    , async
     -- process managment
     , process
     , unix
+    , turtle
     -- directory
     , directory
     , filepath
