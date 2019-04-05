@@ -41,11 +41,28 @@ in
 # parameterize this file when targetting different
 # hosts.
 { system ? builtins.currentSystem
-, config ? {}, ... }@args:
+, config ? {}
+, pkgs ? commonLib.getPkgs { inherit config system; }
+, ... }@args:
 # We will instantiate the default-nix template with the
 # nix/pkgs.nix file...
 commonLib.nix-tools.default-nix ./nix/pkgs.nix args
 # ... and add additional non-haskell packages we want to build on CI:
 // {
-  cardano-shell-env = (import ./stack-shell.nix { inherit config system;  });
+
+  stack-env = pkgs.runCommand "stack-env" { 
+    buildInputs = with pkgs; [ haskell.packages.ghc863.ghc zlib openssl git ];
+  } "mkdir $out";
+
+  runCoveralls = pkgs.stdenv.mkDerivation {
+    name = "run-coveralls";
+    buildInputs = with pkgs; [ haskellPackages.stack-hpc-coveralls stack ];
+    shellHook = ''
+      echo '~~~ stack test'
+      stack test --coverage
+      echo '~~~ shc'
+      shc --repo-token=$COVERALLS_REPO_TOKEN cardano-shell cardano-shell-test
+      exit
+    '';
+  };
 }
