@@ -634,8 +634,9 @@ newtype WalletArguments = WalletArguments
     { getWalletArguments :: [Text]
     } deriving (Eq, Show, Generic)
 
-instance Interpret WalletArguments
-instance Inject WalletArguments
+-- Not sure if we will use it in Dhall
+--instance Interpret WalletArguments
+--instance Inject WalletArguments
 
 instance Arbitrary WalletArguments where
     arbitrary = WalletArguments <$> listOf1 genSafeText
@@ -829,7 +830,6 @@ instance Arbitrary NetworkConfig where
 data WalletConfig = WalletConfig
     { walletDbPath      :: !WalletDbPath
     , walletPath        :: !WalletPath
-    , walletArguments   :: !WalletArguments
     , walletLogging     :: !WalletLogging
     , walletPort        :: !WalletPort
     , walletAddress     :: !WalletAddress
@@ -844,7 +844,6 @@ instance Inject WalletConfig
 instance Arbitrary WalletConfig where
     arbitrary = do
         dbpath              <- arbitrary
-        walletArguments'    <- arbitrary
         path                <- arbitrary
         logging             <- arbitrary
         port                <- arbitrary
@@ -855,7 +854,6 @@ instance Arbitrary WalletConfig where
 
         pure $ WalletConfig
             { walletDbPath      = dbpath
-            , walletArguments   = walletArguments'
             , walletPath        = path
             , walletLogging     = logging
             , walletPort        = port

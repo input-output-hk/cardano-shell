@@ -1,5 +1,4 @@
 {-# LANGUAGE LambdaCase      #-}
-{-# LANGUAGE MultiWayIf      #-}
 {-# LANGUAGE RankNTypes      #-}
 {-# LANGUAGE RecordWildCards #-}
 
