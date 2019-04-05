@@ -4,7 +4,7 @@
 together and makes sure that they have the required resources 
 (configuration, exception handling, ...).
 
-## For cardano-node to operate as an peer
+## Cardano-node to operate as an peer
 
 For cardano-node to operate as an peer, various **features** are required:
 
@@ -24,14 +24,17 @@ each of which is responsible for developing specific features.
 * [network layer](https://github.com/input-output-hk/ouroboros-network)
 * [wallet backend layer](https://github.com/input-output-hk/cardano-wallet)
 
-### Features are being developed on seperate repository
+### Bringing features together
 
 The thing to note is that all these features are being worked on **seperate**
-repository. We need these module working together to act as a node.
+repository. 
 
-This is where `cardano-shell` comes in. The shell will act as a **glue** of these
-features, providing required resources/configurations to each of these features
-as well as resolving its dependencies.
+![scattered-modules](https://user-images.githubusercontent.com/15665039/55607001-dbcf3e00-57b5-11e9-89bf-9ed403c4e8e6.jpg)
+
+We need these modules working together to act as a node. This is where 
+`cardano-shell` comes in. The shell will act as a **glue** of these features,
+providing required resources/configurations to each of these features as well as
+resolving its dependencies.
 
 ![shell-diagram](https://user-images.githubusercontent.com/6264437/47286815-88df4100-d5f0-11e8-92a7-c807b6d3b47a.jpg)
 
