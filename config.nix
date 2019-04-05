@@ -10,7 +10,7 @@
           libyaml           = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./libyaml.nix {});
         });
 
-        basic-tracer        = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./iohk-monitoring-basic-tracer.nix { });
+        contra-tracer        = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./iohk-monitoring-contra-tracer.nix { });
 
         cardano-sl-x509     = pkgs.haskell.lib.dontCheck (haskellPackagesNew.callPackage ./cardano-sl-x509.nix { });
 
