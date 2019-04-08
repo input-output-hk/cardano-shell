@@ -2,6 +2,8 @@
   extras = hackage:
     {
       packages = {
+        "process" = (((hackage.process)."1.6.5.0").revisions).default;
+        "transformers" = (((hackage.transformers)."0.5.6.2").revisions).default;
         "base58-bytestring" = (((hackage.base58-bytestring)."0.1.0").revisions).default;
         "half" = (((hackage.half)."0.2.2.3").revisions).default;
         "micro-recursion-schemes" = (((hackage.micro-recursion-schemes)."5.0.2.2").revisions).default;
