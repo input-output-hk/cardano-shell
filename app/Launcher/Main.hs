@@ -48,10 +48,10 @@ main = do
 
     -- Really no clue what to put there and how will the wallet work.
     let walletPath :: WalletPath
-        walletPath = WalletPath "./wallet"
+        walletPath = WalletPath "stack"
 
     let walletArgs :: WalletArguments
-        walletArgs = WalletArguments [""]
+        walletArgs = WalletArguments ["exec", "cardano-shell-exe"]
 
     -- | Yes, this is something we probably need to replace with actual loggging.
     let externalDependencies :: ExternalDependencies
