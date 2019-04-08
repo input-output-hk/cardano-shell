@@ -67,6 +67,10 @@ extra-deps:
 
   - ekg-json-0.1.0.6@sha256:4ff2e9cac213a5868ae8b4a7c72a16a9a76fac14d944ae819b3d838a9725569b
 
+  - process-1.6.5.0
+  
+  - transformers-0.5.6.2
+
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
