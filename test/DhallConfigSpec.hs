@@ -124,3 +124,4 @@ mkConfigSpec = describe "Cardano configurations" $ do
             \(os :: OS) (cluster :: Cluster) -> monadicIO $ do
                 eWalletConfig <- run $ tryAny $ mkWalletConfig os cluster
                 assert $ isRight eWalletConfig
+

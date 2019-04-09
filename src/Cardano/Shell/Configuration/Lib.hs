@@ -78,6 +78,7 @@ mkNetworkConfig os cluster = input auto networkPath
         <> "(" <> toPath "launcher" <> " " <> clusterPath cluster <> " " <>
         "(" <> osPath os <> " " <> clusterPath cluster <> ")" <>")"
 
+-- TODO(KS): This is a bit complicated.
 mkWalletConfig :: OS -> Cluster -> IO WalletConfig
 mkWalletConfig os cluster = input auto walletPath
   where

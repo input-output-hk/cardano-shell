@@ -1,4 +1,6 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase      #-}
+{-# LANGUAGE RankNTypes      #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
@@ -8,12 +10,17 @@ import qualified Prelude
 import           System.Directory (createDirectoryIfMissing)
 import           System.FilePath ((</>))
 
-import           Formatting (build, bprint, formatToString)
+import qualified System.Process as Process
+import           Turtle (system)
+
+import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
 import           Control.Exception.Safe (throwM)
 
-import           Cardano.Shell.Configuration.Types (LauncherConfig (..))
+import           Cardano.Shell.Configuration.Types (LauncherConfig (..),
+                                                    WalletArguments (..),
+                                                    WalletPath (..))
 
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
@@ -39,11 +46,19 @@ main = do
             , lcfgSeed        = Nothing
             }
 
+    -- Really no clue what to put there and how will the wallet work.
+    let walletPath :: WalletPath
+        walletPath = WalletPath "stack"
+
+    let walletArgs :: WalletArguments
+        walletArgs = WalletArguments ["exec", "cardano-shell-exe"]
+
     -- | Yes, this is something we probably need to replace with actual loggging.
     let externalDependencies :: ExternalDependencies
         externalDependencies = ExternalDependencies
             { logInfo       = putTextLn
             , logError      = putTextLn
+            , logNotice     = putTextLn
             }
 
     -- | If we need to, we first check if there are certificates so we don't have
@@ -54,13 +69,63 @@ main = do
         launcherConfig
         (TLSPath "./configuration/") -- where to generate the certificates
 
+    -- With the exit code
+    _ <- runWallet externalDependencies walletPath walletArgs
+
+    pure ()
+
+-- | Launching the wallet.
+-- For now, this is really light since we don't know whether we will reuse the
+-- older configuration and if so, which parts of it.
+-- We passed in the bare minimum and if we require anything else, we will add it.
+runWallet
+    :: ExternalDependencies
+    -> WalletPath
+    -> WalletArguments
+    -> IO ExitCode
+runWallet ed@ExternalDependencies{..} walletPath walletArguments = do
+    logNotice "Starting the wallet"
+
+    -- create the wallet process
+    walletExitStatus <- system (createProc Process.Inherit walletPath walletArguments) mempty
+
+    case walletExitStatus of
+        ExitFailure 21 -> do
+            logNotice "The wallet has exited with code 21"
+            --logInfo "Switching Configuration to safe mode"
+            --saveSafeMode lo True
+            runWallet ed walletPath walletArguments
+
+        ExitFailure 22 -> do
+            logNotice "The wallet has exited with code 22"
+            --logInfo "Switching Configuration to normal mode"
+            --saveSafeMode lo False
+            runWallet ed walletPath walletArguments
+
+        -- Otherwise, return the exit status.
+        _ -> pure walletExitStatus
+  where
+    -- | The creation of the process.
+    createProc
+        :: Process.StdStream
+        -> WalletPath
+        -> WalletArguments
+        -> Process.CreateProcess
+    createProc stdStream (WalletPath commandPath) (WalletArguments commandArguments) =
+        (Process.proc (strConv Lenient commandPath) (map (strConv Lenient) commandArguments))
+            { Process.std_in    = Process.CreatePipe
+            , Process.std_out   = stdStream
+            , Process.std_err   = stdStream
+            }
+
 --------------------------------------------------------------------------------
 -- Types
 --------------------------------------------------------------------------------
 
 data ExternalDependencies = ExternalDependencies
-    { logInfo       :: Text -> IO ()
-    , logError      :: Text -> IO ()
+    { logInfo   :: Text -> IO ()
+    , logError  :: Text -> IO ()
+    , logNotice :: Text -> IO ()
     }
 
 newtype X509ToolPath = X509ToolPath { getX509ToolPath :: FilePath }
