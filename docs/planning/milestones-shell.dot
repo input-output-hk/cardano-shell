@@ -4,7 +4,7 @@ strict digraph milestone_plan {
 
   subgraph cluster_M1 {
 
-    label = "milestone M1
+    label = "milestone NOD001
 Daedalus IPC complete";
     graph[rankdir = "TB", color=blue];
 
@@ -51,7 +51,7 @@ Documentation" ];
 
   subgraph cluster_M2 {
 
-    label = "milestone M2
+    label = "milestone NOD002
 Configuration complete for batch mode block validation";
     graph[rankdir = "TB", color=blue];
 
@@ -61,7 +61,7 @@ Assist ledger team with integration (#46)" ];
 
   subgraph cluster_M3 {
 
-    label = "milestone M3
+    label = "milestone NOD003
 Node shell as a library";
     graph[rankdir = "TB", color=blue];
 
@@ -81,7 +81,7 @@ Documentation" ];
 
   subgraph cluster_M4 {
 
-    label = "milestone M4
+    label = "milestone NOD004
 Miminal integration with wallet BE - Wallet BE team & Node Shell";
     graph[rankdir = "TB", color=blue];
 
@@ -104,7 +104,7 @@ Assist with integration (#78)" ];
 
   subgraph cluster_M5 {
 
-    label = "milestone M5
+    label = "milestone NOD005
 Minimal integration with Node - Ledger, Consensus & Node Shell";
     graph[rankdir = "TB", color=blue];
 
@@ -128,7 +128,7 @@ Assist with integration" ];
 
   subgraph cluster_M6 {
 
-    label = "milestone M6
+    label = "milestone NOD006
 Maximum integration with wallet BE - Wallet BE team & Node Shell";
     graph[rankdir = "TB", color=blue];
 
@@ -179,7 +179,7 @@ Testing launcher functionality" ];
 
   subgraph cluster_M7 {
 
-    label = "milestone M7
+    label = "milestone NOD007
 Maximum integration with Node - Ledger, Consensus & Node Shell";
     graph[rankdir = "TB", color=blue];
 
@@ -229,7 +229,7 @@ Testing launcher functionality" ];
 
   subgraph cluster_M8 {
 
-    label = "milestone M8
+    label = "milestone NOD008
 Integration with 'Update system'
 with Daedalus, Wallet BE & Node. Launcher
 and update mechansim complete";
@@ -303,7 +303,7 @@ Integration of Wallet BE and launcher" ];
 
   subgraph cluster_M9 {
 
-    label = "milestone M9
+    label = "milestone NOD009
 Formal methods, model verification (TLA+)";
     graph[rankdir = "TB", color=blue];
 
