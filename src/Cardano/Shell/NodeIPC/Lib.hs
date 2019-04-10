@@ -3,16 +3,16 @@
 <https://github.com/input-output-hk/cardano-shell/blob/develop/specs/CardanoShellSpec.pdf>
 -}
 
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 
 module Cardano.Shell.NodeIPC.Lib
     ( startNodeJsIPC
     , startIPC
     , Port (..)
+    , ProtocolDuration (..)
     -- * Testing
     , getIPCHandle
     , MsgIn(..)
@@ -51,6 +51,14 @@ import           Cardano.Shell.NodeIPC.Message (MessageException,
                                                 sendMessage)
 
 import qualified Prelude as P (Show (..))
+
+-- | The way the IPC protocol works.
+data ProtocolDuration
+    = SingleMessage
+    -- ^ Responds to a single message and exits
+    | MultiMessage
+    -- ^ Runs forever responding to messages
+    deriving (Eq, Show)
 
 -- | Message expecting from Daedalus
 data MsgIn
@@ -120,7 +128,13 @@ instance ToJSON MessageSendFailure where
 -- (e.g @8090@)
 newtype Port = Port
     { getPort :: Word16
-    } deriving Show
+    } deriving (Eq, Show, Generic)
+
+instance FromJSON Port where
+    parseJSON = genericParseJSON opts
+
+instance ToJSON Port where
+    toEncoding = genericToEncoding opts
 
 instance Arbitrary Port where
     arbitrary = Port <$> arbitrary
@@ -162,19 +176,26 @@ getIPCHandle = do
             Right fd -> liftIO $ fdToHandle fd
 
 -- | Start IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
-startIPC :: forall m. (MonadIO m) => ReadHandle -> WriteHandle -> Port -> m ()
-startIPC readHandle writeHandle port = liftIO $ void $ ipcListener readHandle writeHandle port
+startIPC :: forall m. (MonadIO m) => ProtocolDuration -> ReadHandle -> WriteHandle -> Port -> m ()
+startIPC protocolDuration readHandle writeHandle port = liftIO $ void $ ipcListener protocolDuration readHandle writeHandle port
 
 -- | Start IPC with NodeJS
 --
 -- This only works if NodeJS spawns the Haskell executable as child process
 -- (See @server.js@ as an example)
-startNodeJsIPC :: forall m. (MonadIO m) => Port -> m ()
-startNodeJsIPC port = do
-    handle <- liftIO $ getIPCHandle
-    let readHandle = ReadHandle handle
+startNodeJsIPC :: forall m. (MonadIO m) => ProtocolDuration -> Port -> m ()
+startNodeJsIPC protocolDuration port = do
+    handle          <- liftIO $ getIPCHandle
+    let readHandle  = ReadHandle handle
     let writeHandle = WriteHandle handle
-    liftIO $ void $ ipcListener readHandle writeHandle port
+    liftIO $ void $ ipcListener protocolDuration readHandle writeHandle port
+
+-- | Function for handling the protocol
+handleIPCProtocol :: forall m. (MonadIO m) => Port -> MsgIn -> m MsgOut
+handleIPCProtocol (Port port) = \case
+    QueryPort          -> pure (ReplyPort port)
+    Ping               -> pure Pong
+    MessageInFailure f -> pure $ MessageOutFailure f
 
 -- | Start IPC listener with given Handles and Port
 --
@@ -182,24 +203,31 @@ startNodeJsIPC port = do
 --
 -- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
-ipcListener :: forall m . (MonadIO m, MonadCatch m, MonadMask m) => ReadHandle -> WriteHandle -> Port -> m ()
-ipcListener readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) (Port port) =
-    do
-        checkHandles readHandle writeHandle
-        catches handleMsgIn [Handler handler, Handler handleMsgError]
-    `finally`
-    shutdown
+ipcListener
+    :: forall m. (MonadIO m, MonadCatch m, MonadMask m)
+    => ProtocolDuration
+    -> ReadHandle
+    -> WriteHandle
+    -> Port
+    -> m ()
+ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = do
+    checkHandles readHandle writeHandle
+    handleMsgIn `catches` [Handler handler, Handler handleMsgError] `finally` shutdown
   where
     handleMsgIn :: m ()
     handleMsgIn = do
         liftIO $ hSetNewlineMode rHndl noNewlineTranslation
-        send Started
-        msgIn <- readMessage readHandle
-        case msgIn of
-            QueryPort          -> send (ReplyPort port)
-            Ping               -> send Pong
-            -- TODO:Handle them nicely
-            MessageInFailure _ -> return ()
+        send Started -- Send the message first time the IPC is up!
+
+        let frequencyFunction = case protocolDuration of
+                                    SingleMessage -> void
+                                    MultiMessage  -> forever
+
+        -- Fetch message and respond to it
+        frequencyFunction $ do
+            msgIn               <- readMessage readHandle        -- Read message
+            messageByteString   <- handleIPCProtocol port msgIn  -- Respond
+            sendMessage writeHandle messageByteString            -- Write to client/server
 
     send :: MsgOut -> m ()
     send = sendMessage writeHandle
