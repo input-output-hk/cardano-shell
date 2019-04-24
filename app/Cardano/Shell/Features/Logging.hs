@@ -48,13 +48,14 @@ data LoggingParameters = LoggingParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { llBasicTrace :: forall m . MonadIO m => Trace m Text
-    , llLogDebug   :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llLogInfo    :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llLogNotice  :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llLogWarning :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llLogError   :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llAppendName :: forall m a. (MonadIO m, Show a) => LoggerName -> Trace m a -> m (Trace m a)
+    { llBasicTrace    :: forall m . MonadIO m => Trace m Text
+    , llLogDebug      :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogInfo       :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogNotice     :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogWarning    :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogError      :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llAppendName    :: forall m a. (MonadIO m, Show a) => LoggerName -> Trace m a -> m (Trace m a)
+    , llConfiguration :: Configuration
     }
 
 --------------------------------
@@ -94,13 +95,14 @@ loggingCardanoFeatureInit loggingConfig = do
     let initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
         initLogging _ _ _ _ = do
             pure $ LoggingLayer
-                    { llBasicTrace  = Trace.natTrace liftIO baseTrace
-                    , llLogDebug    = Trace.logDebug
-                    , llLogInfo     = Trace.logInfo
-                    , llLogNotice   = Trace.logNotice
-                    , llLogWarning  = Trace.logWarning
-                    , llLogError    = Trace.logError
-                    , llAppendName  = Trace.appendName
+                    { llBasicTrace    = Trace.natTrace liftIO baseTrace
+                    , llLogDebug      = Trace.logDebug
+                    , llLogInfo       = Trace.logInfo
+                    , llLogNotice     = Trace.logNotice
+                    , llLogWarning    = Trace.logWarning
+                    , llLogError      = Trace.logError
+                    , llAppendName    = Trace.appendName
+                    , llConfiguration = lpConfiguration loggingConfig
                     }
     let cleanupLogging :: LoggingLayer -> IO ()
         cleanupLogging _ = shutdown switchBoard
