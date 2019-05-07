@@ -6,6 +6,7 @@ between Daedalus and Cardano-node
 
 module Cardano.Shell.NodeIPC.Message
     ( sendMessage
+    , sendMessageByteString
     , readMessage
     , MessageException(..)
     , ReadHandle(..)
@@ -47,8 +48,11 @@ newtype WriteHandle = WriteHandle
 
 -- | Send JSON message with given 'WriteHandle'
 sendMessage :: (MonadIO m, ToJSON msg) => WriteHandle -> msg -> m ()
-sendMessage (WriteHandle hndl) cmd = liftIO $ do
-    send buildOS $ encode cmd
+sendMessage writeHandle cmd = sendMessageByteString writeHandle (encode cmd)
+
+sendMessageByteString :: (MonadIO m) => WriteHandle -> BSL.ByteString -> m ()
+sendMessageByteString (WriteHandle hndl) byteString = liftIO $ do
+    send buildOS $ byteString
     hFlush hndl
   where
     send :: OS -> BSL.ByteString -> IO ()
@@ -65,6 +69,10 @@ sendMessage (WriteHandle hndl) cmd = liftIO $ do
             ]
     sendLinuxMessage :: BSL.ByteString -> IO ()
     sendLinuxMessage = BSLC.hPutStrLn hndl
+
+
+
+
 
 -- | Read JSON message with given 'ReadHandle'
 readMessage :: (MonadIO m, MonadThrow m, FromJSON msg) => ReadHandle -> m msg

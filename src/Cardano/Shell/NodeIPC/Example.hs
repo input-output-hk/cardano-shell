@@ -30,7 +30,7 @@ import           System.Posix.Process (exitImmediately, forkProcess)
 import           System.Process (createPipe)
 
 import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
-                                            startIPC)
+                                            ProtocolDuration (..), startIPC)
 import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
@@ -87,7 +87,7 @@ ipcServer clientWriteHandle msgin = do
     (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
     -- Send message to server
     sendMessage serverWriteHandle msgin
-    startIPC serverReadHandle clientWriteHandle nodePort
+    startIPC SingleMessage serverReadHandle clientWriteHandle nodePort
 
 -- | Read message wigh given 'ReadHandle'
 receieveMessages :: ReadHandle -> IO (MsgOut, MsgOut)

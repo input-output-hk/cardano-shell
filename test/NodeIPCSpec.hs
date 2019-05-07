@@ -21,10 +21,11 @@ import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 import           Cardano.Shell.NodeIPC (MessageException,
                                         MessageSendFailure (..), MsgIn (..),
                                         MsgOut (..), NodeIPCException (..),
-                                        Port (..), ReadHandle (..),
-                                        WriteHandle (..), exampleWithFD,
-                                        exampleWithProcess, getReadWriteHandles,
-                                        isHandleClosed, isIPCException,
+                                        Port (..), ProtocolDuration (..),
+                                        ReadHandle (..), WriteHandle (..),
+                                        exampleWithFD, exampleWithProcess,
+                                        getReadWriteHandles, isHandleClosed,
+                                        isIPCException,
                                         isNodeChannelCannotBeFound,
                                         isUnreadableHandle, isUnwritableHandle,
                                         readMessage, sendMessage, startIPC,
@@ -77,7 +78,7 @@ nodeIPCSpec = do
                 eResult <- run $ try $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
                     closedReadHandle <- (\(ReadHandle hndl) -> hClose hndl >> return (ReadHandle hndl)) readHandle
-                    startIPC closedReadHandle writeHandle port
+                    startIPC SingleMessage closedReadHandle writeHandle port
                 assert $ isLeft (eResult :: Either NodeIPCException ())
                 whenLeft eResult $ \exception -> assert $ isHandleClosed exception
 
@@ -85,7 +86,7 @@ nodeIPCSpec = do
                 eResult <- run $ try $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
                     let (unReadableHandle, _) = swapHandles readHandle writeHandle
-                    startIPC unReadableHandle writeHandle port
+                    startIPC SingleMessage unReadableHandle writeHandle port
                 assert $ isLeft (eResult :: Either NodeIPCException ())
                 whenLeft eResult $ \exception -> assert $ isUnreadableHandle exception
 
@@ -93,7 +94,7 @@ nodeIPCSpec = do
                 eResult <- run $ try $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
                     let (_, unWritableHandle) = swapHandles readHandle writeHandle
-                    startIPC readHandle unWritableHandle port
+                    startIPC SingleMessage readHandle unWritableHandle port
                 assert $ isLeft (eResult :: Either NodeIPCException ())
                 whenLeft eResult $ \exception -> assert $ isUnwritableHandle exception
 
@@ -120,7 +121,7 @@ nodeIPCSpec = do
                     handlesClosed <- run $ do
                         (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
                         (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-                        as <- async $ startIPC serverReadHandle clientWriteHandle port
+                        as <- async $ startIPC SingleMessage serverReadHandle clientWriteHandle port
                         let readClientMessage = readMessage clientReadHandle
                             sendServer        = sendMessage serverWriteHandle
                         _ <- readClientMessage
@@ -143,7 +144,7 @@ nodeIPCSpec = do
 
     describe "startNodeJsIPC" $
         it "should throw NodeIPCException when it is not spawned by NodeJS process" $ monadicIO $ do
-            eResult <- run $ try $ startNodeJsIPC port
+            eResult <- run $ try $ startNodeJsIPC SingleMessage port
             assert $ isLeft (eResult :: Either NodeIPCException ())
             whenLeft eResult $ \exception -> assert $ isNodeChannelCannotBeFound exception
   where
@@ -165,7 +166,7 @@ nodeIPCSpec = do
         (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
         (serverReadHandle, _)                 <- getReadWriteHandles
 
-        as <- async $ startIPC serverReadHandle clientWriteHandle port
+        as <- async $ startIPC SingleMessage serverReadHandle clientWriteHandle port
         (_ :: MsgOut) <- readMessage clientReadHandle
         return (as, serverReadHandle, clientWriteHandle)
 
@@ -187,7 +188,11 @@ testStartNodeIPC port msg = do
 
     -- Start the server
     (_, responses) <-
-        startIPC serverReadHandle clientWriteHandle port
+        startIPC
+            SingleMessage
+            serverReadHandle
+            clientWriteHandle
+            port
         `concurrently`
         do
             -- Use these functions so you don't pass the wrong handle by mistake
