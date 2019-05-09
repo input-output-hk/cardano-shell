@@ -45,27 +45,22 @@ library
     , specs
   build-depends:
       aeson
-    , base >=4.7 && <5
+    , base >=4.11 && <5
     , binary
     , bytestring
-    , cardano-prelude
     , Cabal
+    , cardano-prelude
     , concurrency
-    -- general util
     , containers
+    , contravariant
+    , dhall
     , directory
     , formatting
     , iohk-monitoring
-    , safe-exceptions
-    , text
-    , transformers
-    , unix
-    -- json & config
-    , contravariant
-    , dhall
-    , ekg-core
     , process
     , QuickCheck
+    , safe-exceptions
+    , stm
     , text
     , transformers
     , unix
@@ -96,6 +91,7 @@ executable cardano-shell-exe
     , cardano-prelude
     -- util
     , safe-exceptions
+    , stm
     -- features
     , iohk-monitoring
   default-language:    Haskell2010

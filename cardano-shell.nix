@@ -1,8 +1,8 @@
 { mkDerivation, aeson, async, base, binary, bytestring, Cabal
 , cardano-prelude, cardano-sl-x509, concurrency, containers
-, contravariant, dejafu, dhall, directory, ekg-core, filepath
+, contravariant, dejafu, dhall, directory, filepath
 , formatting, hspec, hspec-contrib, hunit-dejafu, iohk-monitoring
-, process, QuickCheck, safe-exceptions, stdenv, text, transformers
+, process, QuickCheck, safe-exceptions, stdenv, stm, text, transformers
 , turtle, unix
 }:
 mkDerivation {
@@ -13,8 +13,8 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     aeson base binary bytestring Cabal cardano-prelude concurrency
-    containers contravariant dhall directory ekg-core formatting
-    iohk-monitoring process QuickCheck safe-exceptions text
+    containers contravariant dhall directory formatting
+    iohk-monitoring process QuickCheck safe-exceptions stm text
     transformers unix
   ];
   executableHaskellDepends = [

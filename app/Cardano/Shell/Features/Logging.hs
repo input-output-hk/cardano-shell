@@ -6,14 +6,21 @@
 module Cardano.Shell.Features.Logging
     ( LoggingLayer (..)
     , createLoggingFeature
+    -- re-exports
     , Trace
+    , Configuration
+    , Severity (..)
     ) where
 
+import qualified Control.Monad.STM as STM
 import           Cardano.Prelude hiding (trace)
 
 import           Cardano.BM.Configuration (Configuration)
 import qualified Cardano.BM.Configuration as Config
 import           Cardano.BM.Data.LogItem (LoggerName)
+import           Cardano.BM.Data.Severity (Severity (..))
+import qualified Cardano.BM.Observer.Monadic as Monadic
+import qualified Cardano.BM.Observer.STM as Stm
 import           Cardano.BM.Setup (setupTrace_, shutdown)
 import           Cardano.BM.Trace (Trace)
 import qualified Cardano.BM.Trace as Trace
@@ -48,14 +55,16 @@ data LoggingParameters = LoggingParameters
 -- the functions effects and constraining the user (programmer) of those function to use specific effects in them.
 -- https://github.com/input-output-hk/cardano-sl/blob/develop/util/src/Pos/Util/Log/LogSafe.hs
 data LoggingLayer = LoggingLayer
-    { llBasicTrace    :: forall m . MonadIO m => Trace m Text
-    , llLogDebug      :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llLogInfo       :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llLogNotice     :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llLogWarning    :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llLogError      :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
-    , llAppendName    :: forall m a. (MonadIO m, Show a) => LoggerName -> Trace m a -> m (Trace m a)
-    , llConfiguration :: Configuration
+    { llBasicTrace      :: forall m . MonadIO m => Trace m Text
+    , llLogDebug        :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogInfo         :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogNotice       :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogWarning      :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llLogError        :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
+    , llAppendName      :: forall m a. (MonadIO m, Show a) => LoggerName -> Trace m a -> m (Trace m a)
+    , llConfiguration   :: Configuration
+    , llBracketMonadX   :: forall m a t. (MonadIO m, Show a) => Configuration -> Trace m a -> Severity -> Text -> m t -> m t
+    , llBracketStmIO    :: forall a t. (Show a) => Configuration -> Trace IO a -> Severity -> Text -> STM.STM t -> IO t
     }
 
 --------------------------------
@@ -103,6 +112,8 @@ loggingCardanoFeatureInit loggingConfig = do
                     , llLogError      = Trace.logError
                     , llAppendName    = Trace.appendName
                     , llConfiguration = lpConfiguration loggingConfig
+                    , llBracketMonadX = Monadic.bracketObserveX
+                    , llBracketStmIO  = Stm.bracketObserveIO
                     }
     let cleanupLogging :: LoggingLayer -> IO ()
         cleanupLogging _ = shutdown switchBoard
