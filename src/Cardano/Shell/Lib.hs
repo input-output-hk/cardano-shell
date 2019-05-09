@@ -127,9 +127,9 @@ runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardano
     -- Here we run the actual application.
     -- We presume that the control-flow is now in the hands of that function.
     -- An example of top-level-last-resort-error-handling-strategy.
-    liftIO $ catchAny (runCardanoApplication cardanoApplication) $ \_ -> do
-        --putTextLn "Exception occured!"
-        pure ()
+    liftIO $ catchAny (runCardanoApplication cardanoApplication) $ \exception -> do
+        -- For now simply rethrow, might be a good idea to have general exception handler.
+        throwM exception
 
     -- When we reach this point, we cancel all the features.
     _ <- mapM cancel (reverse asyncCardanoFeatures)
