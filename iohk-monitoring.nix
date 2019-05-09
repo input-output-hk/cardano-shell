@@ -9,7 +9,7 @@
 }:
 mkDerivation {
   pname = "iohk-monitoring";
-  version = "0.1.5.0";
+  version = "0.1.7.1";
   src = fetchgit {
     url = "https://github.com/input-output-hk/iohk-monitoring-framework";
     sha256 = "02yr3alnf74qpa8vg1kk9h034blmb4nzpsbzb0n5jymsyy8r1i4c";

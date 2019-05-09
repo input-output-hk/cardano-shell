@@ -9,6 +9,7 @@ module Cardano.Shell.Features.Logging
     -- re-exports
     , Trace
     , Configuration
+    , LoggerName
     , Severity (..)
     ) where
 
