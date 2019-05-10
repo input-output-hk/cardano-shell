@@ -17,8 +17,6 @@ import           Control.Concurrent.Classy (MonadConc)
 
 import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 
--- import qualified System.Metrics as Ekg
-
 -- | The top level module we use to run the key functions.
 newtype CardanoApplication = CardanoApplication { runCardanoApplication :: IO () }
 
@@ -37,17 +35,13 @@ applicationProductionMode _          = False
 -- All features have access to this environment.
 data CardanoEnvironment = CardanoEnvironment
     { ceLogEnv   :: Text
-    -- , ceEkgStore :: Ekg.Store
-     -- ...
     }
 
 -- | Initialise 'ServerEnv'
 initializeCardanoEnvironment :: IO CardanoEnvironment
 initializeCardanoEnvironment = do
-    -- ekgStore <- Ekg.newStore
     return CardanoEnvironment
         { ceLogEnv      = "To implement"
-        -- , ceEkgStore    = ekgStore
         }
 
 -- | The option to not have any additional dependency for the @CardanoFeature@.
