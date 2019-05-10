@@ -71,6 +71,7 @@
             (hsPkgs.filepath)
             (hsPkgs.formatting)
             (hsPkgs.safe-exceptions)
+            (hsPkgs.turtle)
             ] ++ (if system.isWindows
             then [ (hsPkgs.Win32) ]
             else [ (hsPkgs.unix) ]);
