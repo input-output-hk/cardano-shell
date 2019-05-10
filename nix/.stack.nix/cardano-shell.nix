@@ -65,6 +65,7 @@
             (hsPkgs.cardano-shell)
             (hsPkgs.cardano-prelude)
             (hsPkgs.cardano-sl-x509)
+            (hsPkgs.async)
             (hsPkgs.process)
             (hsPkgs.directory)
             (hsPkgs.filepath)
