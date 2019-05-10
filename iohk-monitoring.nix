@@ -9,11 +9,11 @@
 }:
 mkDerivation {
   pname = "iohk-monitoring";
-  version = "0.1.5.0";
+  version = "0.1.7.1";
   src = fetchgit {
     url = "https://github.com/input-output-hk/iohk-monitoring-framework";
-    sha256 = "16sxwx8y2wg8kws15ybhk9vkq6crs5bp7ky37x1vrvpvb3ilc5x0";
-    rev = "8fb87e83468831289820ef9edb3d5ef912b0db0f";
+    sha256 = "02yr3alnf74qpa8vg1kk9h034blmb4nzpsbzb0n5jymsyy8r1i4c";
+    rev = "d4139f18f77d2f837d52383859a27974f4f4e162";
     fetchSubmodules = true;
   };
   postUnpack = "sourceRoot+=/iohk-monitoring; echo source root reset to $sourceRoot";
