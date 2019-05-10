@@ -1,3 +1,5 @@
+packages:
+  .
 
 source-repository-package
   type: git
