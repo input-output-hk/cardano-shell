@@ -30,7 +30,9 @@ let
       # cross compilation plumbing to make Template Haskell
       # work when cross compiling.
       iohk-module
-      { packages.contra-tracer.configureFlags = [ "--ghc-options=\"-pgmL unlit\"" ]; }
+      { packages.contra-tracer.configureFlags = [ "--ghc-options=\"-v\"" ];
+        packages.contra-tracer.setupBuildFlags = [ "-v" ];
+      }
     ];
   };
 
