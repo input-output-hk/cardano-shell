@@ -35,6 +35,8 @@ let
         # implies that it's incompatible with ghc-8.6 (on windows).
         # Let's force it to accept out packageset.
         packages.katip.doExactConfig = true;
+        # turtle seems to have the same issue.
+        packages.turtle.doExactConfig = true;
       }
     ];
   };
