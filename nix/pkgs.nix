@@ -30,11 +30,14 @@ let
       # cross compilation plumbing to make Template Haskell
       # work when cross compiling.
       iohk-module
-      { packages.contra-tracer.configureFlags = [ "--ghc-options=\"-v\"" ];
-        packages.contra-tracer.setupBuildFlags = [ "-v" ];
+      {
+        # katip has an version bound of Win32 < 2.6; this however
+        # implies that it's incompatible with ghc-8.6 (on windows).
+        # Let's force it to accept out packageset.
+        packages.katip.doExactConfig = true;
       }
     ];
   };
 
 in
-  pkgSet.config.hsPkgs // { _config = pkgSet.config; }  
+  pkgSet.config.hsPkgs // { _config = pkgSet.config; }
