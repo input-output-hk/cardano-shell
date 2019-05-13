@@ -47,5 +47,8 @@ commonLib.nix-tools.release-nix {
     jobs.nix-tools.tests.cardano-shell.cardano-shell-test.x86_64-linux
 
     jobs.nix-tools.exes.cardano-shell.x86_64-linux
+
+    # cross-compilation
+    jobs.nix-tools.libs.x86_64-pc-mingw32-cardano-shell.x86_64-linux
   ];
 }
