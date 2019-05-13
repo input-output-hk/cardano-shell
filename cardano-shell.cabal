@@ -36,9 +36,12 @@ library
     , Cardano.Shell.Presets
     , Cardano.Shell.Features.Logging
   other-modules:
-      Cardano.Shell.NodeIPC.Example
-    , Cardano.Shell.NodeIPC.Lib
+      Cardano.Shell.NodeIPC.Lib
     , Cardano.Shell.NodeIPC.Message
+  if !os(windows)
+    other-modules:
+      Cardano.Shell.NodeIPC.Example
+
   hs-source-dirs:
       app
     , src
@@ -180,7 +183,10 @@ test-suite cardano-shell-test
   other-modules:
       Paths_cardano_shell
       DhallConfigSpec
+  if !os(windows)
+    other-modules:
       NodeIPCSpec
+
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
