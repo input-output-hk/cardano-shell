@@ -220,8 +220,8 @@ When the \textit{Daedalus} calls and starts the \textit{Node}, it also opens up 
 First, the \textit{Node} sends the message \textbf{Started} back to the \textit{Daedalus} to inform him that the communication can begin.
 After that, \textit{Daedalus} sends the message \textbf{QueryPort} to the \textit{Node}, and the \textit{Node} responds with the free port it found using \textbf{ReplyPort PORTNUM} that is going to be used for starting the HTTP "server" serving the \textit{JSON API} which they can then use to communicate further.\\
 
-Not only does node server responds to the message, but it can also perform some monadic actions depending on the message sent from the client.
-For instance, you can have the node to start an new process when the client sends \textbf{Started} or have it so that nodes NodeIPC thread/process when it responds with \textbf{ReplyPort PORTNUM}.\\
+Not only does node server responds to the message, but it can also perform some IO actions depending on the message sent from the client.
+For instance, you can have the node to start an new process when the client sends \textbf{Started} or have it so that node will kill its thread/process when it responds with \textbf{ReplyPort PORTNUM}.\\
 
 The communication is bi-directional, on Windows it is using \textbf{named pipes}.\\
 
