@@ -19,6 +19,7 @@ import           Prelude (Show (..))
 import           Control.Exception.Safe (throwM)
 
 import           Control.Concurrent.Classy hiding (catch)
+import qualified Control.Concurrent.Classy.Async as CA
 import           Control.Concurrent.Classy.Async (async, cancel)
 
 import           GHC.IO.Handle.Lock (LockMode (..), hTryLock)
@@ -119,34 +120,32 @@ runCardanoApplicationWithFeatures
     -> [CardanoFeature]
     -> CardanoApplication
     -> m ()
-runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardanoApplication = do
+runCardanoApplicationWithFeatures _ cardanoFeatures cardanoApplication = do
+    -- We still aren't sure if we are going to use the @ApplicationEnvironment@
+    -- or not.
 
     -- We start all the new features.
-    asyncCardanoFeatures <- mapM (async . featureStart) cardanoFeatures
+    asyncCardanoFeatures <- mapM (liftIO . async . featureStart) cardanoFeatures
 
     -- Here we run the actual application.
     -- We presume that the control-flow is now in the hands of that function.
     -- An example of top-level-last-resort-error-handling-strategy.
-    liftIO $ catchAny (runCardanoApplication cardanoApplication) $ \exception -> do
-        -- For now simply rethrow, might be a good idea to have general exception handler.
-        throwM exception
-
-    -- When we reach this point, we cancel all the features.
-    _ <- mapM cancel (reverse asyncCardanoFeatures)
-
-    -- Then we cleanup all the features if we need to do so.
-    _ <- mapM featureShutdown (reverse cardanoFeatures)
-
-    -- And we are done! Or are we? A simple idea is to restart the application if it's
-    -- in production.
-    -- Maybe the user would like to have more control then this, systemd?
-    when (applicationProductionMode applicationEnvironment) $
-       runCardanoApplicationWithFeatures applicationEnvironment cardanoFeatures cardanoApplication
+    liftIO $ runCardanoApplication cardanoApplication `finally`
+        cancelShutdownFeatures asyncCardanoFeatures
 
   where
-    -- | Util function. Yes, yes, we can import this.
-    catchAny :: IO a -> (SomeException -> IO a) -> IO a
-    catchAny = catch
+    -- | The cancel and shutdown of all the features.
+    cancelShutdownFeatures :: [CA.Async IO a] -> IO ()
+    cancelShutdownFeatures asyncCardanoFeatures = do
+        -- When we reach this point, we cancel all the features.
+        _ <- mapM cancel (reverse asyncCardanoFeatures)
+
+        -- Then we cleanup all the features if we need to do so.
+        _ <- mapM featureShutdown (reverse cardanoFeatures)
+
+        -- Closing
+        pure ()
+
 
 type AllFeaturesInitFunction = CardanoConfiguration -> CardanoEnvironment -> IO [CardanoFeature]
 
