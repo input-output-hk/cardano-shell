@@ -26,8 +26,7 @@ import           Cardano.Prelude
 
 import           Data.Aeson (ToJSON)
 import           System.IO (BufferMode (..), hSetBuffering)
-import           System.Posix.Process (exitImmediately, forkProcess)
-import           System.Process (createPipe)
+import           System.Process (createPipe, shell, withCreateProcess)
 
 import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
                                             ProtocolDuration (..), startIPC)
@@ -72,12 +71,8 @@ exampleWithProcess = do
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
 
     -- Create a child process that acts as an server
-
-    _ <- forkProcess $ do
-            ipcServer clientWriteHandle Ping
-            exitImmediately ExitSuccess
-        `finally`
-        return ()
+    withCreateProcess (shell "some shell") $ \_ _ _ _ ->
+        ipcServer clientWriteHandle Ping
 
     receieveMessages clientReadHandle
 
