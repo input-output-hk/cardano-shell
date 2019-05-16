@@ -47,7 +47,7 @@ extra-deps:
       - test
 
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
-    commit: d4139f18f77d2f837d52383859a27974f4f4e162
+    commit: cbe7ab32354f3838dc8c95c64109904c8f503347
     subdirs:
       - contra-tracer
       - iohk-monitoring
@@ -66,6 +66,10 @@ extra-deps:
   - ekg-0.4.0.15@sha256:f52d7c00654d72d2ab988255f30adba95a52484ac310bab9c136c64732e69f4b
 
   - ekg-json-0.1.0.6@sha256:4ff2e9cac213a5868ae8b4a7c72a16a9a76fac14d944ae819b3d838a9725569b
+
+  - ekg-prometheus-adapter-0.1.0.4
+  - prometheus-2.1.1
+  - containers-0.5.11.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
