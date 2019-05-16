@@ -36,9 +36,7 @@
           (hsPkgs.stm)
           (hsPkgs.text)
           (hsPkgs.transformers)
-          ] ++ (if system.isWindows
-          then [ (hsPkgs.Win32) ]
-          else [ (hsPkgs.unix) ]);
+          ];
         };
       exes = {
         "cardano-shell-exe" = {
@@ -72,9 +70,7 @@
             (hsPkgs.formatting)
             (hsPkgs.safe-exceptions)
             (hsPkgs.turtle)
-            ] ++ (if system.isWindows
-            then [ (hsPkgs.Win32) ]
-            else [ (hsPkgs.unix) ]);
+            ];
           };
         };
       tests = {
