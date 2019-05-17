@@ -67,7 +67,6 @@ library
     , stm
     , text
     , transformers
-    , network
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
@@ -121,6 +120,8 @@ executable node-ipc
       base >=4.7 && <5
     , cardano-shell
     , cardano-prelude
+    , safe-exceptions
+    , process
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
