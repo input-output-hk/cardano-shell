@@ -190,6 +190,19 @@ This document is a high-level specification of how the pieces that make Cardano 
 The introduction. WIP!
 
 \newpage 
+\section{TLA+}
+\label{sec:tla}
+
+Currently, there is an attempt to briefly cover the pieces of \textit{cardano-shell} functionality with TLA+.
+The small amount of work that was done, in the interest of time, can be found here -  \url{https://github.com/input-output-hk/cardano-shell/tree/develop/specs/tla}.\\
+
+There is a TLA+ model that I found clarified my understanding when trying to model the IPC protocol - \url{https://github.com/input-output-hk/cardano-shell/blob/develop/specs/tla/IPCProtocol.pdf}.\\
+
+The other parts are just experiments waiting for completion.\\
+
+For example, this is what I started to do to check how the update system will work, but realized that it would have to be really quite more involved so I stopped at that point (in the interest of time) - \url{https://github.com/input-output-hk/cardano-shell/blob/develop/specs/tla/UpdateSystem.pdf}.
+
+\newpage 
 \section{IPC and communication between Daedalus and Node}
 \label{sec:ipc}
 
