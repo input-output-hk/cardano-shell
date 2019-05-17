@@ -51,7 +51,7 @@ commonLib.nix-tools.default-nix ./nix/pkgs.nix args
 // {
 
   stack-env = pkgs.runCommand "stack-env" { 
-    buildInputs = with pkgs; [ haskell.packages.ghc863.ghc zlib openssl git nc ];
+    buildInputs = with pkgs; [ haskell.packages.ghc863.ghc zlib openssl git ];
   } "mkdir $out";
 
   runCoveralls = pkgs.stdenv.mkDerivation {

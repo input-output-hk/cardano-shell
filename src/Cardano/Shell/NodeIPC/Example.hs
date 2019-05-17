@@ -24,22 +24,16 @@ module Cardano.Shell.NodeIPC.Example
 
 import           Cardano.Prelude
 
-import           Network.Socket (AddrInfo (..), AddrInfoFlag (..), Socket,
-                                 SocketOption (..), SocketType (..), accept,
-                                 bind, close, defaultHints, fdSocket,
-                                 getAddrInfo, listen, setCloseOnExecIfNeeded,
-                                 setSocketOption, socket, socketToHandle,
-                                 withSocketsDo)
-import           System.IO (BufferMode (..), hIsOpen, hSetBuffering)
-import           System.Process (CreateProcess (..), StdStream (..), createPipe,
-                                 proc, withCreateProcess)
-
 import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
                                             ProtocolDuration (..), startIPC)
 import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
-import           Prelude (String)
+import           GHC.IO.Handle.FD (fdToHandle)
+import           System.Environment (setEnv, unsetEnv)
+import           System.IO (BufferMode (..), hClose, hSetBuffering)
+import           System.Process (createPipe, createPipeFd, proc,
+                                 withCreateProcess)
 
 -- | Create a pipe for interprocess communication and return a
 -- ('ReadHandle', 'WriteHandle') Handle pair.
@@ -75,69 +69,42 @@ exampleWithFD = do
 
     return responses
 
-serverPort :: String
-serverPort = "8765"
-
 -- | Example of an IPC using nc process
 exampleWithProcess :: IO (MsgOut, MsgOut)
-exampleWithProcess = do
-    -- Test fails dues server not being launched before used.
-    -- MVar is used to lock the main process until the server is ready
-    isReady <- newEmptyMVar
-    withAsync (startNodeServer isReady) $ \as -> do
-        void $ takeMVar isReady
-        withCreateProcess (proc "nc" ["localhost", serverPort])
-            { std_out = CreatePipe
-            , std_in  = CreatePipe
-            } $ \(Just hin) (Just hout) _ _ -> do
-                hSetBuffering hout LineBuffering
-                hSetBuffering hin LineBuffering
-                let readHandle = ReadHandle hout
-                let writeHandle = WriteHandle hin
-                sendMessage writeHandle Ping
-                receieveMessages readHandle
-        `finally`
-        cancel as
+exampleWithProcess = bracket acquire restore action
   where
-    -- Start NodeIPC server
-    -- From: http://hackage.haskell.org/package/network-3.0.1.0/docs/Network-Socket.html
-    startNodeServer :: MVar () -> IO ()
-    startNodeServer isReady = withSocketsDo $
-        bracket (listenOn isReady serverPort) close server
+    acquire :: IO (ReadHandle, Handle)
+    acquire = do
+        (rFd, wFd) <- createPipeFd
+        setEnv "FD_WRITE_HANDLE" (show wFd)
+        readHandle  <- ReadHandle <$> fdToHandle rFd
+        -- Since closeFd only exists in 'unix' library,
+        -- the only way to close this Fd is to convert it into Handle and apply
+        -- hClose to it
+        writeHandle <- fdToHandle wFd
+        return (readHandle, writeHandle)
 
-    listenOn :: MVar () -> String -> IO Socket
-    listenOn isReady port = do
-        let hints = defaultHints
-                { addrFlags = [AI_PASSIVE]
-                , addrSocketType = Stream
-                }
-        addr:_ <- getAddrInfo (Just hints) Nothing (Just port)
-        sock <- socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
-        setSocketOption sock ReuseAddr 1
-        let fd = fdSocket sock
-        setCloseOnExecIfNeeded fd
-        bind sock (addrAddress addr)
-        listen sock 10
-        putMVar isReady () -- Server is ready, flipping the switch
-        return sock
+    restore :: (ReadHandle, Handle) -> IO ()
+    restore ((ReadHandle rHandle), wHandle) = do
+        hClose rHandle
+        hClose wHandle
+        unsetEnv "FD_WRITE_HANDLE"
 
-    server :: Socket -> IO ()
-    server sock = do
-        (conn, _) <- accept sock
-        h         <- socketToHandle conn ReadWriteMode
-        hSetBuffering h LineBuffering
-        void $ forkFinally
-            (do
-                startIPC SingleMessage (ReadHandle h) (WriteHandle h) nodePort
-            )
-            (\_ -> close conn)
+    action :: (ReadHandle, Handle) -> IO (MsgOut, MsgOut)
+    action (readHandle, _) = do
+        withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"]) $
+        -- Tried to use stdin, but it is very incosistent.
+        -- the executable throws exception:
+        -- node-ipc: Unable to read with given handle: {handle: <stdout>}
+        -- Even though I'm providing stdin
+            \_ _ _ _ -> receieveMessages readHandle
+
 
 -- | Read message wigh given 'ReadHandle'
 receieveMessages :: ReadHandle -> IO (MsgOut, MsgOut)
 receieveMessages clientReadHandle = do
     let readClientMessage :: IO MsgOut
         readClientMessage = readMessage clientReadHandle
-
-    started <- readClientMessage
+    started <- readClientMessage -- Started
     pong    <- readClientMessage -- Pong
     return (started, pong)
