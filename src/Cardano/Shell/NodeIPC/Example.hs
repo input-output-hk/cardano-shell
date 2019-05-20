@@ -20,6 +20,7 @@ module Cardano.Shell.NodeIPC.Example
     , exampleWithProcess
     -- * For testing
     , getReadWriteHandles
+    , getHandleFromEnv
     ) where
 
 import           Cardano.Prelude
@@ -30,10 +31,11 @@ import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
 import           GHC.IO.Handle.FD (fdToHandle)
-import           System.Environment (setEnv, unsetEnv)
+import           Prelude (String, error)
+import           System.Environment (lookupEnv, setEnv, unsetEnv)
 import           System.IO (BufferMode (..), hClose, hSetBuffering)
-import           System.Process (createPipe, createPipeFd, proc,
-                                 withCreateProcess)
+import           System.Process (CreateProcess (..), StdStream (..), createPipe,
+                                 createPipeFd, proc, withCreateProcess)
 
 -- | Create a pipe for interprocess communication and return a
 -- ('ReadHandle', 'WriteHandle') Handle pair.
@@ -70,8 +72,9 @@ exampleWithFD = do
     return responses
 
 -- | Example of an IPC using process
--- This will be the server, which sends @MsgIn@ messages to the client.
--- The client is executed via @stack exec node-ipc haskell some-message@
+-- This will be the client, the one which sends the message (@Ping@, @QueryPort@)
+-- to get the response from the other.
+-- The server is executed via @stack exec node-ipc haskell some-message@
 exampleWithProcess :: IO (MsgOut, MsgOut)
 exampleWithProcess = bracket acquire restore action
   where
@@ -94,9 +97,10 @@ exampleWithProcess = bracket acquire restore action
 
     action :: (ReadHandle, Handle) -> IO (MsgOut, MsgOut)
     action (readHandle, _) = do
-        withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell", "ping"]) $
-            \_ _ _ _ -> receieveMessages readHandle
-
+        withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"]) {std_in = CreatePipe}$
+            \(Just stdIn) _ _ _ -> do
+                sendMessage (WriteHandle stdIn) Ping
+                receieveMessages readHandle
 
 -- | Read message wigh given 'ReadHandle'
 receieveMessages :: ReadHandle -> IO (MsgOut, MsgOut)
@@ -106,3 +110,12 @@ receieveMessages clientReadHandle = do
     started <- readClientMessage -- Started
     pong    <- readClientMessage -- Pong
     return (started, pong)
+
+getHandleFromEnv :: String -> IO Handle
+getHandleFromEnv envName = do
+    mFdstring <- lookupEnv envName
+    case mFdstring of
+        Nothing -> error $ "Unable to find fd: " <> envName
+        Just fdstring -> case readEither fdstring of
+            Left err -> error $ "Could not parse file descriptor: " <> toS err
+            Right fd -> liftIO $ fdToHandle fd
