@@ -9,7 +9,7 @@ const child_process = require("child_process");
 const fs            = require('fs');
 
 // Filepath to resources
-const parentPath = "./app/NodeIPC";
+const parentPath = "./app/NodeIPCServer";
 const testDir    = `${parentPath}/test-state`;
 const logPath    = `${testDir}/cardano-node.log`;
 
