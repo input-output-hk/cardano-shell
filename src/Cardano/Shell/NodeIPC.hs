@@ -33,6 +33,7 @@ module Cardano.Shell.NodeIPC
     , exampleWithFD
     , exampleWithProcess
     , getReadWriteHandles
+    , getHandleFromEnv
     -- * Predicates
     , isIPCException
     , isHandleClosed
@@ -43,6 +44,7 @@ module Cardano.Shell.NodeIPC
 
 import           Cardano.Shell.NodeIPC.Example (exampleWithFD,
                                                 exampleWithProcess,
+                                                getHandleFromEnv,
                                                 getReadWriteHandles)
 #endif
 import           Cardano.Shell.NodeIPC.Lib (ClientHandles (..),
