@@ -34,6 +34,7 @@ function getSubProcess(writeStream, timerid) {
   const subproc = child_process.spawn("stack", [
       "exec"
     , "node-ipc"
+    , "js"
     ], {
       stdio: [ "inherit", writeStream, writeStream, "ipc" ]
     });
