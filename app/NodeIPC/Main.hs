@@ -6,11 +6,10 @@ module Main
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.NodeIPC (MsgIn (..), NodeIPCException (..),
+import           Cardano.Shell.NodeIPC (MsgIn (..),
                                         Port (..), ProtocolDuration (..),
                                         ReadHandle (..), WriteHandle (..),
                                         sendMessage, startIPC, startNodeJsIPC)
-import           Control.Exception.Safe (throwM)
 import           GHC.IO.Handle.FD (fdToHandle)
 import           Prelude (String, error)
 import           System.Environment
@@ -30,7 +29,7 @@ main = do
   where
     acquire :: IO (Handle, Handle, Handle)
     acquire = do
-        clientWHandle <- getHandle "FD_WRITE_HANDLE"
+        clientWHandle <- getHandleFromEnv "FD_WRITE_HANDLE"
         hSetBuffering clientWHandle LineBuffering
         (serverRHandle , serverWHandle) <- createPipe
         return (clientWHandle, serverRHandle, serverWHandle)
@@ -48,11 +47,11 @@ main = do
         sendMessage (WriteHandle serverWHandle) Ping
         startIPC SingleMessage serverReadHandle clientWriteHandle port
 
-    getHandle :: String -> IO Handle
-    getHandle envName = do
+    getHandleFromEnv :: String -> IO Handle
+    getHandleFromEnv envName = do
         mFdstring <- lookupEnv envName
         case mFdstring of
             Nothing -> error $ "Unable to find fd: " <> envName
             Just fdstring -> case readEither fdstring of
-                Left err -> throwM $ UnableToParseNodeChannel $ toS err
+                Left err -> error $ "Could not parse file descriptor: " <> toS err
                 Right fd -> liftIO $ fdToHandle fd
