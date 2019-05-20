@@ -56,15 +56,15 @@ nodePort :: Port
 nodePort = Port 8090
 
 -- | Example using file descriptor
-exampleWithFD :: IO (MsgOut, MsgOut)
-exampleWithFD = do
+exampleWithFD :: MsgIn -> IO (MsgOut, MsgOut)
+exampleWithFD msgin = do
 
     (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
 
     (_, responses) <- do
         (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
         -- Send message to server
-        sendMessage serverWriteHandle Ping
+        sendMessage serverWriteHandle msgin
         startIPC SingleMessage serverReadHandle clientWriteHandle nodePort
         `concurrently`
         receieveMessages clientReadHandle
@@ -72,11 +72,11 @@ exampleWithFD = do
     return responses
 
 -- | Example of an IPC using process
--- This will be the client, the one which sends the message (@Ping@, @QueryPort@)
+-- This will be the client, the one which sends the message (such as @Ping@, @QueryPort@)
 -- to get the response from the other.
 -- The server is executed via @stack exec node-ipc haskell some-message@
-exampleWithProcess :: IO (MsgOut, MsgOut)
-exampleWithProcess = bracket acquire restore action
+exampleWithProcess :: MsgIn -> IO (MsgOut, MsgOut)
+exampleWithProcess msg = bracket acquire restore (action msg)
   where
     acquire :: IO (ReadHandle, Handle)
     acquire = do
@@ -95,12 +95,13 @@ exampleWithProcess = bracket acquire restore action
         hClose wHandle
         unsetEnv "FD_WRITE_HANDLE"
 
-    action :: (ReadHandle, Handle) -> IO (MsgOut, MsgOut)
-    action (readHandle, _) = do
-        withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"]) {std_in = CreatePipe}$
-            \(Just stdIn) _ _ _ -> do
-                sendMessage (WriteHandle stdIn) Ping
-                receieveMessages readHandle
+    action :: MsgIn -> (ReadHandle, Handle) -> IO (MsgOut, MsgOut)
+    action msgin (readHandle, _) = do
+        withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"])
+            {std_in = CreatePipe} $
+                \(Just stdIn) _ _ _ -> do
+                    sendMessage (WriteHandle stdIn) msgin
+                    receieveMessages readHandle
 
 -- | Read message wigh given 'ReadHandle'
 receieveMessages :: ReadHandle -> IO (MsgOut, MsgOut)

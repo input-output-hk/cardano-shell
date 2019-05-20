@@ -132,13 +132,13 @@ nodeIPCSpec = do
                     assert handlesClosed
 
         describe "Examples" $ do
-            it "should return Started, Pong with forkProcess" $ monadicIO $ do
-                (started, pong) <- run exampleWithProcess
+            it "should return Started, Pong with createProcess" $ monadicIO $ do
+                (started, pong) <- run (exampleWithProcess Ping)
                 assert $ started == Started
                 assert $ pong    == Pong
 
             it "should return Started, Pong with FDs" $ monadicIO $ do
-                (started, pong) <- run exampleWithFD
+                (started, pong) <- run (exampleWithFD Ping)
                 assert $ started == Started
                 assert $ pong    == Pong
 

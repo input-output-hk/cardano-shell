@@ -109,11 +109,11 @@ executable cardano-shell-exe
                        -Wpartial-fields
 
 executable node-ipc
-  main-is: Server.hs
+  main-is: Main.hs
   other-modules:
       Paths_cardano_shell
   hs-source-dirs:
-      app/NodeIPC
+      app/NodeIPCServer
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
