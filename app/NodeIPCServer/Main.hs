@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- Rename to Client
-module Client
+module Main
     ( main
     ) where
 
@@ -46,6 +46,6 @@ main = do
     action :: Handle -> IO ()
     action clientWHandle = do
         let clientWriteHandle = WriteHandle clientWHandle
-        let serverReadHandle  = ReadHandle stdout
+        let serverReadHandle  = ReadHandle stdin
         startIPC SingleMessage serverReadHandle clientWriteHandle port
 
