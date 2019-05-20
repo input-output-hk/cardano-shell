@@ -109,7 +109,7 @@ executable cardano-shell-exe
                        -Wpartial-fields
 
 executable node-ipc
-  main-is: Main.hs
+  main-is: Client.hs
   other-modules:
       Paths_cardano_shell
   hs-source-dirs:

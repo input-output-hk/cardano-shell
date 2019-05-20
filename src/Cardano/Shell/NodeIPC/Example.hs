@@ -69,7 +69,9 @@ exampleWithFD = do
 
     return responses
 
--- | Example of an IPC using nc process
+-- | Example of an IPC using process
+-- This will be the server, which sends @MsgIn@ messages to the client.
+-- The client is executed via @stack exec node-ipc haskell some-message@
 exampleWithProcess :: IO (MsgOut, MsgOut)
 exampleWithProcess = bracket acquire restore action
   where
@@ -92,11 +94,7 @@ exampleWithProcess = bracket acquire restore action
 
     action :: (ReadHandle, Handle) -> IO (MsgOut, MsgOut)
     action (readHandle, _) = do
-        withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"]) $
-        -- Tried to use stdin, but it is very incosistent.
-        -- the executable throws exception:
-        -- node-ipc: Unable to read with given handle: {handle: <stdout>}
-        -- Even though I'm providing stdin
+        withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell", "ping"]) $
             \_ _ _ _ -> receieveMessages readHandle
 
 
