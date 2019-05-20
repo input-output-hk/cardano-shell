@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- Rename to Client
 module Main
     ( main
     ) where
