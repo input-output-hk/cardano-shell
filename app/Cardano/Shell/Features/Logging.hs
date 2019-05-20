@@ -11,14 +11,19 @@ module Cardano.Shell.Features.Logging
     , Configuration
     , LoggerName
     , Severity (..)
+    , mkLOMeta
+    , LOMeta (..)
+    , LOContent (..)
     ) where
 
+import           Control.Exception.Safe (MonadCatch)
 import qualified Control.Monad.STM as STM
 import           Cardano.Prelude hiding (trace)
 
 import           Cardano.BM.Configuration (Configuration)
 import qualified Cardano.BM.Configuration as Config
-import           Cardano.BM.Data.LogItem (LoggerName)
+import           Cardano.BM.Data.LogItem (LoggerName, LOMeta (..),
+                     LOContent (..), mkLOMeta)
 import           Cardano.BM.Data.Severity (Severity (..))
 import qualified Cardano.BM.Observer.Monadic as Monadic
 import qualified Cardano.BM.Observer.STM as Stm
@@ -63,9 +68,11 @@ data LoggingLayer = LoggingLayer
     , llLogWarning      :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
     , llLogError        :: forall m a. (MonadIO m, Show a) => Trace m a  -> a -> m ()
     , llAppendName      :: forall m a. (MonadIO m, Show a) => LoggerName -> Trace m a -> m (Trace m a)
-    , llConfiguration   :: Configuration
-    , llBracketMonadX   :: forall m a t. (MonadIO m, Show a) => Configuration -> Trace m a -> Severity -> Text -> m t -> m t
-    , llBracketStmIO    :: forall a t. (Show a) => Configuration -> Trace IO a -> Severity -> Text -> STM.STM t -> IO t
+    , llBracketMonadIO  :: forall a t. (Show a) => Trace IO a -> Severity -> Text -> IO t -> IO t
+    , llBracketMonadM   :: forall a m t. (MonadCatch m, MonadIO m, Show a) => Trace m a -> Severity -> Text -> m t -> m t
+    , llBracketMonadX   :: forall m a t. (MonadIO m, Show a) => Trace m a -> Severity -> Text -> m t -> m t
+    , llBracketStmIO    :: forall a t. (Show a) => Trace IO a -> Severity -> Text -> STM.STM t -> IO t
+    , llBracketStmLogIO :: forall a t. (Show a) => Trace IO a -> Severity -> Text -> STM.STM (t,[(LOMeta, LOContent a)]) -> IO t
     }
 
 --------------------------------
@@ -99,8 +106,8 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration = do
 -- | Initialize `LoggingCardanoFeature`
 loggingCardanoFeatureInit :: LoggingParameters -> IO LoggingCardanoFeature
 loggingCardanoFeatureInit loggingConfig = do
-
-    (baseTrace, switchBoard) <- setupTrace_ (lpConfiguration loggingConfig) "cardano"
+    let logconfig = lpConfiguration loggingConfig
+    (baseTrace, switchBoard) <- setupTrace_ logconfig "cardano"
 
     let initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingParameters -> IO LoggingLayer
         initLogging _ _ _ _ = do
@@ -112,9 +119,11 @@ loggingCardanoFeatureInit loggingConfig = do
                     , llLogWarning    = Trace.logWarning
                     , llLogError      = Trace.logError
                     , llAppendName    = Trace.appendName
-                    , llConfiguration = lpConfiguration loggingConfig
-                    , llBracketMonadX = Monadic.bracketObserveX
-                    , llBracketStmIO  = Stm.bracketObserveIO
+                    , llBracketMonadIO = Monadic.bracketObserveIO logconfig
+                    , llBracketMonadM = Monadic.bracketObserveM logconfig
+                    , llBracketMonadX = Monadic.bracketObserveX logconfig
+                    , llBracketStmIO  = Stm.bracketObserveIO logconfig
+                    , llBracketStmLogIO = Stm.bracketObserveLogIO logconfig
                     }
     let cleanupLogging :: LoggingLayer -> IO ()
         cleanupLogging _ = shutdown switchBoard
