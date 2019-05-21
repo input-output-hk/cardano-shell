@@ -15,6 +15,7 @@
 -- This allows the two proccesses to send the message to the other while
 -- reading the response that other had sent.
 -}
+
 module Cardano.Shell.NodeIPC.Example
     ( exampleWithFD
     , exampleWithProcess
@@ -61,23 +62,23 @@ nodePort = Port 8090
 exampleWithFD :: MsgIn -> IO (MsgOut, MsgOut)
 exampleWithFD msgin = do
 
-    (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
+    (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
 
     (_, responses) <- do
-        (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-        -- Send message to server
-        sendMessage serverWriteHandle msgin
-        startIPC SingleMessage serverReadHandle clientWriteHandle nodePort
+        (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
+        -- Send message to client
+        sendMessage clientWriteHandle msgin
+        startIPC SingleMessage clientReadHandle serverWriteHandle nodePort
         `concurrently`
-        receieveMessages clientReadHandle
+        receieveMessages serverReadHandle
 
     return responses
 
--- | Example of an IPC client that is using haskell executable as an server.
+-- | Example of an IPC server that is using haskell executable as an server.
 --
--- This will be the client, the one which sends the message (such as @Ping@, @QueryPort@)
--- to get the response from the other.
--- The server is executed via @stack exec node-ipc haskell@
+-- This will be the server, the one which sends the message (such as @Ping@, @QueryPort@)
+-- to get the response from the client.
+-- The client is executed via @stack exec node-ipc haskell@
 exampleWithProcess :: MsgIn -> IO (MsgOut, MsgOut)
 exampleWithProcess msg = bracket acquire restore (action msg)
   where
@@ -85,7 +86,7 @@ exampleWithProcess msg = bracket acquire restore (action msg)
     acquire = do
         (rFd, wFd) <- createPipeFd
         -- Set the write file descriptor to the envrionment variable
-        -- the server will look this up, and use it to talk the client
+        -- the client will look this up, and use it to talk the server
         setEnv "FD_WRITE_HANDLE" (show wFd)
         readHandle  <- ReadHandle <$> fdToHandle rFd
         -- Since closeFd only exists in 'unix' library,
@@ -110,11 +111,11 @@ exampleWithProcess msg = bracket acquire restore (action msg)
 
 -- | Read message wigh given 'ReadHandle'
 receieveMessages :: ReadHandle -> IO (MsgOut, MsgOut)
-receieveMessages clientReadHandle = do
-    let readClientMessage :: IO MsgOut
-        readClientMessage = readMessage clientReadHandle
-    started <- readClientMessage -- Started
-    reply   <- readClientMessage -- Reply
+receieveMessages serverReadHandle = do
+    let readServerMessage :: IO MsgOut
+        readServerMessage = readMessage serverReadHandle
+    started <- readServerMessage -- Started
+    reply   <- readServerMessage -- Reply
     return (started, reply)
 
 getHandleFromEnv :: String -> IO Handle
