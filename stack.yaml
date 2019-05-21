@@ -100,4 +100,5 @@ extra-deps:
 
 nix:
   enable: true
+  pure: false
   shell-file: stack-shell.nix
