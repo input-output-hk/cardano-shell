@@ -1,7 +1,7 @@
 // How to run the script:
 // Node JS version: v11.10.1
 // Have everything built beforehand
-// On console, run: "node app/NodeIPCServer/server.js"
+// On console, run: "node app/NodeIPCClient/server.js"
 
 // This process implicitly sets environment varibale "NODE_CHANNEL_FD" with a fd it currently uses
 // Hakell node will then lookup that fd, and use it to communicate with this script.
@@ -9,7 +9,7 @@ const child_process = require("child_process");
 const fs            = require('fs');
 
 // Filepath to resources
-const parentPath = "./app/NodeIPCServer";
+const parentPath = "./app/NodeIPCClient";
 const testDir    = `${parentPath}/test-state`;
 const logPath    = `${testDir}/cardano-node.log`;
 
