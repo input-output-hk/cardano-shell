@@ -23,7 +23,6 @@ import           Cardano.Shell.NodeIPC (MessageException,
                                         MsgOut (..), NodeIPCException (..),
                                         Port (..), ProtocolDuration (..),
                                         ReadHandle (..), WriteHandle (..),
-                                        exampleWithFD, exampleWithProcess,
                                         getReadWriteHandles, isHandleClosed,
                                         isIPCException,
                                         isNodeChannelCannotBeFound,
@@ -130,17 +129,6 @@ nodeIPCSpec = do
                         wait as
                         areHandlesClosed serverReadHandle clientWriteHandle
                     assert handlesClosed
-
-        describe "Examples" $ do
-            it "should return Started, Pong with createProcess" $ monadicIO $ do
-                (started, pong) <- run (exampleWithProcess Ping)
-                assert $ started == Started
-                assert $ pong    == Pong
-
-            it "should return Started, Pong with FDs" $ monadicIO $ do
-                (started, pong) <- run (exampleWithFD Ping)
-                assert $ started == Started
-                assert $ pong    == Pong
 
     describe "startNodeJsIPC" $
         it "should throw NodeIPCException when it is not spawned by NodeJS process" $ monadicIO $ do
