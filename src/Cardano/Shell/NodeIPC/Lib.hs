@@ -141,7 +141,7 @@ instance Arbitrary Port where
 
 -- | Exception thrown from Node IPC protocol
 data NodeIPCException
-    = NodeChannelNotFound
+    = NodeChannelNotFound Text
     -- ^ Node channel was not found
     | UnableToParseNodeChannel Text
     -- ^ Unable to parse given 'Text' as File descriptor
@@ -156,12 +156,18 @@ data NodeIPCException
 
 instance Show NodeIPCException where
     show = \case
-        NodeChannelNotFound          -> "Env variable NODE_CHANNEL_FD cannot be found"
-        UnableToParseNodeChannel err -> "Unable to parse NODE_CHANNEL_FD: " <> show err
-        IPCException                 -> "IOError has occured"
-        HandleClosed h               -> "Given handle is closed: " <> show h
-        UnreadableHandle h           -> "Unable to read with given handle: " <> show h
-        UnwritableHandle h           -> "Unable to write with given handle: " <> show h
+        NodeChannelNotFound envName -> 
+            "Environment variable cannot be found: " <> strConv Lenient envName
+        UnableToParseNodeChannel err -> 
+            "Unable to parse file descriptor: " <> strConv Lenient err
+        IPCException -> 
+            "IOError has occured"
+        HandleClosed h -> 
+            "Given handle is closed: " <> show h
+        UnreadableHandle h -> 
+            "Unable to read with given handle: " <> show h
+        UnwritableHandle h -> 
+            "Unable to write with given handle: " <> show h
 
 instance Exception NodeIPCException
 
@@ -170,7 +176,7 @@ getIPCHandle :: IO Handle
 getIPCHandle = do
     mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
     case mFdstring of
-        Nothing -> throwM NodeChannelNotFound
+        Nothing -> throwM $ NodeChannelNotFound "NODE_CHANNEL_FD"
         Just fdstring -> case readEither fdstring of
             Left err -> throwM $ UnableToParseNodeChannel $ toS err
             Right fd -> liftIO $ fdToHandle fd
@@ -295,5 +301,5 @@ isUnwritableHandle _                    = False
 
 -- | Checks if given 'NodeIPCException' is 'NodeChannelNotFound'
 isNodeChannelCannotBeFound :: NodeIPCException -> Bool
-isNodeChannelCannotBeFound NodeChannelNotFound = True
-isNodeChannelCannotBeFound _                   = False
+isNodeChannelCannotBeFound (NodeChannelNotFound _) = True
+isNodeChannelCannotBeFound _                       = False

@@ -25,13 +25,15 @@ module Cardano.Shell.NodeIPC.Example
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..), Port (..),
+import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..),
+                                            NodeIPCException (..), Port (..),
                                             ProtocolDuration (..), startIPC)
 import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
+import           Control.Exception.Safe (throwM)
 import           GHC.IO.Handle.FD (fdToHandle)
-import           Prelude (String, error)
+import           Prelude (String)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
 import           System.IO (BufferMode (..), hClose, hSetBuffering)
 import           System.Process (CreateProcess (..), StdStream (..), createPipe,
@@ -71,16 +73,19 @@ exampleWithFD msgin = do
 
     return responses
 
--- | Example of an IPC using process
+-- | Example of an IPC client that is using haskell executable as an server.
+--
 -- This will be the client, the one which sends the message (such as @Ping@, @QueryPort@)
 -- to get the response from the other.
--- The server is executed via @stack exec node-ipc haskell some-message@
+-- The server is executed via @stack exec node-ipc haskell@
 exampleWithProcess :: MsgIn -> IO (MsgOut, MsgOut)
 exampleWithProcess msg = bracket acquire restore (action msg)
   where
     acquire :: IO (ReadHandle, Handle)
     acquire = do
         (rFd, wFd) <- createPipeFd
+        -- Set the write file descriptor to the envrionment variable
+        -- the server will look this up, and use it to talk the client
         setEnv "FD_WRITE_HANDLE" (show wFd)
         readHandle  <- ReadHandle <$> fdToHandle rFd
         -- Since closeFd only exists in 'unix' library,
@@ -98,7 +103,7 @@ exampleWithProcess msg = bracket acquire restore (action msg)
     action :: MsgIn -> (ReadHandle, Handle) -> IO (MsgOut, MsgOut)
     action msgin (readHandle, _) = do
         withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"])
-            {std_in = CreatePipe} $
+            { std_in = CreatePipe } $
                 \(Just stdIn) _ _ _ -> do
                     sendMessage (WriteHandle stdIn) msgin
                     receieveMessages readHandle
@@ -109,14 +114,14 @@ receieveMessages clientReadHandle = do
     let readClientMessage :: IO MsgOut
         readClientMessage = readMessage clientReadHandle
     started <- readClientMessage -- Started
-    pong    <- readClientMessage -- Pong
-    return (started, pong)
+    reply   <- readClientMessage -- Reply
+    return (started, reply)
 
 getHandleFromEnv :: String -> IO Handle
 getHandleFromEnv envName = do
     mFdstring <- lookupEnv envName
     case mFdstring of
-        Nothing -> error $ "Unable to find fd: " <> envName
+        Nothing -> throwM $ NodeChannelNotFound (strConv Lenient envName)
         Just fdstring -> case readEither fdstring of
-            Left err -> error $ "Could not parse file descriptor: " <> toS err
+            Left err -> throwM $ UnableToParseNodeChannel (strConv Lenient err)
             Right fd -> liftIO $ fdToHandle fd
