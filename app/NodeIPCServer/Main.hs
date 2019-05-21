@@ -1,4 +1,4 @@
-{-| This executable act as an server of an IPC protocol of @exampleWithProcess@
+{-| This executable act as an server of an IPC protocol
 |-}
 
 {-# LANGUAGE OverloadedStrings #-}
@@ -20,8 +20,8 @@ port = Port 8090
 
 -- | Launches the IPC server, the one responses to the message from the client.
 --
--- Client will pass its handle via environment variable @FD_WRITE_HANDLE@.
--- The server will decodes the handle, then launches IPC listener.
+-- Client will pass its handle via environment variable.
+-- The server will then decodes the handle and launches IPC listener.
 -- It then respond to the client with the handle it has been given.
 --
 -- Because of this, the client must the be the one to execute this function (see @exampleWithProcess@).
