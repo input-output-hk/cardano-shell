@@ -1,3 +1,6 @@
+{-| This executable act as an server of an IPC protocol of @exampleWithProcess@
+|-}
+
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main
@@ -35,6 +38,7 @@ main = do
   where
     acquire :: IO Handle
     acquire = do
+        -- Lookup the Handle that the client has set
         clientWHandle <- getHandleFromEnv "FD_WRITE_HANDLE"
         hSetBuffering clientWHandle LineBuffering
         return clientWHandle
