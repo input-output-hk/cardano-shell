@@ -3,13 +3,14 @@
     flags = {
       disable-aggregation = false;
       disable-ekg = false;
+      disable-prometheus = false;
       disable-gui = false;
       disable-monitoring = false;
       disable-observables = false;
       };
     package = {
       specVersion = "1.10";
-      identifier = { name = "iohk-monitoring"; version = "0.1.7.0"; };
+      identifier = { name = "iohk-monitoring"; version = "0.1.8.0"; };
       license = "MIT";
       copyright = "2018 IOHK";
       maintainer = "";
@@ -22,7 +23,7 @@
       };
     components = {
       "library" = {
-        depends = (([
+        depends = ((([
           (hsPkgs.base)
           (hsPkgs.contra-tracer)
           (hsPkgs.aeson)
@@ -56,6 +57,10 @@
           ] ++ (pkgs.lib).optionals (!flags.disable-ekg) [
           (hsPkgs.ekg)
           (hsPkgs.ekg-core)
+          ]) ++ (pkgs.lib).optionals (!flags.disable-ekg && !flags.disable-prometheus) [
+          (hsPkgs.ekg-prometheus-adapter)
+          (hsPkgs.prometheus)
+          (hsPkgs.warp)
           ]) ++ (pkgs.lib).optional (!flags.disable-gui) (hsPkgs.threepenny-gui)) ++ (if system.isWindows
           then [ (hsPkgs.Win32) ]
           else [ (hsPkgs.unix) ]);
@@ -129,8 +134,8 @@
     } // {
     src = (pkgs.lib).mkDefault (pkgs.fetchgit {
       url = "https://github.com/input-output-hk/iohk-monitoring-framework";
-      rev = "d4139f18f77d2f837d52383859a27974f4f4e162";
-      sha256 = "02yr3alnf74qpa8vg1kk9h034blmb4nzpsbzb0n5jymsyy8r1i4c";
+      rev = "cbe7ab32354f3838dc8c95c64109904c8f503347";
+      sha256 = "1yipq7ghjmk5h0cjdpqbq9s00iv6wpj7zqh5b2nk4a6pz93fm6rv";
       });
     postUnpack = "sourceRoot+=/iohk-monitoring; echo source root reset to \$sourceRoot";
     }

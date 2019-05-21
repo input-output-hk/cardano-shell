@@ -50,10 +50,6 @@ commonLib.nix-tools.default-nix ./nix/pkgs.nix args
 # ... and add additional non-haskell packages we want to build on CI:
 // {
 
-  stack-env = pkgs.runCommand "stack-env" { 
-    buildInputs = with pkgs; [ haskell.packages.ghc863.ghc zlib openssl git ];
-  } "mkdir $out";
-
   runCoveralls = pkgs.stdenv.mkDerivation {
     name = "run-coveralls";
     buildInputs = with pkgs; [ haskellPackages.stack-hpc-coveralls stack ];

@@ -1,4 +1,1 @@
-{ system ? builtins.currentSystem
-, config ? {}
-}:
-(import ./default.nix { inherit system config; }).stack-env
+(import ./. {}).nix-tools.libs.cardano-shell
