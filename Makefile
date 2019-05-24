@@ -22,4 +22,8 @@ test-ghci: ## Run repl on test suites
 test-ghcid: ## Run ghcid on test suites
 	@ghcid --command "stack ghci $(PROJECT_NAME):lib $(PROJECT_NAME):test:$(PROJECT_NAME)-test --ghci-options=-fobject-code"
 
+test-ghcid-nix: ## Run ghcid on test suites with Nix
+	#NUM_PROC = $(nproc --all) # Either try to fetch the real num of cores or default to 4
+	@ghcid --command="stack ghci --test --main-is cardano-shell:test:cardano-shell-test --nix -j12"
+
 .PHONY: stylish-haskell ghcid ghcid-test run-test test-ghci test-ghcid help

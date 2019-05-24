@@ -175,7 +175,7 @@ executable cardano-launcher
                        -Wincomplete-record-updates
                        -Wincomplete-uni-patterns
                        -Wredundant-constraints
-                       -Wpartial-fields                      
+                       -Wpartial-fields
 
 test-suite cardano-shell-test
   type: exitcode-stdio-1.0
@@ -186,6 +186,7 @@ test-suite cardano-shell-test
   if !os(windows)
     other-modules:
       NodeIPCSpec
+      NodeIPCSMSpec
 
   hs-source-dirs:
       test
@@ -199,6 +200,10 @@ test-suite cardano-shell-test
     , safe-exceptions
     -- quickcheck
     , QuickCheck
+    , quickcheck-state-machine >= 0.6
+    -- required because of QSM
+    , tree-diff
+    , stm
     , hspec
     , hspec-contrib
     , concurrency
@@ -208,7 +213,7 @@ test-suite cardano-shell-test
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
 
-  ghc-options:         -Wall
+  ghc-options:         
                        -Werror
                        -Wcompat
                        -Wincomplete-record-updates
