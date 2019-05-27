@@ -3,16 +3,25 @@
 <https://github.com/input-output-hk/cardano-shell/blob/develop/specs/CardanoShellSpec.pdf>
 -}
 
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE LambdaCase             #-}
-{-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.Shell.NodeIPC.Lib
     ( startNodeJsIPC
     , startIPC
     , Port (..)
     , ProtocolDuration (..)
+    , handleIPCProtocol
+    , clientIPCListener
+    , testStartNodeIPC
+    , ServerHandles (..)
+    , ClientHandles (..)
+    , closeFullDuplexAnonPipesHandles
+    , createFullDuplexAnonPipesHandles
+    , bracketFullDuplexAnonPipesHandles
+    , serverReadWrite
     -- * Testing
     , getIPCHandle
     , MsgIn(..)
@@ -38,10 +47,14 @@ import           Data.Aeson.Types (Options, SumEncoding (ObjectWithSingleField),
                                    sumEncoding)
 import           GHC.IO.Handle (hIsOpen, hIsReadable, hIsWritable)
 import           GHC.IO.Handle.FD (fdToHandle)
+
 import           System.Environment (lookupEnv)
-import           System.IO (hClose, hFlush, hSetNewlineMode,
-                            noNewlineTranslation)
+import           System.Process (createPipe)
+
+import           System.IO (BufferMode (..), hClose, hFlush, hSetBuffering,
+                            hSetNewlineMode, noNewlineTranslation)
 import           System.IO.Error (IOError, isEOFError)
+
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
                                   choose, elements, listOf1)
 
@@ -52,7 +65,26 @@ import           Cardano.Shell.NodeIPC.Message (MessageException,
 
 import qualified Prelude as P (Show (..))
 
--- | The way the IPC protocol works.
+-- | When using pipes, __the write doesn't block, but the read blocks__!
+-- As a consequence, we eiter need to use IDs to keep track of the client/server pair,
+-- or (read) block so we know which message pair arrived.
+-- This might seems an overkill for this task, but it's actually required if we
+-- want to reason about it and test it properly.
+--
+-- >>> (readEnd, writeEnd) <- createPipe
+--
+-- >>> replicateM 100 $ sendMessage (WriteHandle writeEnd) Cardano.Shell.NodeIPC.Ping
+-- [(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),()]
+--
+-- >>> mesg <- replicateM 100 ((readMessage (ReadHandle readEnd)) :: IO MsgIn)
+--
+-- >>> mesg <- (readMessage (ReadHandle readEnd)) :: IO MsgIn
+--
+--
+-- Blocked!
+
+-- | The way the IPC protocol works - it either responds to a single
+-- __IPC__ message or it remains in a loop responding to multiple messages.
 data ProtocolDuration
     = SingleMessage
     -- ^ Responds to a single message and exits
@@ -186,8 +218,10 @@ startIPC protocolDuration readHandle writeHandle port = liftIO $ void $ ipcListe
 startNodeJsIPC :: forall m. (MonadIO m) => ProtocolDuration -> Port -> m ()
 startNodeJsIPC protocolDuration port = do
     handle          <- liftIO $ getIPCHandle
+
     let readHandle  = ReadHandle handle
     let writeHandle = WriteHandle handle
+
     liftIO $ void $ ipcListener protocolDuration readHandle writeHandle port
 
 -- | Function for handling the protocol
@@ -255,11 +289,127 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
         checkHandle wHandle hIsOpen (HandleClosed wHandle)
         checkHandle rHandle hIsReadable (UnreadableHandle rHandle)
         checkHandle wHandle hIsWritable (UnwritableHandle wHandle)
+      where
+        -- | Utility function for checking a handle.
+        checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCException -> IO ()
+        checkHandle handle pre exception = do
+            result <- pre handle
+            when (not result) $ throwM exception
 
-    checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCException -> IO ()
-    checkHandle handle pre exception = do
-        result <- pre handle
-        when (not result) $ throwM exception
+-- | Client side IPC protocol.
+clientIPCListener
+    :: forall m. (MonadIO m, MonadMask m)
+    => ProtocolDuration
+    -> ClientHandles
+    -> Port
+    -- ^ This is really making things confusing. A Port is here,
+    -- but it's determined on the client side, not before.
+    -> m ()
+clientIPCListener duration clientHandles port =
+    ipcListener
+        duration
+        (getClientReadHandle clientHandles)
+        (getClientWriteHandle clientHandles)
+        port
+
+-- | The set of handles for the server, the halves of one pipe.
+data ServerHandles = ServerHandles
+    { getServerReadHandle  :: !ReadHandle
+    , getServerWriteHandle :: !WriteHandle
+    }
+
+-- | The set of handles for the client, the halves of one pipe.
+data ClientHandles = ClientHandles
+    { getClientReadHandle  :: !ReadHandle
+    , getClientWriteHandle :: !WriteHandle
+    }
+
+-- | This is a __blocking call__ that sends the message to the client
+-- and returns it's response, __after the client response arrives__.
+serverReadWrite :: ServerHandles -> MsgIn -> IO MsgOut
+serverReadWrite serverHandles msgIn = do
+    sendMessage (getServerWriteHandle serverHandles) msgIn
+    readMessage (getServerReadHandle serverHandles)
+
+-- | A bracket function that can be useful.
+bracketFullDuplexAnonPipesHandles
+    :: ((ServerHandles, ClientHandles) -> IO ())
+    -> IO ()
+bracketFullDuplexAnonPipesHandles computationToRun =
+    bracket
+        createFullDuplexAnonPipesHandles
+        closeFullDuplexAnonPipesHandles
+        computationToRun
+
+-- | Close the pipe handles.
+closeFullDuplexAnonPipesHandles :: (ServerHandles, ClientHandles) -> IO ()
+closeFullDuplexAnonPipesHandles (serverHandles, clientHandles) = do
+    -- close the server side
+    hClose $ getReadHandle  (getServerReadHandle serverHandles)
+    hClose $ getWriteHandle (getServerWriteHandle serverHandles)
+
+    -- close the client side
+    hClose $ getReadHandle  (getClientReadHandle clientHandles)
+    hClose $ getWriteHandle (getClientWriteHandle clientHandles)
+
+-- | Creation of a two-way communication between the server and the client.
+-- Full-duplex (two-way) communication normally requires two anonymous pipes.
+-- TODO(KS): Bracket this!
+createFullDuplexAnonPipesHandles :: IO (ServerHandles, ClientHandles)
+createFullDuplexAnonPipesHandles = do
+
+    (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
+    (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
+
+    let serverHandles = ServerHandles clientReadHandle serverWriteHandle
+    let clientHandles = ClientHandles serverReadHandle clientWriteHandle
+
+    return (serverHandles, clientHandles)
+
+-- | Create a pipe for interprocess communication and return a
+-- ('ReadHandle', 'WriteHandle') Handle pair.
+getReadWriteHandles :: IO (ReadHandle, WriteHandle)
+getReadWriteHandles = do
+    (readHndl, writeHndl) <- createPipe
+
+    hSetBuffering readHndl LineBuffering
+    hSetBuffering writeHndl LineBuffering
+
+    let readHandle  = ReadHandle readHndl
+    let writeHandle = WriteHandle writeHndl
+
+    return (readHandle, writeHandle)
+
+
+-- | Test 'startIPC'
+testStartNodeIPC :: (ToJSON msg) => Port -> msg -> IO (MsgOut, MsgOut)
+testStartNodeIPC port msg = do
+    (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
+    (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
+
+    -- Start the server
+    (_, responses) <-
+        startIPC
+            SingleMessage
+            serverReadHandle
+            clientWriteHandle
+            port
+        `concurrently`
+        do
+            -- Use these functions so you don't pass the wrong handle by mistake
+            let readClientMessage :: IO MsgOut
+                readClientMessage = readMessage clientReadHandle
+
+            let sendServer :: (ToJSON msg) => msg -> IO ()
+                sendServer = sendMessage serverWriteHandle
+
+            -- Communication starts here
+            started     <- readClientMessage
+            sendServer msg
+            response    <- readClientMessage
+            return (started, response)
+
+    return responses
 
 --------------------------------------------------------------------------------
 -- Placeholder

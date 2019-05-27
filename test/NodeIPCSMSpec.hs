@@ -7,170 +7,212 @@
 {-# LANGUAGE PolyKinds          #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
+-- Yes, yes, this is an exception.
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module NodeIPCSMSpec
-    ( mkEnv
-    , prop_echoOK
-    , prop_echoParallelOK
+    ( nodeIPCSMSpec
+    , prop_nodeIPC
     ) where
 
 import           Cardano.Prelude
 
-import           Control.Concurrent.STM (TVar, newTVarIO, readTVar, writeTVar)
-
-import           Data.Kind (Type)
 import           Data.TreeDiff (ToExpr (..))
 
-import           GHC.Generics (Generic, Generic1)
-import           Prelude
-import           Test.QuickCheck (Gen, Property, arbitrary, oneof, (===))
-import           Test.QuickCheck.Monadic (monadicIO)
+import           Test.Hspec (Spec, describe, it)
+
+import           Test.QuickCheck (Gen, Property, arbitrary, generate, oneof,
+                                  (===))
+import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import           Test.StateMachine
 import           Test.StateMachine.Types
 import qualified Test.StateMachine.Types.Rank2 as Rank2
 
-------------------------------------------------------------------------
+import           Cardano.Shell.NodeIPC (MessageSendFailure (..), MsgIn (..),
+                                        MsgOut (..), Port (..),
+                                        ProtocolDuration (..),
+                                        ServerHandles (..), clientIPCListener,
+                                        closeFullDuplexAnonPipesHandles,
+                                        createFullDuplexAnonPipesHandles,
 
--- | Echo API.
+                                        readMessage, serverReadWrite)
 
-data Env = Env
-    { _buf :: TVar (Maybe String) }
+-------------------------------------------------------------------------------
+-- Tests
+-------------------------------------------------------------------------------
 
--- | Create a new environment.
-mkEnv :: IO Env
-mkEnv = Env <$> newTVarIO Nothing
+nodeIPCSMSpec :: Spec
+nodeIPCSMSpec = do
+    describe "Node IPC state machine" $ do
+        it "should return the correct response" $ do
+            prop_nodeIPC
 
--- | Input a string. Returns 'True' iff the buffer was empty and the given
--- string was added to it.
-input :: Env -> String -> IO Bool
-input (Env mBuf) str = atomically $ do
-    res <- readTVar mBuf
-    case res of
-        Nothing -> writeTVar mBuf (Just str) >> return True
-        Just _  -> return False
+prop_nodeIPC :: Property
+prop_nodeIPC =
 
--- | Output the buffer contents.
-output :: Env -> IO (Maybe String)
-output (Env mBuf) = atomically $ do
-    res <- readTVar mBuf
-    writeTVar mBuf Nothing
-    return res
+    forAllCommands smUnused (Just 200) $ \cmds -> monadicIO $ do
 
-------------------------------------------------------------------------
+        -- Create the arbitrary port where the IPC server is running on
+        port                            <- run $ generate arbitrary
 
--- | Spec for echo.
+        -- Create the handles for a full duplex communcation (we can use two sockets as well)
+        (serverHandles, clientHandles)  <- liftIO $ createFullDuplexAnonPipesHandles
 
-prop_echoOK :: Property
-prop_echoOK = forAllCommands smUnused Nothing $ \cmds -> monadicIO $ do
-    env <- liftIO $ mkEnv
-    let echoSM' = echoSM env
-    (hist, _, res) <- runCommands echoSM' cmds
-    prettyCommands echoSM' hist (res === Ok)
+        -- Create the IPC server, it's using async, but it can be a separate process.
+        clientIPCAsync                  <-
+            liftIO $ async $ clientIPCListener MultiMessage clientHandles (Port port)
 
-prop_echoParallelOK :: Bool -> Property
-prop_echoParallelOK problem = forAllParallelCommands smUnused $ \cmds -> monadicIO $ do
-    env <- liftIO $ mkEnv
-    let echoSM' = echoSM env
-    let n | problem   = 2
-          | otherwise = 1
-    prettyParallelCommands cmds =<< runParallelCommandsNTimes n echoSM' cmds
+        -- Communication starts here
+        started <- run $ readMessage (getServerReadHandle serverHandles)
 
+        -- The first message must be @Started@.
+        assert $ started == Started
+
+        let nodeSM                      = nodeIPCSM serverHandles
+
+        -- Run the actual commands
+        (hist, _model, res)             <- runCommands nodeSM cmds
+
+        -- Close async
+        run $ cancel clientIPCAsync
+
+        -- Close handles
+        run $ closeFullDuplexAnonPipesHandles (serverHandles, clientHandles)
+
+        -- Pretty the commands
+        prettyCommands nodeSM hist $ checkCommandNames cmds (res === Ok)
+
+-- | Weird, but ok.
 smUnused :: StateMachine Model Action IO Response
-smUnused = echoSM $ error "used env during command generation"
+smUnused = nodeIPCSM $ panic "used env during command generation"
 
-echoSM :: Env -> StateMachine Model Action IO Response
-echoSM env = StateMachine
-    { initModel         = Empty
-    -- ^ At the beginning of time nothing was received.
-    , transition        = mTransitions
-    , precondition      = mPreconditions
-    , postcondition     = mPostconditions
-    , generator         = mGenerator
-    , invariant         = Nothing
-    , shrinker          = mShrinker
-    , semantics         = mSemantics
-    , mock              = mMock
-    , distribution      = Nothing
-    }
-    where
-      mTransitions :: Model r -> Action r -> Response r -> Model r
-      mTransitions Empty   (In str) _   = Buf str
-      mTransitions (Buf _) Echo     _   = Empty
-      mTransitions Empty   Echo     _   = Empty
-      -- TODO: qcsm will match the case below. However we don't expect this to happen!
-      mTransitions (Buf str) (In _)   _ = Buf str -- Dummy response
-          -- error "This shouldn't happen: input transition with full buffer"
+-------------------------------------------------------------------------------
+-- Language
+-------------------------------------------------------------------------------
 
-      -- | There are no preconditions for this model.
-      mPreconditions :: Model Symbolic -> Action Symbolic -> Logic
-      mPreconditions _ _ = Top
+-- | The list of commands/actions the model can take.
+data Action (r :: Type -> Type)
+    = PingCmd
+    | QueryPortCmd
+    deriving (Show, Generic1, Rank2.Foldable, Rank2.Traversable, Rank2.Functor, CommandNames)
 
-      -- | Post conditions for the system.
-      mPostconditions :: Model Concrete -> Action Concrete -> Response Concrete -> Logic
-      mPostconditions Empty     (In _) InAck     = Top
-      mPostconditions (Buf _)   (In _) ErrFull   = Top
-      mPostconditions _         (In _) _         = Bot
-      mPostconditions Empty     Echo   ErrEmpty  = Top
-      mPostconditions Empty     Echo   _         = Bot
-      mPostconditions (Buf str) Echo   (Out out) = str .== out
-      mPostconditions (Buf _)   Echo   _         = Bot
+-- | The types of responses of the model.
+data Response (r :: Type -> Type)
+    = StartedResponse
+    | PongResponse
+    | ReplyPortResponse Word16
+    deriving (Show, Generic1, Rank2.Foldable, Rank2.Traversable, Rank2.Functor)
 
-      -- | Generator for symbolic actions.
-      mGenerator :: Model Symbolic -> Maybe (Gen (Action Symbolic))
-      mGenerator _ =  Just $ oneof
-          [ In <$> arbitrary
-          , return Echo
-          ]
+-- TODO(KS): ISO? Not really painful at this point, so KISS.
 
-      -- | Trivial shrinker.
-      mShrinker :: Model Symbolic -> Action Symbolic -> [Action Symbolic]
-      mShrinker _ _ = []
+-- | Abstract to concrete.
+actionToConcrete :: Action r -> MsgIn
+actionToConcrete PingCmd      = Ping
+actionToConcrete QueryPortCmd = QueryPort
 
-      -- | Here we'd do the dispatch to the actual SUT.
-      mSemantics :: Action Concrete -> IO (Response Concrete)
-      mSemantics (In str) = do
-          success <- input env str
-          return $ if success
-                   then InAck
-                   else ErrFull
-      mSemantics Echo = maybe ErrEmpty Out <$> output env
+-- | Abstract to concrete.
+responseToConcreate :: Response r -> MsgOut
+responseToConcreate StartedResponse          = Started
+responseToConcreate PongResponse             = Pong
+responseToConcreate (ReplyPortResponse port) = ReplyPort port
 
-      -- | What is the mock for?
-      mMock :: Model Symbolic -> Action Symbolic -> GenSym (Response Symbolic)
-      mMock Empty (In _)   = return InAck
-      mMock (Buf _) (In _) = return ErrFull
-      mMock Empty Echo     = return ErrEmpty
-      mMock (Buf str) Echo = return (Out str)
+-------------------------------------------------------------------------------
+-- Instances
+-------------------------------------------------------------------------------
 
 deriving instance ToExpr (Model Concrete)
 
--- | The model contains the last string that was communicated in an input
--- action.
-data Model (r :: Type -> Type)
-    = -- | The model hasn't been initialized.
-      Empty
-    | -- | Last input string (a buffer with size one).
-      Buf String
-  deriving (Eq, Show, Generic)
+deriving instance ToExpr MsgIn
+deriving instance ToExpr MessageSendFailure
+deriving instance ToExpr MsgOut
 
--- | Actions supported by the system.
-data Action (r :: Type -> Type)
-    = -- | Input a string, which should be echoed later.
-      In String
-      -- | Request a string output.
-    | Echo
-  deriving (Show, Generic1, Rank2.Foldable, Rank2.Traversable, Rank2.Functor, CommandNames)
+-------------------------------------------------------------------------------
+-- The model we keep track of
+-------------------------------------------------------------------------------
 
--- | The system gives a single type of output response, containing a string
--- with the input previously received.
-data Response (r :: Type -> Type)
-    = -- | Input acknowledgment.
-      InAck
-      -- | The previous action wasn't an input, so there is no input to echo.
-      -- This is: the buffer is empty.
-    | ErrEmpty
-      -- | There is already a string in the buffer.
-    | ErrFull
-      -- | Output string.
-    | Out String
-  deriving (Show, Generic1, Rank2.Foldable, Rank2.Traversable, Rank2.Functor)
+-- | The model contains the messages that were communicated in the protocol.
+data Model (r :: Type -> Type) = Model
+    { inputMessages  :: [MsgIn]
+    , outputMessages :: [MsgOut]
+    } deriving (Eq, Show, Generic)
+
+-- | Initially, we don't have any messages in the protocol.
+initialModel :: Model r
+initialModel = Model
+    { inputMessages     = []
+    , outputMessages    = []
+    }
+
+-------------------------------------------------------------------------------
+-- State machine
+-------------------------------------------------------------------------------
+
+nodeIPCSM :: ServerHandles -> StateMachine Model Action IO Response
+nodeIPCSM serverHandles = StateMachine
+    { initModel     = initialModel
+    , transition    = mTransitions
+    , precondition  = mPreconditions
+    , postcondition = mPostconditions
+    , generator     = mGenerator
+    , invariant     = Nothing
+    , shrinker      = mShrinker
+    , semantics     = mSemantics
+    , mock          = mMock
+    , distribution  = Nothing
+    }
+  where
+    -- | Let's handle just Ping/Pong for now.
+    mTransitions :: Model r -> Action r -> Response r -> Model r
+    mTransitions model    action      response        = model
+        { inputMessages     = actionToConcrete action       : inputMessages model
+        , outputMessages    = responseToConcreate response  : outputMessages model
+        }
+
+    -- | Preconditions for this model.
+    mPreconditions :: Model Symbolic -> Action Symbolic -> Logic
+    mPreconditions model _ = length (inputMessages model) - length (outputMessages model) .== 0
+
+    -- | Post conditions for the system.
+    mPostconditions :: Model Concrete -> Action Concrete -> Response Concrete -> Logic
+    mPostconditions _   PingCmd         PongResponse          = Top -- valid
+    mPostconditions _   PingCmd         _                     = Bot -- invalid
+    mPostconditions _   QueryPortCmd    (ReplyPortResponse _) = Top -- valid
+    mPostconditions _   QueryPortCmd    _                     = Bot -- invalid
+
+    -- | Generator for symbolic actions.
+    mGenerator :: Model Symbolic -> Maybe (Gen (Action Symbolic))
+    mGenerator _ =  Just $ oneof
+        [ return PingCmd
+        , return QueryPortCmd
+        ]
+
+    -- | Trivial shrinker. __No shrinker__.
+    mShrinker :: Model Symbolic -> Action Symbolic -> [Action Symbolic]
+    mShrinker _ _ = []
+
+    -- | Here we'd do the dispatch to the actual SUT.
+    mSemantics :: Action Concrete -> IO (Response Concrete)
+    mSemantics PingCmd      = handleIPCProtocolTest Ping
+    mSemantics QueryPortCmd = handleIPCProtocolTest QueryPort
+
+    handleIPCProtocolTest :: MsgIn -> IO (Response Concrete)
+    handleIPCProtocolTest actionIn = do
+        -- The first message is @Started@
+
+        -- Fetch message and respond to it, this is __blocking__.
+        msgIn <- serverReadWrite serverHandles actionIn
+
+        case msgIn of
+            Started             -> return StartedResponse
+            Pong                -> return PongResponse
+            ReplyPort p         -> return (ReplyPortResponse p)
+            MessageOutFailure _ -> return StartedResponse
+            -- ^ This is no-op, ignored. Yes, yes, should be in the model.
+
+    -- | What is the mock for?
+    mMock :: Model Symbolic -> Action Symbolic -> GenSym (Response Symbolic)
+    mMock _ PingCmd      = return PongResponse
+    mMock _ QueryPortCmd = return $ ReplyPortResponse 12345 -- Random number
+
+

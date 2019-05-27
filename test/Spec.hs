@@ -8,7 +8,7 @@ import           Cardano.Prelude
 import           Control.Concurrent.Classy (MonadConc)
 import           Control.Exception.Safe (throwM)
 import           Test.DejaFu (abortsNever, deadlocksNever, exceptionsNever)
-import           Test.Hspec (Spec, describe, hspec, it)
+import           Test.Hspec (Spec, describe, hspec)
 import           Test.Hspec.Contrib.HUnit (fromHUnitTest)
 import           Test.HUnit.DejaFu (testDejafu)
 import           Test.QuickCheck (Gen, arbitraryASCIIChar, choose, frequency,
@@ -19,8 +19,8 @@ import           Cardano.Shell.Lib (AllFeaturesInitFunction,
 import           Cardano.Shell.Types (CardanoFeature (..))
 
 import           DhallConfigSpec (dhallConfigSpec, mkConfigSpec)
+import           NodeIPCSMSpec (nodeIPCSMSpec)
 import           NodeIPCSpec (nodeIPCSpec)
-import           NodeIPCSMSpec
 
 -- | Entry point for tests.
 main :: IO ()
@@ -28,7 +28,7 @@ main = hspec $ do
     describe "App should have no concurrency issues" validConcurrencySpec
     describe "Dhall configurations" dhallConfigSpec
     describe "Cardano configurations" mkConfigSpec
-    describe "NodeIPC state machine example" $ it "check the example works" prop_echoOK
+    describe "NodeIPC state machine" nodeIPCSMSpec
     describe "NodeIPC" nodeIPCSpec
 
 -- | A valid concurrency specification.
