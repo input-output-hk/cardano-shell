@@ -89,7 +89,6 @@
             (hsPkgs.QuickCheck)
             (hsPkgs.quickcheck-state-machine)
             (hsPkgs.tree-diff)
-            (hsPkgs.stm)
             (hsPkgs.hspec)
             (hsPkgs.hspec-contrib)
             (hsPkgs.concurrency)
