@@ -101,7 +101,7 @@ mainnetConfiguration =
                 , geSrc      = "mainnet-genesis.json"
                 , geFileHash = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
                 }
-          , coRequiresNetworkMagic = "NetworkMainOrStage"
+          , coRequiresNetworkMagic = "RequiresNoMagic"
           , coDBSerializeVersion   = 0
           }
     , ccNTP =
@@ -249,23 +249,23 @@ devConfiguration =
                   , bvdMaxHeaderSize     = 2000000
                   , bvdMaxTxSize         = 4096
                   , bvdMaxProposalSize   = 700
-                  , bvdMpcThd            = 0.01
-                  , bvdHeavyDelThd       = 0.005
-                  , bvdUpdateVoteThd     = 0.001
-                  , bvdUpdateProposalThd = 0.1
+                  , bvdMpcThd            = 10
+                  , bvdHeavyDelThd       = 5
+                  , bvdUpdateVoteThd     = 1
+                  , bvdUpdateProposalThd = 100
                   , bvdUpdateImplicit    = 10
                   , bvdSoftforkRule      =
                     SoftForkRule
-                      { sfrInitThd      = 0.9
-                      , sfrMinThd       = 0.6
-                      , sfrThdDecrement = 0.05
+                      { sfrInitThd      = 90
+                      , sfrMinThd       = 60
+                      , sfrThdDecrement = 5
                       }
                   , bvdTXFeePolicy       =
                     TxFeePolicy
                       { txfTXSizeLinear =
                         TxSizeLinear
                           { txsA = 155381
-                          , txsB = 43.946
+                          , txsB = 43
                           }
                       }
                   , bvdUnlockStakeEpoch = 18446744073709551615
