@@ -25,6 +25,7 @@
           (hsPkgs.bytestring)
           (hsPkgs.canonical-json)
           (hsPkgs.cardano-prelude)
+          (hsPkgs.containers)
           (hsPkgs.cryptonite)
           (hsPkgs.formatting)
           (hsPkgs.hedgehog)
@@ -33,6 +34,7 @@
           (hsPkgs.QuickCheck)
           (hsPkgs.quickcheck-instances)
           (hsPkgs.text)
+          (hsPkgs.template-haskell)
           (hsPkgs.time)
           ];
         };
@@ -40,8 +42,8 @@
     } // {
     src = (pkgs.lib).mkDefault (pkgs.fetchgit {
       url = "https://github.com/input-output-hk/cardano-prelude";
-      rev = "2256fd727c5f92e6218afdcf8cddf6e01c4a9dcd";
-      sha256 = "0fdwlhkpc7inkqflcdzinx9qr5g3i34clzhl6iiagj851c3jcgsn";
+      rev = "892661cc3951e0d3a385c49c4563b2ae1cf9a4c2";
+      sha256 = "0nnplb68q18bcbgl49dh0m3lppm7v5ys1svk9q3kpl0yihydh9s5";
       });
     postUnpack = "sourceRoot+=/test; echo source root reset to \$sourceRoot";
     }
