@@ -10,3 +10,5 @@ https://github.com/input-output-hk/haskell-hedgehog.git 2e741bb53afb085741807018
 http://github.com/nc6/canonical-json a9dc9b893649bc2e2a770ab22d278a780f7e3a3c . 0alwbi9xqaj6fmwzs6lr2drqrnhlnp13d9k2qkl5ga7h4grz9zcr canonical-json canonical-json.nix
 https://github.com/input-output-hk/iohk-monitoring-framework d4139f18f77d2f837d52383859a27974f4f4e162 contra-tracer 02yr3alnf74qpa8vg1kk9h034blmb4nzpsbzb0n5jymsyy8r1i4c contra-tracer contra-tracer.nix
 https://github.com/input-output-hk/iohk-monitoring-framework d4139f18f77d2f837d52383859a27974f4f4e162 iohk-monitoring 02yr3alnf74qpa8vg1kk9h034blmb4nzpsbzb0n5jymsyy8r1i4c iohk-monitoring iohk-monitoring.nix
+https://github.com/input-output-hk/iohk-monitoring-framework cbe7ab32354f3838dc8c95c64109904c8f503347 contra-tracer 1yipq7ghjmk5h0cjdpqbq9s00iv6wpj7zqh5b2nk4a6pz93fm6rv contra-tracer contra-tracer.nix
+https://github.com/input-output-hk/iohk-monitoring-framework cbe7ab32354f3838dc8c95c64109904c8f503347 iohk-monitoring 1yipq7ghjmk5h0cjdpqbq9s00iv6wpj7zqh5b2nk4a6pz93fm6rv iohk-monitoring iohk-monitoring.nix
