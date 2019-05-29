@@ -39,9 +39,7 @@ library
   other-modules:
       Cardano.Shell.NodeIPC.Lib
     , Cardano.Shell.NodeIPC.Message
-  if !os(windows)
-    other-modules:
-      Cardano.Shell.NodeIPC.Example
+    , Cardano.Shell.NodeIPC.Example
 
   hs-source-dirs:
       app
