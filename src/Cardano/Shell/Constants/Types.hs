@@ -91,9 +91,9 @@ data Spec = Spec
 data Initializer = Initializer
     { inTestBalance       :: !TestBalance
     , inFakeAvvmBalance   :: !FakeAvvmBalance
-    , inAVVMBalanceFactor :: !Int
+    , inAVVMBalanceFactor :: !Word64
     , inUseHeavyDlg       :: !Bool
-    , inSeed              :: !Int
+    , inSeed              :: !Integer
       -- ^ Seed to use to generate secret data. It's used only in
       -- testnet, shouldn't be used for anything important.
     } deriving (Eq, Show)
