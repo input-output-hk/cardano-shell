@@ -3,6 +3,8 @@
 <https://github.com/input-output-hk/cardano-shell/blob/develop/specs/CardanoShellSpec.pdf>
 -}
 
+{-# LANGUAGE CPP #-}
+
 module Cardano.Shell.NodeIPC
     (-- * Data types
       Port(..)
@@ -33,10 +35,12 @@ module Cardano.Shell.NodeIPC
     , isNodeChannelCannotBeFound
     ) where
 
+#if !defined(mingw32_HOST_OS)
 import           Cardano.Shell.NodeIPC.Example (exampleWithFD,
                                                 exampleWithProcess,
                                                 getHandleFromEnv,
                                                 getReadWriteHandles)
+#endif
 import           Cardano.Shell.NodeIPC.Lib (MessageSendFailure (..), MsgIn (..),
                                             MsgOut (..), NodeIPCException (..),
                                             Port (..), ProtocolDuration (..),

@@ -113,3 +113,6 @@ exchange-topology.yaml
 launch_*
 result*
 cabal.config
+
+# avoid issues when running /nix/regenerate.sh
+.stack-to-nix.cache
