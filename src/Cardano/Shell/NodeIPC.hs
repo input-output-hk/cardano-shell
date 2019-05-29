@@ -24,7 +24,7 @@ module Cardano.Shell.NodeIPC
     , sendMessage
     , readMessage
     , exampleWithFD
-    , exampleWithProcess
+    , exampleServerWithProcess
     , getReadWriteHandles
     , getHandleFromEnv
     -- * Predicates
@@ -36,7 +36,7 @@ module Cardano.Shell.NodeIPC
     ) where
 
 import           Cardano.Shell.NodeIPC.Example (exampleWithFD,
-                                                exampleWithProcess,
+                                                exampleServerWithProcess,
                                                 getHandleFromEnv,
                                                 getReadWriteHandles)
 import           Cardano.Shell.NodeIPC.Lib (MessageSendFailure (..), MsgIn (..),

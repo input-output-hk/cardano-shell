@@ -39,7 +39,7 @@ main = do
     acquire :: IO Handle
     acquire = do
         -- Lookup the Handle that the server has set
-        serverWHandle <- getHandleFromEnv "FD_WRITE_HANDLE"
+        serverWHandle <- getHandleFromEnv "NODE_CHANNEL_FD"
         hSetBuffering serverWHandle LineBuffering
         return serverWHandle
 

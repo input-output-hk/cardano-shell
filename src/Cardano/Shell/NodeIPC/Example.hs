@@ -18,7 +18,7 @@
 
 module Cardano.Shell.NodeIPC.Example
     ( exampleWithFD
-    , exampleWithProcess
+    , exampleServerWithProcess
     -- * For testing
     , getReadWriteHandles
     , getHandleFromEnv
@@ -79,15 +79,15 @@ exampleWithFD msgin = do
 -- This will be the server, the one which sends the message (such as @Ping@, @QueryPort@)
 -- to get the response from the client.
 -- The client is executed via @stack exec node-ipc haskell@
-exampleWithProcess :: MsgIn -> IO (MsgOut, MsgOut)
-exampleWithProcess msg = bracket acquire restore (action msg)
+exampleServerWithProcess :: MsgIn -> IO (MsgOut, MsgOut)
+exampleServerWithProcess msg = bracket acquire restore (action msg)
   where
     acquire :: IO (ReadHandle, Handle)
     acquire = do
         (rFd, wFd) <- createPipeFd
         -- Set the write file descriptor to the envrionment variable
         -- the client will look this up, and use it to talk the server
-        setEnv "FD_WRITE_HANDLE" (show wFd)
+        setEnv "NODE_CHANNEL_FD" (show wFd)
         readHandle  <- ReadHandle <$> fdToHandle rFd
         -- Since closeFd only exists in 'unix' library,
         -- the only way to close this Fd is to convert it into Handle and apply
@@ -99,7 +99,7 @@ exampleWithProcess msg = bracket acquire restore (action msg)
     restore ((ReadHandle rHandle), wHandle) = do
         hClose rHandle
         hClose wHandle
-        unsetEnv "FD_WRITE_HANDLE"
+        unsetEnv "NODE_CHANNEL_FD"
 
     action :: MsgIn -> (ReadHandle, Handle) -> IO (MsgOut, MsgOut)
     action msgin (readHandle, _) = do
