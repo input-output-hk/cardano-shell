@@ -203,7 +203,6 @@ test-suite cardano-shell-test
     , quickcheck-state-machine >= 0.6
     -- required because of QSM
     , tree-diff
-    , stm
     , hspec
     , hspec-contrib
     , concurrency
@@ -213,7 +212,7 @@ test-suite cardano-shell-test
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
 
-  ghc-options:         
+  ghc-options:         -Wall
                        -Werror
                        -Wcompat
                        -Wincomplete-record-updates
