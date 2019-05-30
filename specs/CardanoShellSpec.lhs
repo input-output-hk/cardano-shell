@@ -210,7 +210,7 @@ Currently, the \textit{Daedalus} and the \textit{Node} (this is what I'm calling
 \textbf{IPC} (Inter Process Communication) is a set of methods which processes can use to communicate - \url{https://en.wikipedia.org/wiki/Inter-process_communication}.\\
 
 The actual communication right now is being done by the \textit{spawn} function, pieces of which can be found \href{https://github.com/nodejs/node/blob/62942e9ad7a59b76e9255ea2560bad2245709efc/lib/internal/child_process.js#L306}{here}.
-The part of the code which adds the handle id which they will use to communicate via environment variable "NODE\_CHANNEL\_FD" \href{https://github.com/nodejs/node/blob/master/lib/internal/child_process.js#L324-L335}{here}.\\
+The part of the code which adds the handle id which they will use to communicate via environment variable \textit{NODE\_CHANNEL\_FD} \href{https://github.com/nodejs/node/blob/master/lib/internal/child_process.js#L324-L335}{here}.\\
 
 Currently, the \textit{Deadalus} starts the \textit{Node} (we will ignore the \textit{Launcher} for now, since it complicates the story a bit).\\
 
@@ -219,6 +219,9 @@ The initial simplified communication protocol can be seen on Figure ~\ref{fig:ip
 When the \textit{Daedalus} calls and starts the \textit{Node}, it also opens up the \textbf{IPC} protocol to enable communication between the two.
 First, the \textit{Node} sends the message \textbf{Started} back to the \textit{Daedalus} to inform him that the communication can begin.
 After that, \textit{Daedalus} sends the message \textbf{QueryPort} to the \textit{Node}, and the \textit{Node} responds with the free port it found using \textbf{ReplyPort PORTNUM} that is going to be used for starting the HTTP "server" serving the \textit{JSON API} which they can then use to communicate further.\\
+
+Not only does the \textit{Node} responds to the message, but it can also perform some IO actions depending on the message sent from the client.
+For instance, you can have the client fetch the system information and return it to the server, or have it so that node will kill its thread/process when it responds with \textbf{ReplyPort PORTNUM}.\\
 
 The communication is bi-directional, on Windows it is using \textbf{named pipes}.\\
 
