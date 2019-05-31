@@ -96,5 +96,4 @@ extra-deps:
 
 nix:
   enable: true
-  pure: false
-  shell-file: shell.nix
+  shell-file: stack-shell.nix
