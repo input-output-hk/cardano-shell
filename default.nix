@@ -60,12 +60,12 @@ in defaultNix // {
     # env will provide the dependencies of cardano-shell
     packages = ps: with ps; [ cardano-shell ];
     # This adds git to the shell, which is used by stack.
-    buildInputs = with pkgs; [ git ];
+    buildInputs = with pkgs; [ git stack commonLib.stack-hpc-coveralls ];
   };
 
   runCoveralls = pkgs.stdenv.mkDerivation {
     name = "run-coveralls";
-    buildInputs = with pkgs; [ haskellPackages.stack-hpc-coveralls stack ];
+    buildInputs = with pkgs; [ commonLib.stack-hpc-coveralls stack ];
     shellHook = ''
       echo '~~~ stack test'
       stack test --coverage
