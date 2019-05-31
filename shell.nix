@@ -1,6 +1,6 @@
 let
   localPkgs = import ./. { };
-  mainShell = localPkgs.nix-tools.libs.cardano-shell;
+  mainShell = localPkgs.env;
 in mainShell // {
   inherit (localPkgs) runCoveralls;
 }
