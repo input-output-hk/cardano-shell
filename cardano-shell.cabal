@@ -167,7 +167,7 @@ executable cardano-launcher
                        -Wincomplete-record-updates
                        -Wincomplete-uni-patterns
                        -Wredundant-constraints
-                       -Wpartial-fields                      
+                       -Wpartial-fields
 
 test-suite cardano-shell-test
   type: exitcode-stdio-1.0
@@ -178,6 +178,7 @@ test-suite cardano-shell-test
   if !os(windows)
     other-modules:
       NodeIPCSpec
+      NodeIPCSMSpec
 
   hs-source-dirs:
       test
@@ -191,6 +192,12 @@ test-suite cardano-shell-test
     , safe-exceptions
     -- quickcheck
     , QuickCheck
+    -- SM
+    , quickcheck-state-machine >= 0.6
+    -- required because of QSM
+    , tree-diff
+    , pretty-show >=1.9.5
+    -- tests
     , hspec
     , hspec-contrib
     , concurrency

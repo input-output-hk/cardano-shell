@@ -19,6 +19,7 @@ import           Cardano.Shell.Lib (AllFeaturesInitFunction,
 import           Cardano.Shell.Types (CardanoFeature (..))
 
 import           DhallConfigSpec (dhallConfigSpec, mkConfigSpec)
+import           NodeIPCSMSpec (nodeIPCSMSpec)
 import           NodeIPCSpec (nodeIPCSpec)
 
 -- | Entry point for tests.
@@ -27,6 +28,7 @@ main = hspec $ do
     describe "App should have no concurrency issues" validConcurrencySpec
     describe "Dhall configurations" dhallConfigSpec
     describe "Cardano configurations" mkConfigSpec
+    describe "NodeIPC state machine" nodeIPCSMSpec
     describe "NodeIPC" nodeIPCSpec
 
 -- | A valid concurrency specification.

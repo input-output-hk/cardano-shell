@@ -100,7 +100,7 @@ data Initializer = Initializer
 
 -- | These options determine balances of nodes specific for testnet.
 data TestBalance = TestBalance
-    { tePoors          :: !Int
+    { tePoors          :: !Word
       -- ^ Number of poor nodes (with small balance).
     , teRichmen        :: !Word
       -- ^ Number of rich nodes (with huge balance).
@@ -108,7 +108,7 @@ data TestBalance = TestBalance
       -- ^ Portion of stake owned by all richmen together.
     , teUseHDAddresses :: !Bool
       -- ^ Whether generate plain addresses or with hd payload.
-    , teTotalBalance   :: !Int
+    , teTotalBalance   :: !Word64
       -- ^ Total balance owned by these nodes.
     } deriving (Eq, Show)
 
@@ -126,26 +126,26 @@ data ModuleAutoRestart
     deriving (Eq, Show)
 
 data BlockVersionData = BlockVersionData
-    { bvdScriptVersion     :: !Int
+    { bvdScriptVersion     :: !Word16
     , bvdSlotDuration      :: !Int
-    , bvdMaxBlockSize      :: !Int
-    , bvdMaxHeaderSize     :: !Int
-    , bvdMaxTxSize         :: !Int
-    , bvdMaxProposalSize   :: !Int
-    , bvdMpcThd            :: !Float
-    , bvdHeavyDelThd       :: !Float
-    , bvdUpdateVoteThd     :: !Float
-    , bvdUpdateProposalThd :: !Float
-    , bvdUpdateImplicit    :: !Int
+    , bvdMaxBlockSize      :: !Natural
+    , bvdMaxHeaderSize     :: !Natural
+    , bvdMaxTxSize         :: !Natural
+    , bvdMaxProposalSize   :: !Natural
+    , bvdMpcThd            :: !Word64
+    , bvdHeavyDelThd       :: !Word64
+    , bvdUpdateVoteThd     :: !Word64
+    , bvdUpdateProposalThd :: !Word64
+    , bvdUpdateImplicit    :: !Word64
     , bvdSoftforkRule      :: !SoftForkRule
     , bvdTXFeePolicy       :: !TxFeePolicy
-    , bvdUnlockStakeEpoch  :: !Integer
+    , bvdUnlockStakeEpoch  :: !Word64
     } deriving (Eq, Show)
 
 data SoftForkRule = SoftForkRule
-    { sfrInitThd      :: !Float
-    , sfrMinThd       :: !Float
-    , sfrThdDecrement :: !Float
+    { sfrInitThd      :: !Word64
+    , sfrMinThd       :: !Word64
+    , sfrThdDecrement :: !Word64
     } deriving (Eq, Show)
 
 data TxFeePolicy = TxFeePolicy
@@ -153,14 +153,14 @@ data TxFeePolicy = TxFeePolicy
     } deriving (Eq, Show)
 
 data TxSizeLinear = TxSizeLinear
-    { txsA :: !Int
-    , txsB :: !Float
+    { txsA :: !Word64
+    , txsB :: !Word64
     } deriving (Eq, Show)
 
 data ProtocolConstants = ProtocolConstants
-    { prK             :: !Int
+    { prK             :: !Word64
     -- ^ Security parameter from the paper.
-    , prProtocolMagic :: !Int
+    , prProtocolMagic :: !Word32
     -- ^ Magic constant for separating real/testnet.
     } deriving (Eq, Show)
 

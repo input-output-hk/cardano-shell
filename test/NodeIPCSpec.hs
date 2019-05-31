@@ -28,7 +28,7 @@ import           Cardano.Shell.NodeIPC (MessageException,
                                         isNodeChannelCannotBeFound,
                                         isUnreadableHandle, isUnwritableHandle,
                                         readMessage, sendMessage, startIPC,
-                                        startNodeJsIPC)
+                                        startNodeJsIPC, testStartNodeIPC)
 
 -- | Test spec for node IPC
 nodeIPCSpec :: Spec
@@ -168,34 +168,6 @@ testMessage msg = monadicIO $ do
 
     assert $ response == msg
 
--- | Test 'startIPC'
-testStartNodeIPC :: forall msg. (ToJSON msg) => Port -> msg -> IO (MsgOut, MsgOut)
-testStartNodeIPC port msg = do
-    (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
-    (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-
-    -- Start the server
-    (_, responses) <-
-        startIPC
-            SingleMessage
-            serverReadHandle
-            clientWriteHandle
-            port
-        `concurrently`
-        do
-            -- Use these functions so you don't pass the wrong handle by mistake
-            let readClientMessage :: IO MsgOut
-                readClientMessage = readMessage clientReadHandle
-
-            let sendServer :: msg -> IO ()
-                sendServer = sendMessage serverWriteHandle
-
-            -- Communication starts here
-            started <- readClientMessage
-            sendServer msg
-            response <- readClientMessage
-            return (started, response)
-    return responses
 
 whenLeft :: Applicative m => Either a b -> (a -> m ()) -> m ()
 whenLeft (Left x) f = f x
