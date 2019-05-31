@@ -42,7 +42,7 @@ module Cardano.Shell.NodeIPC
     , isNodeChannelCannotBeFound
     ) where
 
-import           Cardano.Shell.NodeIPC.Example (exampleWithFD,
+import           Cardano.Shell.NodeIPC.ServerExample (exampleWithFD,
                                                 exampleServerWithProcess,
                                                 getHandleFromEnv,
                                                 getReadWriteHandles)

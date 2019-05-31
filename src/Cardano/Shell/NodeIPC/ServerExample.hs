@@ -16,7 +16,7 @@
 -- reading the response that other had sent.
 -}
 
-module Cardano.Shell.NodeIPC.Example
+module Cardano.Shell.NodeIPC.ServerExample
     ( exampleWithFD
     , exampleServerWithProcess
     -- * For testing
