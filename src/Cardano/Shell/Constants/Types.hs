@@ -65,11 +65,20 @@ data Core = Core
       -- ^ Versioning for values in node's DB.
     } deriving (Eq, Show)
 
-data Genesis = Genesis { geInternal :: !Bool
-                       , geSpec     :: !Spec
-                       , geSrc      :: !FilePath
-                       , geFileHash :: !Text
-                       } deriving (Eq, Show)
+-- | The genesis section.
+-- For now, we only store the path to the genesis file(s) and their hash.
+-- The rest is in the hands of the modules/features that need to use it.
+-- The info flow is:
+-- __genesis config ---> genesis file__
+-- And separately:
+-- __genesis file ---> runtime config ---> running node__
+-- __static config ---> ...__
+--
+data Genesis = Genesis
+    { geSrc             :: !FilePath
+    , geGenesisHash     :: !Text
+    , gePrevBlockHash   :: !Text
+    } deriving (Eq, Show)
 
 data Spec = Spec
     { spInitializer       :: !Initializer

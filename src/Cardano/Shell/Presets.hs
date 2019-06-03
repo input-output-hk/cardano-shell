@@ -36,70 +36,9 @@ mainnetConfiguration =
         Core
           { coGenesis =
               Genesis
-                { geInternal = False
-                , geSpec     =
-                    Spec
-                      { spInitializer =
-                          Initializer
-                            { inTestBalance =
-                                TestBalance
-                                  { tePoors          = 0
-                                  , teRichmen        = 0
-                                  , teRichmenShare   = 0
-                                  , teUseHDAddresses = True
-                                  , teTotalBalance   = 0
-                                  }
-                            , inFakeAvvmBalance  =
-                                FakeAvvmBalance
-                                  { faCount      = 0
-                                  , faOneBalance = 0
-                                  }
-                            , inAVVMBalanceFactor = 0
-                            , inUseHeavyDlg       = True
-                            , inSeed              = 0
-                            }
-
-                      , spBlockVersionData  =
-                          BlockVersionData
-                            { bvdScriptVersion     = 0
-                            , bvdSlotDuration      = 0
-                            , bvdMaxBlockSize      = 0
-                            , bvdMaxHeaderSize     = 0
-                            , bvdMaxTxSize         = 0
-                            , bvdMaxProposalSize   = 0
-                            , bvdMpcThd            = 0
-                            , bvdHeavyDelThd       = 0
-                            , bvdUpdateVoteThd     = 0
-                            , bvdUpdateProposalThd = 0
-                            , bvdUpdateImplicit    = 0
-                            , bvdSoftforkRule =
-                                SoftForkRule
-                                  { sfrInitThd      = 0
-                                  , sfrMinThd       = 0
-                                  , sfrThdDecrement = 0
-                                  }
-                            , bvdTXFeePolicy =
-                                TxFeePolicy
-                                  { txfTXSizeLinear =
-                                      TxSizeLinear
-                                        { txsA = 0
-                                        , txsB = 0
-                                        }
-                                  }
-                            , bvdUnlockStakeEpoch = 0
-                            }
-
-                      , spProtocolConstants =
-                          ProtocolConstants
-                            { prK             = 0
-                            , prProtocolMagic = 0
-                            }
-                      , spFTSSeed           = "c2tvdm9yb2RhIEdndXJkYSBib3JvZGEgcHJvdm9kYSA="
-                      , spHeavyDelegation   = ""
-                      , spAVVMDistr         = ""
-                      }
-                , geSrc      = "mainnet-genesis.json"
-                , geFileHash = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
+                { geSrc             = "mainnet-genesis.json"
+                , geGenesisHash     = "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
+                , gePrevBlockHash   = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
                 }
           , coRequiresNetworkMagic = "RequiresNoMagic"
           , coDBSerializeVersion   = 0
@@ -217,69 +156,9 @@ devConfiguration =
       Core
         { coGenesis  =
           Genesis
-            { geInternal = True
-            , geSrc      = ""
-            , geFileHash = ""
-            , geSpec = Spec
-              { spInitializer =
-              Initializer
-                { inTestBalance =
-                TestBalance
-                  { tePoors          = 12
-                  , teRichmen        = 4
-                  , teRichmenShare   = 0.99
-                  , teUseHDAddresses = True
-                  , teTotalBalance   = 600000000000000000
-                  }
-                , inFakeAvvmBalance  =
-                  FakeAvvmBalance
-                    { faCount      = 10
-                    , faOneBalance = 100000
-                    }
-                , inAVVMBalanceFactor = 1
-                , inUseHeavyDlg       = True
-                , inSeed              = 0
-                }
-
-              , spBlockVersionData  =
-                BlockVersionData
-                  { bvdScriptVersion     = 0
-                  , bvdSlotDuration      = 7000
-                  , bvdMaxBlockSize      = 2000000
-                  , bvdMaxHeaderSize     = 2000000
-                  , bvdMaxTxSize         = 4096
-                  , bvdMaxProposalSize   = 700
-                  , bvdMpcThd            = 10
-                  , bvdHeavyDelThd       = 5
-                  , bvdUpdateVoteThd     = 1
-                  , bvdUpdateProposalThd = 100
-                  , bvdUpdateImplicit    = 10
-                  , bvdSoftforkRule      =
-                    SoftForkRule
-                      { sfrInitThd      = 90
-                      , sfrMinThd       = 60
-                      , sfrThdDecrement = 5
-                      }
-                  , bvdTXFeePolicy       =
-                    TxFeePolicy
-                      { txfTXSizeLinear =
-                        TxSizeLinear
-                          { txsA = 155381
-                          , txsB = 43
-                          }
-                      }
-                  , bvdUnlockStakeEpoch = 18446744073709551615
-                  }
-
-              , spProtocolConstants =
-                ProtocolConstants
-                  { prK             = 2
-                  , prProtocolMagic = 55550001
-                  }
-              , spFTSSeed           = "c2tvdm9yb2RhIEdndXJkYSBib3JvZGEgcHJvdm9kYSA="
-              , spHeavyDelegation   = ""
-              , spAVVMDistr         = ""
-              }
+            { geSrc             = "testnet-genesis.json"
+            , geGenesisHash     = "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
+            , gePrevBlockHash   = "b7f76950bc4866423538ab7764fc1c7020b24a5f717a5bee3109ff2796567214"
             }
         , coRequiresNetworkMagic = "RequiresNoMagic"
         , coDBSerializeVersion   = 0

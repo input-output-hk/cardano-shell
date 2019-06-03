@@ -34,6 +34,7 @@ library
     -- Constants
     , Cardano.Shell.Constants.Types
     , Cardano.Shell.Presets
+    -- Features
     , Cardano.Shell.Features.Logging
   other-modules:
       Cardano.Shell.NodeIPC.Lib

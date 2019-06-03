@@ -10,7 +10,7 @@ ghci: ## Run repl
 	@stack ghci $(PROJECT_NAME):lib --haddock-deps --ghci-options=-fobject-code
 
 ghcid:  ## Run ghcid
-	@ghcid --command "stack ghci $(PROJECT_NAME):lib --ghci-options=-fobject-code"
+	@ghcid --command "stack ghci $(PROJECT_NAME):lib --nix -j12 --ghci-options=-fobject-code"
 
 run-test: ## Build & run test
 	@stack build --fast && \
