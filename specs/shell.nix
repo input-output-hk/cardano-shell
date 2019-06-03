@@ -1,6 +1,6 @@
 let
   # adding the haskell environment for running lhs2tex
-  pkgs = import (import ./../nixpkgs.nix) { config = import ./../config.nix; };
+  pkgs = import (import ./../nixpkgs.nix) { config = import ./../default.nix; };
 in
   pkgs.stdenv.mkDerivation {
     name = "docsEnv";

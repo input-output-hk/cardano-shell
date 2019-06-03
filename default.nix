@@ -41,18 +41,31 @@ in
 # parameterize this file when targetting different
 # hosts.
 { system ? builtins.currentSystem
+, crossSystem ? null
 , config ? {}
-, pkgs ? commonLib.getPkgs { inherit config system; }
-, ... }@args:
-# We will instantiate the default-nix template with the
-# nix/pkgs.nix file...
-commonLib.nix-tools.default-nix ./nix/pkgs.nix args
-# ... and add additional non-haskell packages we want to build on CI:
-// {
+, pkgs ? commonLib.getPkgs { inherit config crossSystem system; }
+, withHoogle ? true
+}:
+let 
+  # We will instantiate the default-nix template with the
+  # nix/pkgs.nix file...
+  defaultNix = commonLib.nix-tools.default-nix ./nix/pkgs.nix { 
+    inherit system crossSystem config pkgs;
+  };
+in defaultNix // {
+  # ... and add additional packages we want to build on CI:
+
+  env = defaultNix.nix-tools.shellFor {
+    inherit withHoogle;
+    # env will provide the dependencies of cardano-shell
+    packages = ps: with ps; [ cardano-shell ];
+    # This adds git to the shell, which is used by stack.
+    buildInputs = with pkgs; [ git stack commonLib.stack-hpc-coveralls ];
+  };
 
   runCoveralls = pkgs.stdenv.mkDerivation {
     name = "run-coveralls";
-    buildInputs = with pkgs; [ haskellPackages.stack-hpc-coveralls stack ];
+    buildInputs = with pkgs; [ commonLib.stack-hpc-coveralls stack ];
     shellHook = ''
       echo '~~~ stack test'
       stack test --coverage
