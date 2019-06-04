@@ -188,17 +188,17 @@ data NodeIPCException
 
 instance Show NodeIPCException where
     show = \case
-        NodeChannelNotFound envName -> 
+        NodeChannelNotFound envName ->
             "Environment variable cannot be found: " <> strConv Lenient envName
-        UnableToParseNodeChannel err -> 
+        UnableToParseNodeChannel err ->
             "Unable to parse file descriptor: " <> strConv Lenient err
-        IPCException -> 
+        IPCException ->
             "IOError has occured"
-        HandleClosed h -> 
+        HandleClosed h ->
             "Given handle is closed: " <> show h
-        UnreadableHandle h -> 
+        UnreadableHandle h ->
             "Unable to read with given handle: " <> show h
-        UnwritableHandle h -> 
+        UnwritableHandle h ->
             "Unable to write with given handle: " <> show h
 
 instance Exception NodeIPCException

@@ -42,11 +42,6 @@ module Cardano.Shell.NodeIPC
     , isNodeChannelCannotBeFound
     ) where
 
-import           Cardano.Shell.NodeIPC.ServerExample (exampleWithFD,
-                                                exampleServerWithProcess,
-                                                getHandleFromEnv,
-                                                getReadWriteHandles)
-#endif
 import           Cardano.Shell.NodeIPC.Lib (ClientHandles (..),
                                             MessageSendFailure (..), MsgIn (..),
                                             MsgOut (..), NodeIPCException (..),
@@ -67,3 +62,7 @@ import           Cardano.Shell.NodeIPC.Message (MessageException (..),
                                                 ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
+import           Cardano.Shell.NodeIPC.ServerExample (exampleServerWithProcess,
+                                                      exampleWithFD,
+                                                      getHandleFromEnv,
+                                                      getReadWriteHandles)
