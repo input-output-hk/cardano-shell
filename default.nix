@@ -67,8 +67,8 @@ in defaultNix // {
     name = "run-coveralls";
     buildInputs = with pkgs; [ commonLib.stack-hpc-coveralls stack ];
     shellHook = ''
-      echo '~~~ stack test'
-      stack test --coverage
+      echo '~~~ stack nix test'
+      stack test --nix --coverage
       echo '~~~ shc'
       shc --repo-token=$COVERALLS_REPO_TOKEN cardano-shell cardano-shell-test
       exit
