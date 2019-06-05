@@ -1,6 +1,6 @@
 # cardano-shell
 
-[![Coverage Status](https://coveralls.io/repos/github/input-output-hk/cardano-shell/badge.svg)](https://coveralls.io/github/input-output-hk/cardano-shell)
+[![Coverage Status](https://coveralls.io/repos/github/input-output-hk/cardano-shell/badge.svg?branch=master)](https://coveralls.io/github/input-output-hk/cardano-shell?branch=master)
 
 [!["master" Build status](https://badge.buildkite.com/5e4cd5ff2fd87975136914d037c409618deb4d8ed6579f8635.svg?branch=master)](https://buildkite.com/input-output-hk/cardano-shell)
 
