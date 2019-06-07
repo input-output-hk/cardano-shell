@@ -32,7 +32,7 @@ main :: IO ()
 main = do
     (cmd:_) <- getArgs
     case cmd of
-        "js"      -> startNodeJsIPC SingleMessage port
+        "js"      -> void $ startNodeJsIPC SingleMessage port
         "haskell" -> bracket acquire restore action
         _         -> return ()
   where
@@ -50,5 +50,5 @@ main = do
     action serverWHandle = do
         let serverWriteHandle = WriteHandle serverWHandle
         let serverReadHandle  = ReadHandle stdin
-        startIPC SingleMessage serverReadHandle serverWriteHandle port
+        void $ startIPC SingleMessage serverReadHandle serverWriteHandle port
 
