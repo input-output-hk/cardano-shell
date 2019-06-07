@@ -1,11 +1,12 @@
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE FlexibleInstances  #-}
-{-# LANGUAGE KindSignatures     #-}
-{-# LANGUAGE LambdaCase         #-}
-{-# LANGUAGE PolyKinds          #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE PolyKinds           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving  #-}
 
 -- Yes, yes, this is an exception.
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -35,7 +36,6 @@ import           Cardano.Shell.NodeIPC (MessageSendFailure (..), MsgIn (..),
                                         ServerHandles (..), clientIPCListener,
                                         closeFullDuplexAnonPipesHandles,
                                         createFullDuplexAnonPipesHandles,
-
                                         readMessage, serverReadWrite)
 
 -------------------------------------------------------------------------------
@@ -95,6 +95,7 @@ smUnused = nodeIPCSM $ panic "used env during command generation"
 data Action (r :: Type -> Type)
     = PingCmd
     | QueryPortCmd
+    | ShutdownCmd
     deriving (Show, Generic1, Rank2.Foldable, Rank2.Traversable, Rank2.Functor, CommandNames)
 
 -- | The types of responses of the model.
@@ -102,7 +103,15 @@ data Response (r :: Type -> Type)
     = StartedResponse
     | PongResponse
     | ReplyPortResponse Word16
+    | ShutdownInitiatedResponse
     deriving (Show, Generic1, Rank2.Foldable, Rank2.Traversable, Rank2.Functor)
+
+-- | The types of error that can occur in the model.
+data Error
+    = ExitCodeError
+    deriving (Show, Eq)
+
+instance Exception Error
 
 -- TODO(KS): ISO? Not really painful at this point, so KISS.
 
@@ -110,12 +119,14 @@ data Response (r :: Type -> Type)
 actionToConcrete :: Action r -> MsgIn
 actionToConcrete PingCmd      = Ping
 actionToConcrete QueryPortCmd = QueryPort
+actionToConcrete ShutdownCmd  = Shutdown
 
 -- | Abstract to concrete.
 responseToConcreate :: Response r -> MsgOut
-responseToConcreate StartedResponse          = Started
-responseToConcreate PongResponse             = Pong
-responseToConcreate (ReplyPortResponse port) = ReplyPort port
+responseToConcreate StartedResponse           = Started
+responseToConcreate PongResponse              = Pong
+responseToConcreate (ReplyPortResponse port)  = ReplyPort port
+responseToConcreate ShutdownInitiatedResponse = ShutdownInitiated
 
 -------------------------------------------------------------------------------
 -- Instances
@@ -175,16 +186,20 @@ nodeIPCSM serverHandles = StateMachine
 
     -- | Post conditions for the system.
     mPostconditions :: Model Concrete -> Action Concrete -> Response Concrete -> Logic
-    mPostconditions _   PingCmd         PongResponse          = Top -- valid
-    mPostconditions _   PingCmd         _                     = Bot -- invalid
-    mPostconditions _   QueryPortCmd    (ReplyPortResponse _) = Top -- valid
-    mPostconditions _   QueryPortCmd    _                     = Bot -- invalid
+    mPostconditions _   PingCmd         PongResponse                = Top -- valid
+    mPostconditions _   PingCmd         _                           = Bot -- invalid
+    mPostconditions _   QueryPortCmd    (ReplyPortResponse _)       = Top -- valid
+    mPostconditions _   QueryPortCmd    _                           = Bot -- invalid
+    mPostconditions _   ShutdownCmd     (ShutdownInitiatedResponse) = Top
+    mPostconditions _   ShutdownCmd     _                           = Bot
 
     -- | Generator for symbolic actions.
+    -- This is effectivly a single message, not multi message!
     mGenerator :: Model Symbolic -> Maybe (Gen (Action Symbolic))
     mGenerator _ =  Just $ oneof
         [ return PingCmd
         , return QueryPortCmd
+        --, return ShutdownCmd -- TODO(KS): Pain in the ass.
         ]
 
     -- | Trivial shrinker. __No shrinker__.
@@ -195,24 +210,29 @@ nodeIPCSM serverHandles = StateMachine
     mSemantics :: Action Concrete -> IO (Response Concrete)
     mSemantics PingCmd      = handleIPCProtocolTest Ping
     mSemantics QueryPortCmd = handleIPCProtocolTest QueryPort
+    mSemantics ShutdownCmd  = handleIPCProtocolTest Shutdown
 
     handleIPCProtocolTest :: MsgIn -> IO (Response Concrete)
     handleIPCProtocolTest actionIn = do
         -- The first message is @Started@
 
         -- Fetch message and respond to it, this is __blocking__.
-        msgIn <- serverReadWrite serverHandles actionIn
+        msgIn :: Either ExitCode MsgOut <- try $ serverReadWrite serverHandles actionIn
 
         case msgIn of
-            Started             -> return StartedResponse
-            Pong                -> return PongResponse
-            ReplyPort p         -> return (ReplyPortResponse p)
-            MessageOutFailure _ -> return StartedResponse
+            Left _exitCode              -> return ShutdownInitiatedResponse
+
+            Right Started               -> return StartedResponse
+            Right Pong                  -> return PongResponse
+            Right (ReplyPort p)         -> return (ReplyPortResponse p)
+            Right (MessageOutFailure _) -> return StartedResponse
             -- ^ This is no-op, ignored. Yes, yes, should be in the model.
+            Right ShutdownInitiated     -> throwIO ExitCodeError
 
     -- | What is the mock for?
     mMock :: Model Symbolic -> Action Symbolic -> GenSym (Response Symbolic)
     mMock _ PingCmd      = return PongResponse
     mMock _ QueryPortCmd = return $ ReplyPortResponse 12345 -- Random number
+    mMock _ ShutdownCmd  = return ShutdownInitiatedResponse
 
 

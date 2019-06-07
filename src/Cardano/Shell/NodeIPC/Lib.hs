@@ -92,12 +92,20 @@ data ProtocolDuration
     -- ^ Runs forever responding to messages
     deriving (Eq, Show)
 
--- | Message expecting from Daedalus
+
+-- We look at the messages from the perspective of the client.
+--
+-- @MsgIn@ ---> CLIENT --> @MsgOut@
+--
+
+-- | Message from the server being sent to the client.
 data MsgIn
     = QueryPort
     -- ^ Ask which port to use
     | Ping
     -- ^ Ping
+    | Shutdown
+    -- ^ Shutdown message from the server
     | MessageInFailure MessageSendFailure
     deriving (Show, Eq, Generic)
 
@@ -112,6 +120,8 @@ data MsgOut
     -- ^ Reply of QueryPort
     | Pong
     -- ^ Reply of Ping
+    | ShutdownInitiated
+    -- ^ Reply of shutdown
     | MessageOutFailure MessageSendFailure
     deriving (Show, Eq, Generic)
 
@@ -230,11 +240,16 @@ startNodeJsIPC protocolDuration port = do
 
     liftIO $ void $ ipcListener protocolDuration readHandle writeHandle port
 
+newtype ShutdownFunction = ShutdownFunction { shutdown :: IO () }
+
 -- | Function for handling the protocol
 handleIPCProtocol :: forall m. (MonadIO m) => Port -> MsgIn -> m MsgOut
 handleIPCProtocol (Port port) = \case
     QueryPort          -> pure (ReplyPort port)
     Ping               -> pure Pong
+    Shutdown           -> return ShutdownInitiated >> liftIO $ exitWith (ExitFailure 22)
+    -- ^ Send message, flush buffer, shutdown. Since it's complicated to reason with another
+    -- thread that shuts down the program after some time, we do it immediately.
     MessageInFailure f -> pure $ MessageOutFailure f
 
 -- | Start IPC listener with given Handles and Port
