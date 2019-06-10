@@ -326,10 +326,12 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
     send = sendMessage writeHandle
 
     shutdown :: m ()
-    shutdown = liftIO $ do
-        hClose rHndl
-        hClose wHndl
-        hFlush stdout
+    shutdown = do
+        liftIO $ do
+            hClose rHndl
+            hClose wHndl
+            hFlush stdout
+        throwError IPCException
 
     handleMsgError :: MessageException -> m ()
     handleMsgError err = do
