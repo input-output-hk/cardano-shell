@@ -223,6 +223,7 @@ instance Exception NodeIPCException
 -- ExceptT IO
 --------------------------------------------------------------------------------
 
+-- | Monad stack for node-ipc
 newtype NodeIPCMonad m a = NodeIPCMonad
     { getNodeIPC :: ExceptT NodeIPCException m a
     } deriving ( Functor
@@ -235,21 +236,19 @@ newtype NodeIPCMonad m a = NodeIPCMonad
                , MonadThrow
                )
 
+-- | Unwraps monad stack
 runNodeIPC :: NodeIPCMonad m a -> m (Either NodeIPCException a)
 runNodeIPC = runExceptT . getNodeIPC
 
 -- | Acquire a Handle that can be used for IPC
 getIPCHandle :: (MonadIO m) => m (Either NodeIPCException Handle)
-getIPCHandle = runNodeIPC getter
-  where
-    getter :: (MonadIO m, MonadError NodeIPCException m) => m Handle
-    getter = do
-        mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
-        case mFdstring of
-            Nothing -> throwError $  NodeChannelNotFound "NODE_CHANNEL_FD"
-            Just fdstring -> case readEither fdstring of
-                Left err -> throwError $ UnableToParseNodeChannel $ toS err
-                Right fd -> liftIO (fdToHandle fd)
+getIPCHandle = runNodeIPC $ do
+    mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
+    case mFdstring of
+        Nothing -> throwError $  NodeChannelNotFound "NODE_CHANNEL_FD"
+        Just fdstring -> case readEither fdstring of
+            Left err -> throwError $ UnableToParseNodeChannel $ toS err
+            Right fd -> liftIO (fdToHandle fd)
 
 -- | Start IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
 startIPC :: forall m. (MonadIO m, MonadMask m)
