@@ -57,6 +57,7 @@
             (hsPkgs.cardano-shell)
             (hsPkgs.cardano-prelude)
             (hsPkgs.optparse-applicative)
+            (hsPkgs.safe-exceptions)
             ];
           };
         "cardano-launcher" = {
