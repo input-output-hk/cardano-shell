@@ -137,20 +137,28 @@ deriving instance ToExpr (Model Concrete)
 deriving instance ToExpr MsgIn
 deriving instance ToExpr MessageSendFailure
 deriving instance ToExpr MsgOut
+deriving instance ToExpr InputOutputMessages
 
 -------------------------------------------------------------------------------
 -- The model we keep track of
 -------------------------------------------------------------------------------
 
+-- | Yes, this costs more but for a simple test it's acceptable.
+-- The readability / performance tradeoff is good here.
+data InputOutputMessages = InputOutputMessages
+   { inputMessages  :: [MsgIn]
+   , outputMessages :: [MsgOut]
+   } deriving (Eq, Show, Generic)
+
 -- | The model contains the messages that were communicated in the protocol.
-data Model (r :: Type -> Type) = Model
-    { inputMessages  :: [MsgIn]
-    , outputMessages :: [MsgOut]
-    } deriving (Eq, Show, Generic)
+data Model (r :: Type -> Type)
+    = RunningModel !InputOutputMessages
+    | ShutdownInit
+    deriving (Eq, Show, Generic)
 
 -- | Initially, we don't have any messages in the protocol.
 initialModel :: Model r
-initialModel = Model
+initialModel = RunningModel $ InputOutputMessages
     { inputMessages     = []
     , outputMessages    = []
     }
@@ -175,14 +183,18 @@ nodeIPCSM serverHandles = StateMachine
   where
     -- | Let's handle just Ping/Pong for now.
     mTransitions :: Model r -> Action r -> Response r -> Model r
-    mTransitions model    action      response        = model
+    mTransitions (RunningModel model) action response   = RunningModel $ model
         { inputMessages     = actionToConcrete action       : inputMessages model
         , outputMessages    = responseToConcreate response  : outputMessages model
         }
+    mTransitions _ ShutdownCmd _                        = ShutdownInit
+    mTransitions ShutdownInit _ _                       = ShutdownInit
 
     -- | Preconditions for this model.
     mPreconditions :: Model Symbolic -> Action Symbolic -> Logic
-    mPreconditions model _ = length (inputMessages model) - length (outputMessages model) .== 0
+    mPreconditions (RunningModel model) _   =
+        length (inputMessages model) - length (outputMessages model) .== 0
+    mPreconditions ShutdownInit         _   = Bot
 
     -- | Post conditions for the system.
     mPostconditions :: Model Concrete -> Action Concrete -> Response Concrete -> Logic
@@ -194,12 +206,12 @@ nodeIPCSM serverHandles = StateMachine
     mPostconditions _   ShutdownCmd     _                           = Bot
 
     -- | Generator for symbolic actions.
-    -- This is effectivly a single message, not multi message!
     mGenerator :: Model Symbolic -> Maybe (Gen (Action Symbolic))
-    mGenerator _ =  Just $ oneof
+    mGenerator ShutdownInit = Nothing
+    mGenerator _            = Just $ oneof
         [ return PingCmd
         , return QueryPortCmd
-        --, return ShutdownCmd -- TODO(KS): Pain in the ass.
+        , return ShutdownCmd
         ]
 
     -- | Trivial shrinker. __No shrinker__.
@@ -216,8 +228,12 @@ nodeIPCSM serverHandles = StateMachine
     handleIPCProtocolTest actionIn = do
         -- The first message is @Started@
 
+        _ <- traceIO (show actionIn :: Text) ("IN - " :: Text)
+
         -- Fetch message and respond to it, this is __blocking__.
         msgIn :: Either ExitCode MsgOut <- try $ serverReadWrite serverHandles actionIn
+
+        _ <- traceIO (show msgIn :: Text) ("OUT - " :: Text)
 
         case msgIn of
             Left _exitCode              -> return ShutdownInitiatedResponse
