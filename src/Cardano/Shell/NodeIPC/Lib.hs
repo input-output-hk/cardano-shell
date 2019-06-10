@@ -51,12 +51,10 @@ import           GHC.IO.Handle (hIsOpen, hIsReadable, hIsWritable, hIsEOF)
 import           GHC.IO.Handle.FD (fdToHandle)
 
 import           System.Environment (lookupEnv)
-import           System.Process (createPipe)
-
 import           System.IO (BufferMode (..), hClose, hFlush, hSetBuffering,
                             hSetNewlineMode, noNewlineTranslation)
 import           System.IO.Error (IOError, isEOFError)
-
+import           System.Process (createPipe)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
                                   choose, elements, listOf1)
 
@@ -199,6 +197,7 @@ data NodeIPCException
     -- ^ Given handle cannot be used to read
     | UnwritableHandle Handle
     -- ^ Given handle cannot be used to write
+    | NoStdIn
 
 instance Show NodeIPCException where
     show = \case
@@ -216,6 +215,7 @@ instance Show NodeIPCException where
             "Unable to read with given handle: " <> show h
         UnwritableHandle h ->
             "Unable to write with given handle: " <> show h
+        NoStdIn -> "createProcess returned Nothing when creating pipes for the subprocess"
 
 instance Exception NodeIPCException
 

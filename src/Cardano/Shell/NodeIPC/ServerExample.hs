@@ -32,7 +32,6 @@ import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..),
 import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
-import           Control.Exception.Safe (throwM)
 import           GHC.IO.Handle.FD (fdToHandle)
 import           Prelude (String)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
@@ -79,7 +78,7 @@ exampleWithFD msgin = do
 -- This will be the server, the one which sends the message (such as @Ping@, @QueryPort@)
 -- to get the response from the client.
 -- The client is executed via @stack exec node-ipc haskell@
-exampleServerWithProcess :: MsgIn -> IO (MsgOut, MsgOut)
+exampleServerWithProcess :: MsgIn -> IO (Either NodeIPCException (MsgOut, MsgOut))
 exampleServerWithProcess msg = bracket acquire restore (action msg)
   where
     acquire :: IO (ReadHandle, Handle)
@@ -101,7 +100,9 @@ exampleServerWithProcess msg = bracket acquire restore (action msg)
         hClose wHandle
         unsetEnv "NODE_CHANNEL_FD"
 
-    action :: MsgIn -> (ReadHandle, Handle) -> IO (MsgOut, MsgOut)
+    action :: MsgIn
+           -> (ReadHandle, Handle)
+           -> IO (Either NodeIPCException (MsgOut, MsgOut))
     action msgin (readHandle, _) = do
         withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"])
             { std_in = CreatePipe } $
@@ -123,11 +124,14 @@ receieveMessages serverReadHandle = do
     reply   <- readServerMessage -- Reply
     return (started, reply)
 
-getHandleFromEnv :: String -> IO Handle
+getHandleFromEnv :: String -> IO (Either NodeIPCException Handle)
 getHandleFromEnv envName = do
     mFdstring <- lookupEnv envName
     case mFdstring of
-        Nothing -> throwM $ NodeChannelNotFound (strConv Lenient envName)
+        Nothing -> throw $ NodeChannelNotFound (strConv Lenient envName)
         Just fdstring -> case readEither fdstring of
-            Left err -> throwM $ UnableToParseNodeChannel (strConv Lenient err)
-            Right fd -> liftIO $ fdToHandle fd
+            Left err -> throw $ UnableToParseNodeChannel (strConv Lenient err)
+            Right fd -> Right <$> fdToHandle fd
+  where
+    throw :: NodeIPCException -> IO (Either NodeIPCException Handle)
+    throw = return . Left

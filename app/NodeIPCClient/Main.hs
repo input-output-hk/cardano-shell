@@ -13,6 +13,7 @@ import           Cardano.Shell.NodeIPC (Port (..), ProtocolDuration (..),
                                         ReadHandle (..), WriteHandle (..),
                                         getHandleFromEnv, startIPC,
                                         startNodeJsIPC)
+import           Control.Exception.Safe (throwM)
 import           System.IO (BufferMode (..), hClose, hSetBuffering)
 
 port :: Port
@@ -39,7 +40,7 @@ main = do
     acquire :: IO Handle
     acquire = do
         -- Lookup the Handle that the server has set
-        serverWHandle <- getHandleFromEnv "NODE_CHANNEL_FD"
+        serverWHandle <- either throwM return =<< (getHandleFromEnv "NODE_CHANNEL_FD")
         hSetBuffering serverWHandle LineBuffering
         return serverWHandle
 
