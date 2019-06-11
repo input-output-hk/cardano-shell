@@ -244,17 +244,19 @@ getIPCHandle = runNodeIPC $ do
     mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
     case mFdstring of
         Nothing -> throwError $  NodeChannelNotFound "NODE_CHANNEL_FD"
-        Just fdstring -> case readEither fdstring of
-            Left err -> throwError $ UnableToParseNodeChannel $ toS err
-            Right fd -> liftIO (fdToHandle fd)
+        Just fdstring ->
+            case readEither fdstring of
+                Left err -> throwError $ UnableToParseNodeChannel $ toS err
+                Right fd -> liftIO (fdToHandle fd)
 
 -- | Start IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
-startIPC :: forall m. (MonadIO m, MonadMask m)
-         => ProtocolDuration
-         -> ReadHandle
-         -> WriteHandle
-         -> Port
-         -> m (Either NodeIPCError ())
+startIPC
+    :: (MonadIO m, MonadMask m)
+    => ProtocolDuration
+    -> ReadHandle
+    -> WriteHandle
+    -> Port
+    -> m (Either NodeIPCError ())
 startIPC protocolDuration readHandle writeHandle port =
     runNodeIPC $ ipcListener protocolDuration readHandle writeHandle port
 
@@ -262,12 +264,12 @@ startIPC protocolDuration readHandle writeHandle port =
 --
 -- This only works if NodeJS spawns the Haskell executable as child process
 -- (See @server.js@ as an example)
-startNodeJsIPC :: (MonadIO m)
-               => ProtocolDuration
-               -> Port
-               -> m (Either NodeIPCError ())
-startNodeJsIPC protocolDuration port = do
-    eHandle          <- getIPCHandle
+startNodeJsIPC
+    :: (MonadIO m)
+    => ProtocolDuration
+    -> Port
+    -> m (Either NodeIPCError ())
+startNodeJsIPC protocolDuration port =
     either
         (return . Left)
         (\handle -> do
@@ -275,7 +277,8 @@ startNodeJsIPC protocolDuration port = do
             let writeHandle = WriteHandle handle
             liftIO $ runNodeIPC $ ipcListener protocolDuration readHandle writeHandle port
         )
-        eHandle
+        =<<
+        getIPCHandle
 
 -- | Function for handling the protocol
 handleIPCProtocol :: forall m. (MonadIO m) => Port -> MsgIn -> m MsgOut
@@ -366,8 +369,7 @@ clientIPCListener
     -- but it's determined on the client side, not before.
     -> m (Either NodeIPCError ())
 clientIPCListener duration clientHandles port =
-    runNodeIPC
-    $ ipcListener
+    runNodeIPC $ ipcListener
         duration
         (getClientReadHandle clientHandles)
         (getClientWriteHandle clientHandles)
@@ -502,7 +504,7 @@ logError _ = return ()
 -- | Checks if given 'NodeIPCError' is 'IPCError'
 isIPCError :: NodeIPCError -> Bool
 isIPCError IPCError = True
-isIPCError _            = False
+isIPCError _        = False
 
 -- | Checks if given 'NodeIPCError' is 'HandleClosed'
 isHandleClosed :: NodeIPCError -> Bool
