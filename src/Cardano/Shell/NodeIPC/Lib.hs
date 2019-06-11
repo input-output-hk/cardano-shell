@@ -40,8 +40,7 @@ module Cardano.Shell.NodeIPC.Lib
 
 import           Cardano.Prelude hiding (catches, finally, handle)
 
-import           Control.Exception.Safe (Handler (..), MonadCatch, MonadMask,
-                                         MonadThrow, catches, finally)
+import           Control.Exception.Safe (Handler (..), catches, finally)
 import           Data.Aeson (FromJSON (parseJSON), ToJSON (toEncoding),
                              defaultOptions, genericParseJSON,
                              genericToEncoding)
@@ -217,30 +216,9 @@ instance Show NodeIPCError where
             "Unable to write with given handle: " <> show h
         NoStdIn -> "createProcess returned Nothing when creating pipes for the subprocess"
 
---------------------------------------------------------------------------------
--- ExceptT IO
---------------------------------------------------------------------------------
-
--- | Monad stack for node-ipc
-newtype NodeIPCMonad m a = NodeIPCMonad
-    { getNodeIPC :: ExceptT NodeIPCError m a
-    } deriving ( Functor
-               , Applicative
-               , Monad
-               , MonadIO
-               , MonadError NodeIPCError
-               , MonadMask
-               , MonadCatch
-               , MonadThrow
-               )
-
--- | Unwraps monad stack
-runNodeIPC :: NodeIPCMonad m a -> m (Either NodeIPCError a)
-runNodeIPC = runExceptT . getNodeIPC
-
 -- | Acquire a Handle that can be used for IPC
-getIPCHandle :: (MonadIO m) => m (Either NodeIPCError Handle)
-getIPCHandle = runNodeIPC $ do
+getIPCHandle :: IO (Either NodeIPCError Handle)
+getIPCHandle = runExceptT $ do
     mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
     case mFdstring of
         Nothing -> throwError $  NodeChannelNotFound "NODE_CHANNEL_FD"
@@ -250,38 +228,35 @@ getIPCHandle = runNodeIPC $ do
                 Right fd -> liftIO (fdToHandle fd)
 
 -- | Start IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
-startIPC
-    :: (MonadIO m, MonadMask m)
-    => ProtocolDuration
+startIPC :: ProtocolDuration
     -> ReadHandle
     -> WriteHandle
     -> Port
-    -> m (Either NodeIPCError ())
+    -> IO (Either NodeIPCError ())
 startIPC protocolDuration readHandle writeHandle port =
-    runNodeIPC $ ipcListener protocolDuration readHandle writeHandle port
+    runExceptT $ ipcListener protocolDuration readHandle writeHandle port
 
 -- | Start IPC with NodeJS
 --
 -- This only works if NodeJS spawns the Haskell executable as child process
 -- (See @server.js@ as an example)
 startNodeJsIPC
-    :: (MonadIO m)
-    => ProtocolDuration
+    :: ProtocolDuration
     -> Port
-    -> m (Either NodeIPCError ())
+    -> IO (Either NodeIPCError ())
 startNodeJsIPC protocolDuration port =
     either
         (return . Left)
         (\handle -> do
             let readHandle  = ReadHandle handle
             let writeHandle = WriteHandle handle
-            liftIO $ runNodeIPC $ ipcListener protocolDuration readHandle writeHandle port
+            liftIO $ runExceptT $ ipcListener protocolDuration readHandle writeHandle port
         )
         =<<
         getIPCHandle
 
 -- | Function for handling the protocol
-handleIPCProtocol :: forall m. (MonadIO m) => Port -> MsgIn -> m MsgOut
+handleIPCProtocol :: Port -> MsgIn -> IO MsgOut
 handleIPCProtocol (Port port) = \case
     QueryPort          -> pure (ReplyPort port)
     Ping               -> pure Pong
@@ -297,17 +272,20 @@ handleIPCProtocol (Port port) = \case
 -- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
 ipcListener
-    :: forall m. (MonadIO m, MonadCatch m, MonadMask m, MonadError NodeIPCError m)
-    => ProtocolDuration
+    :: ProtocolDuration
     -> ReadHandle
     -> WriteHandle
     -> Port
-    -> m ()
-ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = do
-    liftIO $ checkHandles readHandle writeHandle
-    handleMsgIn `catches` [Handler handler, Handler handleMsgError] `finally` shutdown
+    -> ExceptT NodeIPCError IO ()
+ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port =
+    ( do
+        checkHandles readHandle writeHandle
+        handleMsgIn `catches` [Handler handler, Handler handleMsgError]
+    )
+    `finally`
+    shutdown
   where
-    handleMsgIn :: m ()
+    handleMsgIn :: ExceptT NodeIPCError IO ()
     handleMsgIn = do
         liftIO $ hSetNewlineMode rHndl noNewlineTranslation
         send Started -- Send the message first time the IPC is up!
@@ -317,15 +295,15 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
                                     MultiMessage  -> forever
 
         -- Fetch message and respond to it
-        frequencyFunction $ do
+        liftIO $ frequencyFunction $ do
             msgIn               <- readMessage readHandle        -- Read message
             messageByteString   <- handleIPCProtocol port msgIn  -- Respond
             sendMessage writeHandle messageByteString            -- Write to client/server
 
-    send :: MsgOut -> m ()
+    send :: MsgOut -> ExceptT NodeIPCError IO ()
     send = sendMessage writeHandle
 
-    shutdown :: m ()
+    shutdown :: ExceptT NodeIPCError IO ()
     shutdown = do
         liftIO $ do
             hClose rHndl
@@ -333,11 +311,10 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
             hFlush stdout
         throwError IPCError
 
-    handleMsgError :: MessageException -> m ()
+    handleMsgError :: MessageException -> ExceptT NodeIPCError IO ()
     handleMsgError err = do
         liftIO $ logError "Unexpected message"
         send $ MessageOutFailure $ ParseError $ show err
-
 
 handler :: (MonadIO m, MonadCatch m) => IOError -> m ()
 handler err =
@@ -354,22 +331,21 @@ checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = do
     checkHandle wHandle hIsWritable (UnwritableHandle wHandle)
   where
     -- | Utility function for checking a handle.
-    checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCError -> m ()
+    checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCError -> ExceptT NodeIPCError IO ()
     checkHandle handle pre exception = do
         result <- pre handle
         when (not result) $ throwM exception
 
 -- | Client side IPC protocol.
 clientIPCListener
-    :: forall m. (MonadIO m, MonadMask m)
-    => ProtocolDuration
+    :: ProtocolDuration
     -> ClientHandles
     -> Port
     -- ^ This is really making things confusing. A Port is here,
     -- but it's determined on the client side, not before.
-    -> m (Either NodeIPCError ())
+    -> IO (Either NodeIPCError ())
 clientIPCListener duration clientHandles port =
-    runNodeIPC $ ipcListener
+    runExceptT $ ipcListener
         duration
         (getClientReadHandle clientHandles)
         (getClientWriteHandle clientHandles)
