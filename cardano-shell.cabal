@@ -206,8 +206,8 @@ test-suite cardano-shell-test
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
 
-  ghc-options:         
-                       
+  ghc-options:         -Wall
+                       -Werror
                        -Wcompat
                        -Wincomplete-record-updates
                        -Wincomplete-uni-patterns

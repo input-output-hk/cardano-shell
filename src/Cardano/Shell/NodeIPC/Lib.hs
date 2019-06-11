@@ -302,9 +302,9 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
 
 
 handler :: (MonadIO m, MonadCatch m) => IOError -> m ()
-handler err = do
-    liftIO $ when (isEOFError err) $ logError "its an eof"
-    throwM IPCException
+handler err =
+    when (isEOFError err) $
+        throwM IPCException
 
 
 -- | Check if given two handles are usable (i.e. Handle is open, can be used to read/write)
@@ -353,8 +353,10 @@ data ClientHandles = ClientHandles
 -- and returns it's response, __after the client response arrives__.
 serverReadWrite :: ServerHandles -> MsgIn -> IO MsgOut
 serverReadWrite serverHandles msgIn = do
+
     let readHandle      = getServerReadHandle serverHandles
     let writeHandle     = getServerWriteHandle serverHandles
+
     -- First check if the handles are valid!
     checkHandles readHandle writeHandle
 

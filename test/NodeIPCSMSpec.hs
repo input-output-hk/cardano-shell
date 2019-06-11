@@ -24,15 +24,15 @@ import           Test.Hspec (Spec, describe, it)
 
 import           Test.QuickCheck (Gen, Property, arbitrary, generate, oneof,
                                   (===))
-import           Test.QuickCheck.Monadic (assert, monadicIO, run)
+import           Test.QuickCheck.Monadic (PropertyM, assert, monadicIO, run)
 
 import           Test.StateMachine
 import           Test.StateMachine.Types
 import qualified Test.StateMachine.Types.Rank2 as Rank2
 
 import           Cardano.Shell.NodeIPC (MessageSendFailure (..), MsgIn (..),
-                                        MsgOut (..), Port (..),
-                                        ProtocolDuration (..),
+                                        MsgOut (..), NodeIPCException (..),
+                                        Port (..), ProtocolDuration (..),
                                         ServerHandles (..), clientIPCListener,
                                         closeFullDuplexAnonPipesHandles,
                                         createFullDuplexAnonPipesHandles,
@@ -52,40 +52,48 @@ prop_nodeIPC :: Property
 prop_nodeIPC =
 
     forAllCommands smUnused (Just 200) $ \cmds -> monadicIO $ do
+        withServerHandles $ \serverHandles -> do
 
-        -- Create the arbitrary port where the IPC server is running on
-        port                            <- run $ generate arbitrary
+            let nodeSM                      = nodeIPCSM serverHandles
 
-        -- Create the handles for a full duplex communcation (we can use two sockets as well)
-        (serverHandles, clientHandles)  <- liftIO $ createFullDuplexAnonPipesHandles
+            -- Run the actual commands
+            (hist, _model, res)             <- runCommands nodeSM cmds
 
-        -- Create the IPC server, it's using async, but it can be a separate process.
-        clientIPCAsync                  <-
-            liftIO $ async $ clientIPCListener MultiMessage clientHandles (Port port)
-
-        -- Communication starts here
-        started <- run $ readMessage (getServerReadHandle serverHandles)
-
-        -- The first message must be @Started@.
-        assert $ started == Started
-
-        let nodeSM                      = nodeIPCSM serverHandles
-
-        -- Run the actual commands
-        (hist, _model, res)             <- runCommands nodeSM cmds
-
-        -- Close async
-        run $ cancel clientIPCAsync
-
-        -- Close handles
-        run $ closeFullDuplexAnonPipesHandles (serverHandles, clientHandles)
-
-        -- Pretty the commands
-        prettyCommands nodeSM hist $ checkCommandNames cmds (res === Ok)
+            -- Pretty the commands
+            prettyCommands nodeSM hist $ checkCommandNames cmds (res === Ok)
 
 -- | Weird, but ok.
 smUnused :: StateMachine Model Action IO Response
 smUnused = nodeIPCSM $ panic "used env during command generation"
+
+-- | All the setup for the tests/model is here.
+withServerHandles :: (ServerHandles -> PropertyM IO ()) -> PropertyM IO ()
+withServerHandles runServer = do
+
+    -- Create the arbitrary port where the IPC server is running on
+    port                            <- run $ generate arbitrary
+
+    -- Create the handles for a full duplex communcation (we can use two sockets as well)
+    (serverHandles, clientHandles) <- liftIO createFullDuplexAnonPipesHandles
+
+    -- Create the IPC server, it's using async, but it can be a separate process.
+    clientIPCAsync                  <-
+        liftIO $ async $ clientIPCListener MultiMessage clientHandles (Port port)
+
+    -- Communication starts here
+    started <- run $ readMessage (getServerReadHandle serverHandles)
+
+    -- The first message must be @Started@.
+    assert $ started == Started
+
+    -- Run the server side checks
+    runServer serverHandles
+
+    -- Close async
+    run $ cancel clientIPCAsync
+
+    -- Close handles
+    run $ closeFullDuplexAnonPipesHandles (serverHandles, clientHandles)
 
 -------------------------------------------------------------------------------
 -- Language
@@ -108,8 +116,10 @@ data Response (r :: Type -> Type)
 
 -- | The types of error that can occur in the model.
 data Error
-    = ExitCodeError
-    deriving (Show, Eq)
+    = UnexpectedError
+    | ExitCodeError ExitCode
+    | IPCExceptionError NodeIPCException
+    deriving (Show)
 
 instance Exception Error
 
@@ -211,7 +221,7 @@ nodeIPCSM serverHandles = StateMachine
     mGenerator _            = Just $ oneof
         [ return PingCmd
         , return QueryPortCmd
-        , return ShutdownCmd
+        --, return ShutdownCmd
         ]
 
     -- | Trivial shrinker. __No shrinker__.
@@ -228,22 +238,26 @@ nodeIPCSM serverHandles = StateMachine
     handleIPCProtocolTest actionIn = do
         -- The first message is @Started@
 
-        _ <- traceIO (show actionIn :: Text) ("IN - " :: Text)
+        -- _ <- traceIO ("**************************" :: Text) ("START - " :: Text)
+        -- _ <- traceIO (show actionIn :: Text) ("IN - " :: Text)
 
         -- Fetch message and respond to it, this is __blocking__.
-        msgIn :: Either ExitCode MsgOut <- try $ serverReadWrite serverHandles actionIn
+        msgIn :: Either NodeIPCException MsgOut <- try $ serverReadWrite serverHandles actionIn
 
-        _ <- traceIO (show msgIn :: Text) ("OUT - " :: Text)
+        -- _ <- traceIO (show msgIn :: Text) ("OUT - " :: Text)
 
         case msgIn of
-            Left _exitCode              -> return ShutdownInitiatedResponse
-
             Right Started               -> return StartedResponse
             Right Pong                  -> return PongResponse
             Right (ReplyPort p)         -> return (ReplyPortResponse p)
             Right (MessageOutFailure _) -> return StartedResponse
             -- ^ This is no-op, ignored. Yes, yes, should be in the model.
-            Right ShutdownInitiated     -> throwIO ExitCodeError
+
+            Left (HandleEOF _)          -> return ShutdownInitiatedResponse
+
+            Left _unexpectedException   -> throwIO UnexpectedError
+            Right ShutdownInitiated     -> throwIO UnexpectedError
+
 
     -- | What is the mock for?
     mMock :: Model Symbolic -> Action Symbolic -> GenSym (Response Symbolic)
