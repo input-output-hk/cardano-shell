@@ -228,7 +228,8 @@ getIPCHandle = runExceptT $ do
                 Right fd -> liftIO (fdToHandle fd)
 
 -- | Start IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
-startIPC :: ProtocolDuration
+startIPC 
+    :: ProtocolDuration
     -> ReadHandle
     -> WriteHandle
     -> Port
