@@ -24,7 +24,7 @@ module Cardano.Shell.NodeIPC
     , bracketFullDuplexAnonPipesHandles
     , serverReadWrite
      -- ** Exceptions
-    , NodeIPCException(..)
+    , NodeIPCError(..)
     , MessageSendFailure(..)
     , MessageException(..)
      -- * Used for testing
@@ -44,7 +44,7 @@ module Cardano.Shell.NodeIPC
 
 import           Cardano.Shell.NodeIPC.Lib (ClientHandles (..),
                                             MessageSendFailure (..), MsgIn (..),
-                                            MsgOut (..), NodeIPCException (..),
+                                            MsgOut (..), NodeIPCError (..),
                                             Port (..), ProtocolDuration (..),
                                             ServerHandles (..),
                                             bracketFullDuplexAnonPipesHandles,

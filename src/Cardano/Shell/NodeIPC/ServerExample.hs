@@ -27,7 +27,7 @@ module Cardano.Shell.NodeIPC.ServerExample
 import           Cardano.Prelude
 
 import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..),
-                                            NodeIPCException (..), Port (..),
+                                            NodeIPCError (..), Port (..),
                                             ProtocolDuration (..), startIPC)
 import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
@@ -78,7 +78,7 @@ exampleWithFD msgin = do
 -- This will be the server, the one which sends the message (such as @Ping@, @QueryPort@)
 -- to get the response from the client.
 -- The client is executed via @stack exec node-ipc haskell@
-exampleServerWithProcess :: MsgIn -> IO (Either NodeIPCException (MsgOut, MsgOut))
+exampleServerWithProcess :: MsgIn -> IO (Either NodeIPCError (MsgOut, MsgOut))
 exampleServerWithProcess msg = bracket acquire restore (action msg)
   where
     acquire :: IO (ReadHandle, Handle)
@@ -102,7 +102,7 @@ exampleServerWithProcess msg = bracket acquire restore (action msg)
 
     action :: MsgIn
            -> (ReadHandle, Handle)
-           -> IO (Either NodeIPCException (MsgOut, MsgOut))
+           -> IO (Either NodeIPCError (MsgOut, MsgOut))
     action msgin (readHandle, _) = do
         withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"])
             { std_in = CreatePipe } $
@@ -124,7 +124,7 @@ receieveMessages serverReadHandle = do
     reply   <- readServerMessage -- Reply
     return (started, reply)
 
-getHandleFromEnv :: String -> IO (Either NodeIPCException Handle)
+getHandleFromEnv :: String -> IO (Either NodeIPCError Handle)
 getHandleFromEnv envName = do
     mFdstring <- lookupEnv envName
     case mFdstring of
@@ -133,5 +133,5 @@ getHandleFromEnv envName = do
             Left err -> throw $ UnableToParseNodeChannel (strConv Lenient err)
             Right fd -> Right <$> fdToHandle fd
   where
-    throw :: NodeIPCException -> IO (Either NodeIPCException Handle)
+    throw :: NodeIPCError -> IO (Either NodeIPCError Handle)
     throw = return . Left

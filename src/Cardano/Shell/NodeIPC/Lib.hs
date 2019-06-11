@@ -28,7 +28,7 @@ module Cardano.Shell.NodeIPC.Lib
     , getIPCHandle
     , MsgIn(..)
     , MsgOut(..)
-    , NodeIPCException(..)
+    , NodeIPCError(..)
     , MessageSendFailure(..)
     -- * Predicates
     , isIPCException
@@ -182,7 +182,7 @@ instance Arbitrary Port where
     arbitrary = Port <$> arbitrary
 
 -- | Exception thrown from Node IPC protocol
-data NodeIPCException
+data NodeIPCError
     = NodeChannelNotFound Text
     -- ^ Node channel was not found
     | UnableToParseNodeChannel Text
@@ -199,7 +199,7 @@ data NodeIPCException
     -- ^ Given handle cannot be used to write
     | NoStdIn
 
-instance Show NodeIPCException where
+instance Show NodeIPCError where
     show = \case
         NodeChannelNotFound envName ->
             "Environment variable cannot be found: " <> strConv Lenient envName
@@ -217,31 +217,29 @@ instance Show NodeIPCException where
             "Unable to write with given handle: " <> show h
         NoStdIn -> "createProcess returned Nothing when creating pipes for the subprocess"
 
-instance Exception NodeIPCException
-
 --------------------------------------------------------------------------------
 -- ExceptT IO
 --------------------------------------------------------------------------------
 
 -- | Monad stack for node-ipc
 newtype NodeIPCMonad m a = NodeIPCMonad
-    { getNodeIPC :: ExceptT NodeIPCException m a
+    { getNodeIPC :: ExceptT NodeIPCError m a
     } deriving ( Functor
                , Applicative
                , Monad
                , MonadIO
-               , MonadError NodeIPCException
+               , MonadError NodeIPCError
                , MonadMask
                , MonadCatch
                , MonadThrow
                )
 
 -- | Unwraps monad stack
-runNodeIPC :: NodeIPCMonad m a -> m (Either NodeIPCException a)
+runNodeIPC :: NodeIPCMonad m a -> m (Either NodeIPCError a)
 runNodeIPC = runExceptT . getNodeIPC
 
 -- | Acquire a Handle that can be used for IPC
-getIPCHandle :: (MonadIO m) => m (Either NodeIPCException Handle)
+getIPCHandle :: (MonadIO m) => m (Either NodeIPCError Handle)
 getIPCHandle = runNodeIPC $ do
     mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
     case mFdstring of
@@ -256,7 +254,7 @@ startIPC :: forall m. (MonadIO m, MonadMask m)
          -> ReadHandle
          -> WriteHandle
          -> Port
-         -> m (Either NodeIPCException ())
+         -> m (Either NodeIPCError ())
 startIPC protocolDuration readHandle writeHandle port =
     runNodeIPC $ ipcListener protocolDuration readHandle writeHandle port
 
@@ -267,7 +265,7 @@ startIPC protocolDuration readHandle writeHandle port =
 startNodeJsIPC :: (MonadIO m)
                => ProtocolDuration
                -> Port
-               -> m (Either NodeIPCException ())
+               -> m (Either NodeIPCError ())
 startNodeJsIPC protocolDuration port = do
     eHandle          <- getIPCHandle
     either
@@ -296,7 +294,7 @@ handleIPCProtocol (Port port) = \case
 -- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
 ipcListener
-    :: forall m. (MonadIO m, MonadCatch m, MonadMask m, MonadError NodeIPCException m)
+    :: forall m. (MonadIO m, MonadCatch m, MonadMask m, MonadError NodeIPCError m)
     => ProtocolDuration
     -> ReadHandle
     -> WriteHandle
@@ -353,7 +351,7 @@ checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = do
     checkHandle wHandle hIsWritable (UnwritableHandle wHandle)
   where
     -- | Utility function for checking a handle.
-    checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCException -> IO ()
+    checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCError -> m ()
     checkHandle handle pre exception = do
         result <- pre handle
         when (not result) $ throwM exception
@@ -366,7 +364,7 @@ clientIPCListener
     -> Port
     -- ^ This is really making things confusing. A Port is here,
     -- but it's determined on the client side, not before.
-    -> m (Either NodeIPCException ())
+    -> m (Either NodeIPCError ())
 clientIPCListener duration clientHandles port =
     runNodeIPC
     $ ipcListener
@@ -501,27 +499,27 @@ logError _ = return ()
 -- Predicates
 --------------------------------------------------------------------------------
 
--- | Checks if given 'NodeIPCException' is 'IPCException'
-isIPCException :: NodeIPCException -> Bool
+-- | Checks if given 'NodeIPCError' is 'IPCException'
+isIPCException :: NodeIPCError -> Bool
 isIPCException IPCException = True
 isIPCException _            = False
 
--- | Checks if given 'NodeIPCException' is 'HandleClosed'
-isHandleClosed :: NodeIPCException -> Bool
+-- | Checks if given 'NodeIPCError' is 'HandleClosed'
+isHandleClosed :: NodeIPCError -> Bool
 isHandleClosed (HandleClosed _) = True
 isHandleClosed _                = False
 
--- | Checks if given 'NodeIPCException' is 'UnreadableHandle'
-isUnreadableHandle :: NodeIPCException -> Bool
+-- | Checks if given 'NodeIPCError' is 'UnreadableHandle'
+isUnreadableHandle :: NodeIPCError -> Bool
 isUnreadableHandle (UnreadableHandle _) = True
 isUnreadableHandle _                    = False
 
--- | Checks if given 'NodeIPCException' is 'UnwritableHandle'
-isUnwritableHandle :: NodeIPCException -> Bool
+-- | Checks if given 'NodeIPCError' is 'UnwritableHandle'
+isUnwritableHandle :: NodeIPCError -> Bool
 isUnwritableHandle (UnwritableHandle _) = True
 isUnwritableHandle _                    = False
 
--- | Checks if given 'NodeIPCException' is 'NodeChannelNotFound'
-isNodeChannelCannotBeFound :: NodeIPCException -> Bool
+-- | Checks if given 'NodeIPCError' is 'NodeChannelNotFound'
+isNodeChannelCannotBeFound :: NodeIPCError -> Bool
 isNodeChannelCannotBeFound (NodeChannelNotFound _) = True
 isNodeChannelCannotBeFound _                       = False
