@@ -12,8 +12,7 @@ import           Cardano.Prelude
 import           Cardano.Shell.NodeIPC (Port (..), ProtocolDuration (..),
                                         ReadHandle (..), WriteHandle (..),
                                         getHandleFromEnv, startIPC,
-                                        startNodeJsIPC)
-import           Control.Exception.Safe (throwM)
+                                        startNodeJsIPC, NodeIPCError)
 import           System.IO (BufferMode (..), hClose, hSetBuffering)
 
 port :: Port
@@ -29,27 +28,24 @@ port = Port 8090
 -- Calling this function directly (ex. @stack exec node-ipc haskell@) will throw an error
 -- since there wouldn't be an handle that client will be able to use to communicate with
 -- the server.
-main :: IO ()
+main :: IO (Either NodeIPCError ())
 main = do
     (cmd:_) <- getArgs
     case cmd of
-        "js"      -> void $ startNodeJsIPC SingleMessage port
-        "haskell" -> bracket acquire restore action
-        _         -> return ()
+        "js"      -> Right <$> void (startNodeJsIPC SingleMessage port)
+        "haskell" -> either
+            (return . Left)
+            action
+            =<<
+            (getHandleFromEnv "NODE_CHANNEL_FD")
+        _         -> return . Right $ ()
   where
-    acquire :: IO Handle
-    acquire = do
-        -- Lookup the Handle that the server has set
-        serverWHandle <- either throwM return =<< (getHandleFromEnv "NODE_CHANNEL_FD")
-        hSetBuffering serverWHandle LineBuffering
-        return serverWHandle
-
-    restore :: Handle -> IO ()
-    restore = hClose
-
-    action :: Handle -> IO ()
+    action :: Handle -> IO (Either NodeIPCError ())
     action serverWHandle = do
+        hSetBuffering serverWHandle LineBuffering
         let serverWriteHandle = WriteHandle serverWHandle
         let serverReadHandle  = ReadHandle stdin
-        void $ startIPC SingleMessage serverReadHandle serverWriteHandle port
+        startIPC SingleMessage serverReadHandle serverWriteHandle port
+        `finally`
+        hClose serverWHandle
 
