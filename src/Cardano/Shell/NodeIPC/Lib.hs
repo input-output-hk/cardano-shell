@@ -31,7 +31,7 @@ module Cardano.Shell.NodeIPC.Lib
     , NodeIPCError(..)
     , MessageSendFailure(..)
     -- * Predicates
-    , isIPCException
+    , isIPCError
     , isHandleClosed
     , isUnreadableHandle
     , isUnwritableHandle
@@ -187,7 +187,7 @@ data NodeIPCError
     -- ^ Node channel was not found
     | UnableToParseNodeChannel Text
     -- ^ Unable to parse given 'Text' as File descriptor
-    | IPCException
+    | IPCError
     -- ^ Exception thrown when there's something wrong with IPC
     | HandleClosed Handle
     -- ^ Given handle is closed therefore cannot be used
@@ -205,7 +205,7 @@ instance Show NodeIPCError where
             "Environment variable cannot be found: " <> strConv Lenient envName
         UnableToParseNodeChannel err ->
             "Unable to parse file descriptor: " <> strConv Lenient err
-        IPCException ->
+        IPCError ->
             "IOError has occured"
         HandleClosed h ->
             "Given handle is closed: " <> show h
@@ -328,7 +328,7 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
             hClose rHndl
             hClose wHndl
             hFlush stdout
-        throwError IPCException
+        throwError IPCError
 
     handleMsgError :: MessageException -> m ()
     handleMsgError err = do
@@ -499,10 +499,10 @@ logError _ = return ()
 -- Predicates
 --------------------------------------------------------------------------------
 
--- | Checks if given 'NodeIPCError' is 'IPCException'
-isIPCException :: NodeIPCError -> Bool
-isIPCException IPCException = True
-isIPCException _            = False
+-- | Checks if given 'NodeIPCError' is 'IPCError'
+isIPCError :: NodeIPCError -> Bool
+isIPCError IPCError = True
+isIPCError _            = False
 
 -- | Checks if given 'NodeIPCError' is 'HandleClosed'
 isHandleClosed :: NodeIPCError -> Bool

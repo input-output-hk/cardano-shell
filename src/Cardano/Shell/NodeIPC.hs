@@ -35,7 +35,7 @@ module Cardano.Shell.NodeIPC
     , getReadWriteHandles
     , getHandleFromEnv
     -- * Predicates
-    , isIPCException
+    , isIPCError
     , isHandleClosed
     , isUnreadableHandle
     , isUnwritableHandle
@@ -52,7 +52,7 @@ import           Cardano.Shell.NodeIPC.Lib (ClientHandles (..),
                                             closeFullDuplexAnonPipesHandles,
                                             createFullDuplexAnonPipesHandles,
                                             handleIPCProtocol, isHandleClosed,
-                                            isIPCException,
+                                            isIPCError,
                                             isNodeChannelCannotBeFound,
                                             isUnreadableHandle,
                                             isUnwritableHandle, serverReadWrite,

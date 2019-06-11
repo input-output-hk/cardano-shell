@@ -24,7 +24,7 @@ import           Cardano.Shell.NodeIPC (MessageException,
                                         Port (..), ProtocolDuration (..),
                                         ReadHandle (..), WriteHandle (..),
                                         getReadWriteHandles, isHandleClosed,
-                                        isIPCException,
+                                        isIPCError,
                                         isNodeChannelCannotBeFound,
                                         isUnreadableHandle, isUnwritableHandle,
                                         readMessage, sendMessage, startIPC,
@@ -111,7 +111,7 @@ nodeIPCSpec = do
                     cancelWith as ioerror
                     wait as
                 assert $ isLeft (eResult :: Either NodeIPCError ())
-                whenLeft eResult $ \exception -> assert $ isIPCException exception
+                whenLeft eResult $ \exception -> assert $ isIPCError exception
 
             it "should close used handles when exception is being thrown" $ monadicIO $ do
                 handlesClosed <- run $ do

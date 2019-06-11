@@ -128,10 +128,10 @@ getHandleFromEnv :: String -> IO (Either NodeIPCError Handle)
 getHandleFromEnv envName = do
     mFdstring <- lookupEnv envName
     case mFdstring of
-        Nothing -> throw $ NodeChannelNotFound (strConv Lenient envName)
+        Nothing -> left $ NodeChannelNotFound (strConv Lenient envName)
         Just fdstring -> case readEither fdstring of
-            Left err -> throw $ UnableToParseNodeChannel (strConv Lenient err)
+            Left err -> left $ UnableToParseNodeChannel (strConv Lenient err)
             Right fd -> Right <$> fdToHandle fd
   where
-    throw :: NodeIPCError -> IO (Either NodeIPCError Handle)
-    throw = return . Left
+    left :: NodeIPCError -> IO (Either NodeIPCError Handle)
+    left = return . Left
