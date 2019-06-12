@@ -278,11 +278,9 @@ ipcListener
     -> WriteHandle
     -> Port
     -> ExceptT NodeIPCError IO ()
-ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port =
-    ( do
-        checkHandles readHandle writeHandle
-        handleMsgIn `catches` [Handler handler, Handler handleMsgError]
-    )
+ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = do
+    checkHandles readHandle writeHandle
+    handleMsgIn `catches` [Handler handler, Handler handleMsgError]
     `finally`
     shutdown
   where
