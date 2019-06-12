@@ -245,16 +245,17 @@ startNodeJsIPC
     :: ProtocolDuration
     -> Port
     -> IO (Either NodeIPCError ())
-startNodeJsIPC protocolDuration port =
-    either
-        (return . Left)
-        (\handle -> do
-            let readHandle  = ReadHandle handle
-            let writeHandle = WriteHandle handle
-            liftIO $ runExceptT $ ipcListener protocolDuration readHandle writeHandle port
-        )
-        =<<
-        getIPCHandle
+startNodeJsIPC protocolDuration port = do
+    eHandle <- getIPCHandle
+    runIPCListener eHandle
+  where
+    runIPCListener :: Either NodeIPCError Handle -> IO (Either NodeIPCError ())
+    runIPCListener (Left nodeIPCError) = return . Left $ nodeIPCError
+    runIPCListener (Right handle) = do
+        let readHandle  = ReadHandle handle
+        let writeHandle = WriteHandle handle
+        liftIO $ runExceptT $ ipcListener protocolDuration readHandle writeHandle port
+
 
 -- | Function for handling the protocol
 handleIPCProtocol :: Port -> MsgIn -> IO MsgOut
