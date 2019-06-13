@@ -6,37 +6,13 @@
 // This process implicitly sets environment varibale "NODE_CHANNEL_FD" with a fd it currently uses
 // Hakell node will then lookup that fd, and use it to communicate with this script.
 const child_process = require("child_process");
-const fs            = require('fs');
 
-// Filepath to resources
-const parentPath = "./app/NodeIPCClient";
-const testDir    = `${parentPath}/test-state`;
-const logPath    = `${testDir}/cardano-node.log`;
-
-// Acquiring resources
-function acquire () {
-  if (!fs.existsSync(testDir)) {
-    fs.mkdirSync(testDir);
-  };
-  
-  let writeStream = fs.createWriteStream(logPath, { flags: "a" }); 
-  return writeStream;
-}
-
-// Clean up resources
-function cleanup () {
-  fs.unlinkSync(logPath);
-  fs.rmdirSync(testDir);
-};
-
-// Return Subprocess with given writeStream and timerid
-function getSubProcess(writeStream, timerid) {
-  const subproc = child_process.spawn("stack", [
-      "exec"
-    , "node-ipc"
-    , "js"
+// Return Subprocess with given timerid
+function getSubProcess( timerid) {
+  const subproc = child_process.spawn("node-ipc", [
+     "js"
     ], {
-      stdio: [ "inherit", writeStream, writeStream, "ipc" ]
+      stdio: [ "inherit", "inherit", "inherit", "ipc" ]
     });
     subproc.on("message", function (msg) {
       console.log(new Date(), "got reply",msg);
@@ -49,13 +25,11 @@ function getSubProcess(writeStream, timerid) {
     });
     subproc.on("error", function (err) {
       console.log("error:", err);
-      cleanup();
     });
     subproc.on("exit", function (code, signal) {
       console.log(new Date(), "child exited", code, signal);
-      cleanup();
       clearTimeout(timerid);
-      if (code == 20) {
+      if (code == 0) {
         process.exit(0);
       } else {
         process.exit(-1);
@@ -67,24 +41,20 @@ function getSubProcess(writeStream, timerid) {
 
 // Actual process
 // I honestly don't know if this can clean-up the resources if async exception occurs
-let logfile = acquire ();
 
-logfile.on("open", function () {
-  let timerid;
-  let subprocess = getSubProcess(logfile, timerid);
+let timerid;
+let subprocess = getSubProcess(timerid);
 
-  // Action
-  console.log(new Date(), "in parent");
-  console.log(new Date(), "log file opened");
-  subprocess.send({QueryPort:[]});
-  
+// Action
+console.log(new Date(), "in parent");
+console.log(new Date(), "log file opened");
+subprocess.send({QueryPort:[]});
+
+timerid = setTimeout(function () {
+  console.log(new Date(), "sending disconnect");
+  subprocess.disconnect();
   timerid = setTimeout(function () {
-    //process.exit();
-    console.log(new Date(), "sending disconnect");
-    subprocess.disconnect();
-    timerid = setTimeout(function () {
-      console.log(new Date(), "it failed to exit, killing");
-      subprocess.kill();
-    },30000);
-  }, 30000);
-});
+    console.log(new Date(), "it failed to exit, killing");
+    subprocess.kill();
+  },30000);
+}, 30000);
