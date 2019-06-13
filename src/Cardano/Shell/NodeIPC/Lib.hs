@@ -249,9 +249,9 @@ handleIPCProtocol :: forall m. (MonadIO m) => Port -> MsgIn -> m MsgOut
 handleIPCProtocol (Port port) = \case
     QueryPort          -> pure (ReplyPort port)
     Ping               -> pure Pong
-    Shutdown           -> return ShutdownInitiated >> liftIO $ exitWith (ExitFailure 22)
-    -- ^ Send message, flush buffer, shutdown. Since it's complicated to reason with another
+    -- Send message, flush buffer, shutdown. Since it's complicated to reason with another
     -- thread that shuts down the program after some time, we do it immediately.
+    Shutdown           -> return ShutdownInitiated >> liftIO $ exitWith (ExitFailure 22)
     MessageInFailure f -> pure $ MessageOutFailure f
 
 -- | Start IPC listener with given Handles and Port
