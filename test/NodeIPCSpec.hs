@@ -1,6 +1,7 @@
 {-| Module testing Node IPC
 -}
 
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module NodeIPCSpec
@@ -14,7 +15,7 @@ import           GHC.IO.Handle (hIsOpen)
 import           System.IO (hClose)
 import           System.IO.Error (eofErrorType, mkIOError)
 import           Test.Hspec (Spec, describe, it)
-import           Test.Hspec.QuickCheck (prop)
+import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
@@ -24,8 +25,7 @@ import           Cardano.Shell.NodeIPC (MessageException,
                                         Port (..), ProtocolDuration (..),
                                         ReadHandle (..), WriteHandle (..),
                                         getReadWriteHandles, isHandleClosed,
-                                        isIPCError,
-                                        isNodeChannelCannotBeFound,
+                                        isIPCError, isNodeChannelCannotBeFound,
                                         isUnreadableHandle, isUnwritableHandle,
                                         readMessage, sendMessage, startIPC,
                                         startNodeJsIPC, testStartNodeIPC)
@@ -49,19 +49,14 @@ nodeIPCSpec = do
                     assert $ isLeft (eResult :: Either MessageException MsgIn)
 
     describe "startIPC" $ do
-        it "should return Started and Pong when client sends message 'Ping'" $ monadicIO $ do
-            (started, pong) <- run $ do
-                testStartNodeIPC port Ping
-            assert $ started == Started
-            assert $ pong    == Pong
-
-        prop "should return Started and ReplyPort when client sends message 'QueryPort'" $
-            \(randomPort :: Port) -> monadicIO $ do
-                (started, replyPort) <- run $ do
-                    testStartNodeIPC randomPort QueryPort
-                let portNum = getPort randomPort
-                assert $ started   == Started
-                assert $ replyPort == (ReplyPort portNum)
+        modifyMaxSuccess (const 1000) $ prop "model based testing" $ 
+            -- Have both MsgIn and MsgOut in order to test failing cases
+            \(eMsg :: Either MsgOut MsgIn) (randomPort :: Port) -> monadicIO $ do
+                response <- run $ either
+                    (testStartNodeIPC randomPort)
+                    (testStartNodeIPC randomPort)
+                    eMsg
+                assert $ response == (Started, modelResponse randomPort eMsg)
 
         prop "should return Started and ShutdownInitiated when client sends message 'Shutdown'" $ monadicIO $ do
             result <- run $ try $ testStartNodeIPC port Shutdown
@@ -70,15 +65,6 @@ nodeIPCSpec = do
             --assert $ pong    == ShutdownInitiated
 
         describe "Exceptions" $ do
-            prop "should throw exception when incorrect message is sent" $
-            -- Sending MsgOut would fail since it expects 'MsgIn' to be sent
-                \(randomMsg :: MsgOut) -> monadicIO $ do
-                    (started, parseError) <- run $ do
-                        testStartNodeIPC port randomMsg
-                    let errorMessage = "Failed to decode given blob: " <> toS (encode randomMsg)
-                    assert $ started    == Started
-                    assert $ parseError == (MessageOutFailure $ ParseError errorMessage)
-
             it "should throw NodeIPCError when closed handle is given" $ monadicIO $ do
                 eResult <- run $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
@@ -178,3 +164,18 @@ testMessage msg = monadicIO $ do
 whenLeft :: Applicative m => Either a b -> (a -> m ()) -> m ()
 whenLeft (Left x) f = f x
 whenLeft _        _ = pure ()
+
+-- Try to predict the @MsgOut@ with given @Port@ and @Either MsgOut MsgIn@
+modelResponse :: Port -> Either MsgOut MsgIn -> MsgOut
+modelResponse (Port portNumber) = \case
+    Left msgOut ->
+        let errorMessage = "Failed to decode given blob: " <> toS (encode msgOut)
+        in MessageOutFailure $ ParseError errorMessage
+    Right QueryPort -> 
+        ReplyPort portNumber
+    Right Ping ->
+        Pong
+    Right Shutdown ->
+        ShutdownInitiated
+    Right (MessageInFailure f) ->
+        MessageOutFailure f

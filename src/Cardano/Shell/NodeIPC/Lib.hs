@@ -268,7 +268,6 @@ startNodeJsIPC protocolDuration port = do
         let writeHandle = WriteHandle handle
         liftIO $ runExceptT $ ipcListener protocolDuration readHandle writeHandle port
 
-
 -- | Function for handling the protocol
 handleIPCProtocol :: Port -> MsgIn -> IO MsgOut
 handleIPCProtocol (Port port) = \case
@@ -276,7 +275,7 @@ handleIPCProtocol (Port port) = \case
     Ping               -> pure Pong
     -- Send message, flush buffer, shutdown. Since it's complicated to reason with another
     -- thread that shuts down the program after some time, we do it immediately.
-    Shutdown           -> return ShutdownInitiated >> liftIO $ exitWith (ExitFailure 22)
+    Shutdown           -> return ShutdownInitiated >> exitWith (ExitFailure 22)
     MessageInFailure f -> pure $ MessageOutFailure f
 
 -- | Start IPC listener with given Handles and Port
@@ -291,11 +290,9 @@ ipcListener
     -> WriteHandle
     -> Port
     -> ExceptT NodeIPCError IO ()
-ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = 
-    ( do
+ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = do
     checkHandles readHandle writeHandle
     handleMsgIn `catches` [Handler handler, Handler handleMsgError]
-    )
     `finally`
     shutdown
   where
