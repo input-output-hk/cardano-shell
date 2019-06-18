@@ -31,7 +31,7 @@ import           Test.StateMachine.Types
 import qualified Test.StateMachine.Types.Rank2 as Rank2
 
 import           Cardano.Shell.NodeIPC (MessageSendFailure (..), MsgIn (..),
-                                        MsgOut (..), NodeIPCException (..),
+                                        MsgOut (..), NodeIPCError (..),
                                         Port (..), ProtocolDuration (..),
                                         ServerHandles (..), clientIPCListener,
                                         closeFullDuplexAnonPipesHandles,
@@ -118,7 +118,7 @@ data Response (r :: Type -> Type)
 data Error
     = UnexpectedError
     | ExitCodeError ExitCode
-    | IPCExceptionError NodeIPCException
+    | IPCExceptionError NodeIPCError
     deriving (Show)
 
 instance Exception Error
@@ -242,7 +242,7 @@ nodeIPCSM serverHandles = StateMachine
         -- _ <- traceIO (show actionIn :: Text) ("IN - " :: Text)
 
         -- Fetch message and respond to it, this is __blocking__.
-        msgIn :: Either NodeIPCException MsgOut <- try $ serverReadWrite serverHandles actionIn
+        msgIn :: Either NodeIPCError MsgOut <- serverReadWrite serverHandles actionIn
 
         -- _ <- traceIO (show msgIn :: Text) ("OUT - " :: Text)
 

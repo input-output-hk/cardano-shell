@@ -55,7 +55,7 @@ import           System.IO (BufferMode (..), hClose, hFlush, hSetBuffering,
 import           System.IO.Error (IOError, isEOFError)
 import           System.Process (createPipe)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
-                                  choose, elements, listOf1)
+                                  choose, elements, listOf1, oneof)
 
 import           Cardano.Shell.NodeIPC.Message (MessageException,
                                                 ReadHandle (..),
@@ -109,7 +109,12 @@ data MsgIn
     deriving (Show, Eq, Generic)
 
 instance Arbitrary MsgIn where
-    arbitrary = elements [QueryPort, Ping]
+    arbitrary = oneof
+        [ return QueryPort
+        , return Ping
+        , MessageInFailure <$> arbitrary
+        -- , return Shutdown
+        ]
 
 -- | Message which is send out from Cardano-node
 data MsgOut
@@ -130,6 +135,12 @@ data MessageSendFailure
     | GeneralFailure
     deriving (Show, Eq, Generic)
 
+instance Arbitrary MessageSendFailure where
+    arbitrary = oneof
+        [ ParseError <$> genSafeText
+        , return GeneralFailure
+        ]
+
 instance Arbitrary MsgOut where
     arbitrary = do
         safeText   <- genSafeText
@@ -140,9 +151,9 @@ instance Arbitrary MsgOut where
             , Pong
             , MessageOutFailure $ ParseError safeText
             ]
-        where
-          genSafeText :: Gen Text
-          genSafeText = strConv Lenient <$> listOf1 arbitraryASCIIChar
+
+genSafeText :: Gen Text
+genSafeText = strConv Lenient <$> listOf1 arbitraryASCIIChar
 
 opts :: Options
 opts = defaultOptions { sumEncoding = ObjectWithSingleField }
@@ -197,6 +208,7 @@ data NodeIPCError
     | UnwritableHandle Handle
     -- ^ Given handle cannot be used to write
     | NoStdIn
+    deriving (Eq)
 
 instance Show NodeIPCError where
     show = \case
@@ -279,9 +291,11 @@ ipcListener
     -> WriteHandle
     -> Port
     -> ExceptT NodeIPCError IO ()
-ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = do
+ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = 
+    ( do
     checkHandles readHandle writeHandle
     handleMsgIn `catches` [Handler handler, Handler handleMsgError]
+    )
     `finally`
     shutdown
   where
@@ -316,14 +330,13 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
         liftIO $ logError "Unexpected message"
         send $ MessageOutFailure $ ParseError $ show err
 
-handler :: (MonadIO m, MonadCatch m) => IOError -> m ()
-handler err =
-    when (isEOFError err) $
-        throwM IPCException
+    handler :: IOError -> ExceptT NodeIPCError IO ()
+    handler err =
+        when (isEOFError err) $ shutdown
 
 
 -- | Check if given two handles are usable (i.e. Handle is open, can be used to read/write)
-checkHandles :: ReadHandle -> WriteHandle -> IO ()
+checkHandles :: ReadHandle -> WriteHandle -> ExceptT NodeIPCError IO ()
 checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = do
     checkHandle rHandle hIsOpen (HandleClosed rHandle)
     checkHandle wHandle hIsOpen (HandleClosed wHandle)
@@ -333,8 +346,8 @@ checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = do
     -- | Utility function for checking a handle.
     checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCError -> ExceptT NodeIPCError IO ()
     checkHandle handle pre exception = do
-        result <- pre handle
-        when (not result) $ throwM exception
+        result <- liftIO $ pre handle
+        when (not result) $ throwError exception
 
 -- | Client side IPC protocol.
 clientIPCListener
@@ -365,8 +378,8 @@ data ClientHandles = ClientHandles
 
 -- | This is a __blocking call__ that sends the message to the client
 -- and returns it's response, __after the client response arrives__.
-serverReadWrite :: ServerHandles -> MsgIn -> IO MsgOut
-serverReadWrite serverHandles msgIn = do
+serverReadWrite :: ServerHandles -> MsgIn -> IO (Either NodeIPCError MsgOut)
+serverReadWrite serverHandles msgIn = runExceptT $ do
 
     let readHandle      = getServerReadHandle serverHandles
     let writeHandle     = getServerWriteHandle serverHandles
@@ -379,8 +392,8 @@ serverReadWrite serverHandles msgIn = do
 
     -- Check if the handle is at End Of Line, we need to do this
     -- here since we @hIsEOF@ __blocks__ as well.
-    whenM (hIsEOF . getReadHandle $ readHandle) $
-        throwM . HandleEOF . getReadHandle $ readHandle
+    whenM (liftIO . hIsEOF . getReadHandle $ readHandle) $
+        throwError . HandleEOF . getReadHandle $ readHandle
 
     -- Read message
     readMessage readHandle
