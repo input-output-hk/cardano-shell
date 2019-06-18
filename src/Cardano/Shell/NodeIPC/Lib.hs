@@ -26,6 +26,7 @@ module Cardano.Shell.NodeIPC.Lib
     , serverReadWrite
     -- * Testing
     , getIPCHandle
+    , getHandleFromEnv
     , MsgIn(..)
     , MsgOut(..)
     , NodeIPCError(..)
@@ -46,7 +47,7 @@ import           Data.Aeson (FromJSON (parseJSON), ToJSON (toEncoding),
                              genericToEncoding)
 import           Data.Aeson.Types (Options, SumEncoding (ObjectWithSingleField),
                                    sumEncoding)
-import           GHC.IO.Handle (hIsOpen, hIsReadable, hIsWritable, hIsEOF)
+import           GHC.IO.Handle (hIsEOF, hIsOpen, hIsReadable, hIsWritable)
 import           GHC.IO.Handle.FD (fdToHandle)
 
 import           System.Environment (lookupEnv)
@@ -61,6 +62,7 @@ import           Cardano.Shell.NodeIPC.Message (MessageException,
                                                 ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
+import           Prelude (String)
 
 import qualified Prelude as P (Show (..))
 
@@ -228,19 +230,22 @@ instance Show NodeIPCError where
             "Unable to write with given handle: " <> show h
         NoStdIn -> "createProcess returned Nothing when creating pipes for the subprocess"
 
--- | Acquire a Handle that can be used for IPC
-getIPCHandle :: IO (Either NodeIPCError Handle)
-getIPCHandle = runExceptT $ do
-    mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
+-- | Acquire a Handle that can be used for IPC from Environment
+getHandleFromEnv :: String -> IO (Either NodeIPCError Handle)
+getHandleFromEnv envName = runExceptT $ do
+    mFdstring <- liftIO $ lookupEnv envName
     case mFdstring of
-        Nothing -> throwError $  NodeChannelNotFound "NODE_CHANNEL_FD"
+        Nothing -> throwError $ NodeChannelNotFound $ toS envName
         Just fdstring ->
             case readEither fdstring of
                 Left err -> throwError $ UnableToParseNodeChannel $ toS err
                 Right fd -> liftIO (fdToHandle fd)
 
+getIPCHandle :: IO (Either NodeIPCError Handle)
+getIPCHandle = getHandleFromEnv "NODE_CHANNEL_FD"
+
 -- | Start IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
-startIPC 
+startIPC
     :: ProtocolDuration
     -> ReadHandle
     -> WriteHandle

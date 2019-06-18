@@ -13,7 +13,7 @@ import           Cardano.Prelude
 import           Data.Aeson (FromJSON, ToJSON, encode)
 import           GHC.IO.Handle (hIsOpen)
 import           System.IO (hClose)
-import           System.IO.Error (eofErrorType, mkIOError)
+import           System.IO.Error (eofErrorType, mkIOError, IOError)
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Property)
@@ -60,7 +60,7 @@ nodeIPCSpec = do
 
         prop "should return Started and ShutdownInitiated when client sends message 'Shutdown'" $ monadicIO $ do
             result <- run $ try $ testStartNodeIPC port Shutdown
-            assert $ isLeft (result :: Either ExitCode (MsgOut, MsgOut))
+            assert $ isLeft (result :: Either IOError (MsgOut, MsgOut))
             --assert $ started == Started
             --assert $ pong    == ShutdownInitiated
 

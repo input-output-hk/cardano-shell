@@ -21,7 +21,6 @@ module Cardano.Shell.NodeIPC.ServerExample
     , exampleServerWithProcess
     -- * For testing
     , getReadWriteHandles
-    , getHandleFromEnv
     ) where
 
 import           Cardano.Prelude
@@ -33,8 +32,7 @@ import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
 import           GHC.IO.Handle.FD (fdToHandle)
-import           Prelude (String)
-import           System.Environment (lookupEnv, setEnv, unsetEnv)
+import           System.Environment (setEnv, unsetEnv)
 import           System.IO (BufferMode (..), hClose, hSetBuffering)
 import           System.Process (CreateProcess (..), StdStream (..), createPipe,
                                  createPipeFd, proc, withCreateProcess)
@@ -124,14 +122,3 @@ receieveMessages serverReadHandle = do
     reply   <- readServerMessage -- Reply
     return (started, reply)
 
-getHandleFromEnv :: String -> IO (Either NodeIPCError Handle)
-getHandleFromEnv envName = do
-    mFdstring <- lookupEnv envName
-    case mFdstring of
-        Nothing -> left $ NodeChannelNotFound (strConv Lenient envName)
-        Just fdstring -> case readEither fdstring of
-            Left err -> left $ UnableToParseNodeChannel (strConv Lenient err)
-            Right fd -> Right <$> fdToHandle fd
-  where
-    left :: NodeIPCError -> IO (Either NodeIPCError Handle)
-    left = return . Left
