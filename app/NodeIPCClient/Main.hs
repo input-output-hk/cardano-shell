@@ -12,7 +12,7 @@ import           Cardano.Prelude
 import           Cardano.Shell.NodeIPC (Port (..), ProtocolDuration (..),
                                         ReadHandle (..), WriteHandle (..),
                                         getHandleFromEnv, startIPC,
-                                        startNodeJsIPC)
+                                        startNodeJsIPC, handleIPCProtocol, MsgOut(Started))
 import           System.IO (BufferMode (..), hClose, hSetBuffering)
 
 port :: Port
@@ -32,7 +32,15 @@ main :: IO ()
 main = do
     (cmd:_) <- getArgs
     case cmd of
-        "js"      -> startNodeJsIPC SingleMessage port
+        "js"      -> do
+          eReply <- startNodeJsIPC SingleMessage (handleIPCProtocol port)
+          case eReply of
+            Left err -> do
+              print err
+              exitFailure
+            Right (server, sendMsg) -> do
+              sendMsg Started -- Send the message first time the IPC is up!
+              wait server
         "haskell" -> bracket acquire restore action
         _         -> return ()
   where
@@ -50,5 +58,12 @@ main = do
     action serverWHandle = do
         let serverWriteHandle = WriteHandle serverWHandle
         let serverReadHandle  = ReadHandle stdin
-        startIPC SingleMessage serverReadHandle serverWriteHandle port
+        eReply <- startIPC SingleMessage serverReadHandle serverWriteHandle (handleIPCProtocol port)
+        case eReply of
+          Left err -> do
+            print err
+            exitFailure
+          Right (server, sendMsg) -> do
+            sendMsg Started -- Send the message first time the IPC is up!
+            wait server
 

@@ -13,9 +13,7 @@ module Cardano.Shell.NodeIPC.Lib
     , startIPC
     , Port (..)
     , ProtocolDuration (..)
-    , handleIPCProtocol
     , clientIPCListener
-    , testStartNodeIPC
     , ServerHandles (..)
     , ClientHandles (..)
     , closeFullDuplexAnonPipesHandles
@@ -24,8 +22,7 @@ module Cardano.Shell.NodeIPC.Lib
     , serverReadWrite
     -- * Testing
     , getIPCHandle
-    , MsgIn(..)
-    , MsgOut(..)
+    , getReadWriteHandles
     , NodeIPCException(..)
     , MessageSendFailure(..)
     -- * Predicates
@@ -98,32 +95,6 @@ data ProtocolDuration
 -- @MsgIn@ ---> CLIENT --> @MsgOut@
 --
 
--- | Message from the server being sent to the client.
-data MsgIn
-    = QueryPort
-    -- ^ Ask which port to use
-    | Ping
-    -- ^ Ping
-    | Shutdown
-    -- ^ Shutdown message from the server
-    | MessageInFailure MessageSendFailure
-    deriving (Show, Eq, Generic)
-
-instance Arbitrary MsgIn where
-    arbitrary = elements [QueryPort, Ping]
-
--- | Message which is send out from Cardano-node
-data MsgOut
-    = Started
-    -- ^ Notify Daedalus that the node has started
-    | ReplyPort Word16
-    -- ^ Reply of QueryPort
-    | Pong
-    -- ^ Reply of Ping
-    | ShutdownInitiated
-    -- ^ Reply of shutdown
-    | MessageOutFailure MessageSendFailure
-    deriving (Show, Eq, Generic)
 
 -- | Message that can be used to let the other know the that exception had occured
 data MessageSendFailure
@@ -131,34 +102,8 @@ data MessageSendFailure
     | GeneralFailure
     deriving (Show, Eq, Generic)
 
-instance Arbitrary MsgOut where
-    arbitrary = do
-        safeText   <- genSafeText
-        randomPort <- choose (1000,10000)
-        elements
-            [ Started
-            , ReplyPort randomPort
-            , Pong
-            , MessageOutFailure $ ParseError safeText
-            ]
-        where
-          genSafeText :: Gen Text
-          genSafeText = strConv Lenient <$> listOf1 arbitraryASCIIChar
-
 opts :: Options
 opts = defaultOptions { sumEncoding = ObjectWithSingleField }
-
-instance ToJSON   MsgIn  where
-    toEncoding = genericToEncoding opts
-
-instance FromJSON MsgIn  where
-    parseJSON = genericParseJSON opts
-
-instance ToJSON   MsgOut where
-    toEncoding = genericToEncoding opts
-
-instance FromJSON MsgOut where
-    parseJSON = genericParseJSON opts
 
 instance FromJSON MessageSendFailure where
     parseJSON = genericParseJSON opts
@@ -218,41 +163,33 @@ instance Show NodeIPCException where
 instance Exception NodeIPCException
 
 -- | Acquire a Handle that can be used for IPC
-getIPCHandle :: IO Handle
+getIPCHandle :: IO (Either NodeIPCException Handle)
 getIPCHandle = do
     mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
     case mFdstring of
-        Nothing -> throwM $ NodeChannelNotFound "NODE_CHANNEL_FD"
+        Nothing -> pure $ Left $ NodeChannelNotFound "NODE_CHANNEL_FD"
         Just fdstring -> case readEither fdstring of
-            Left err -> throwM $ UnableToParseNodeChannel $ toS err
-            Right fd -> liftIO $ fdToHandle fd
+            Left err -> pure $ Left $ UnableToParseNodeChannel $ toS err
+            Right fd -> liftIO $ Right <$> fdToHandle fd
 
 -- | Start IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
-startIPC :: forall m. (MonadIO m) => ProtocolDuration -> ReadHandle -> WriteHandle -> Port -> m ()
-startIPC protocolDuration readHandle writeHandle port = liftIO $ void $ ipcListener protocolDuration readHandle writeHandle port
+startIPC :: forall a b m. (FromJSON a, ToJSON b, MonadIO m, MonadMask m) => ProtocolDuration -> ReadHandle -> WriteHandle -> (a -> IO b) -> m (Either NodeIPCException (Async (), b -> IO ()))
+startIPC protocolDuration readHandle writeHandle handler = ipcListener protocolDuration readHandle writeHandle handler
 
 -- | Start IPC with NodeJS
 --
 -- This only works if NodeJS spawns the Haskell executable as child process
 -- (See @server.js@ as an example)
-startNodeJsIPC :: forall m. (MonadIO m) => ProtocolDuration -> Port -> m ()
-startNodeJsIPC protocolDuration port = do
-    handle          <- liftIO $ getIPCHandle
+startNodeJsIPC :: forall a b m. (FromJSON a, ToJSON b, MonadIO m, MonadMask m) => ProtocolDuration -> (a -> IO b) -> m (Either NodeIPCException (Async (), b -> IO ()))
+startNodeJsIPC protocolDuration handler = do
+    eHandle          <- liftIO $ getIPCHandle
+    case eHandle of
+      Left err -> pure $ Left $ err
+      Right handle -> do
+        let readHandle  = ReadHandle handle
+        let writeHandle = WriteHandle handle
 
-    let readHandle  = ReadHandle handle
-    let writeHandle = WriteHandle handle
-
-    liftIO $ void $ ipcListener protocolDuration readHandle writeHandle port
-
--- | Function for handling the protocol
-handleIPCProtocol :: forall m. (MonadIO m) => Port -> MsgIn -> m MsgOut
-handleIPCProtocol (Port port) = \case
-    QueryPort          -> pure (ReplyPort port)
-    Ping               -> pure Pong
-    -- Send message, flush buffer, shutdown. Since it's complicated to reason with another
-    -- thread that shuts down the program after some time, we do it immediately.
-    Shutdown           -> return ShutdownInitiated >> liftIO $ exitWith (ExitFailure 22)
-    MessageInFailure f -> pure $ MessageOutFailure f
+        ipcListener protocolDuration readHandle writeHandle handler
 
 -- | Start IPC listener with given Handles and Port
 --
@@ -261,32 +198,33 @@ handleIPCProtocol (Port port) = \case
 -- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
 ipcListener
-    :: forall m. (MonadIO m, MonadCatch m, MonadMask m)
+    :: forall a b m. (MonadIO m, MonadCatch m, MonadMask m, FromJSON a, ToJSON b)
     => ProtocolDuration
     -> ReadHandle
     -> WriteHandle
-    -> Port
-    -> m ()
-ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = do
+    -> (a -> IO b)
+    -> m (Either NodeIPCException (Async (), b -> IO ()))
+ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) handler = do
     liftIO $ checkHandles readHandle writeHandle
-    handleMsgIn `catches` [Handler handler, Handler handleMsgError] `finally` shutdown
+    handleMsgIn `catches` [] `finally` shutdown
   where
-    handleMsgIn :: m ()
+    handleMsgIn :: m (Either NodeIPCException (Async (), b -> IO ()))
     handleMsgIn = do
         liftIO $ hSetNewlineMode rHndl noNewlineTranslation
-        send Started -- Send the message first time the IPC is up!
 
         let frequencyFunction = case protocolDuration of
                                     SingleMessage -> void
                                     MultiMessage  -> forever
 
         -- Fetch message and respond to it
-        frequencyFunction $ do
-            msgIn               <- readMessage readHandle        -- Read message
-            messageByteString   <- handleIPCProtocol port msgIn  -- Respond
-            sendMessage writeHandle messageByteString            -- Write to client/server
+        async <- liftIO $ async $ frequencyFunction $ liftIO $ do
+            msgIn               <- readMessage readHandle  -- Read message
+            messageByteString   <- handler msgIn           -- Respond
+            send messageByteString                         -- Write to client/server
+        pure $ Right $ (async,send)
 
-    send :: MsgOut -> m ()
+    -- TODO, put the messages into a queue, so if 2 threads try to write at a time, they dont get interleaved
+    send :: b -> IO ()
     send = sendMessage writeHandle
 
     shutdown :: m ()
@@ -295,16 +233,14 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
         hClose wHndl
         hFlush stdout
 
-    handleMsgError :: MessageException -> m ()
-    handleMsgError err = do
-        liftIO $ logError "Unexpected message"
-        send $ MessageOutFailure $ ParseError $ show err
+    --handleMsgError :: MessageException -> m ()
+    --handleMsgError err = do
+    --    liftIO $ logError "Unexpected message"
+    --    send $ MessageOutFailure $ ParseError $ show err
 
 
-handler :: (MonadIO m, MonadCatch m) => IOError -> m ()
-handler err =
-    when (isEOFError err) $
-        throwM IPCException
+--errorHandler :: (MonadIO m, MonadCatch m) => IOError -> m (Either NodeIPCException a)
+--errorHandler err = when (isEOFError err) $ pure $ Left IPCException
 
 
 -- | Check if given two handles are usable (i.e. Handle is open, can be used to read/write)
@@ -323,19 +259,19 @@ checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = do
 
 -- | Client side IPC protocol.
 clientIPCListener
-    :: forall m. (MonadIO m, MonadMask m)
+    :: forall a b m. (MonadIO m, MonadMask m, FromJSON a, ToJSON b)
     => ProtocolDuration
     -> ClientHandles
-    -> Port
+    -> (a -> IO b)
     -- ^ This is really making things confusing. A Port is here,
     -- but it's determined on the client side, not before.
-    -> m ()
-clientIPCListener duration clientHandles port =
+    -> m (Either NodeIPCException (Async (), b -> IO ()))
+clientIPCListener duration clientHandles handler =
     ipcListener
         duration
         (getClientReadHandle clientHandles)
         (getClientWriteHandle clientHandles)
-        port
+        handler
 
 -- | The set of handles for the server, the halves of one pipe.
 data ServerHandles = ServerHandles
@@ -351,7 +287,7 @@ data ClientHandles = ClientHandles
 
 -- | This is a __blocking call__ that sends the message to the client
 -- and returns it's response, __after the client response arrives__.
-serverReadWrite :: ServerHandles -> MsgIn -> IO MsgOut
+serverReadWrite :: (ToJSON a, FromJSON b) => ServerHandles -> a -> IO b
 serverReadWrite serverHandles msgIn = do
 
     let readHandle      = getServerReadHandle serverHandles
@@ -420,44 +356,13 @@ getReadWriteHandles = do
 
     return (readHandle, writeHandle)
 
-
--- | Test 'startIPC'
-testStartNodeIPC :: (ToJSON msg) => Port -> msg -> IO (MsgOut, MsgOut)
-testStartNodeIPC port msg = do
-    (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
-    (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-
-    -- Start the server
-    (_, responses) <-
-        startIPC
-            SingleMessage
-            serverReadHandle
-            clientWriteHandle
-            port
-        `concurrently`
-        do
-            -- Use these functions so you don't pass the wrong handle by mistake
-            let readClientMessage :: IO MsgOut
-                readClientMessage = readMessage clientReadHandle
-
-            let sendServer :: (ToJSON msg) => msg -> IO ()
-                sendServer = sendMessage serverWriteHandle
-
-            -- Communication starts here
-            started     <- readClientMessage
-            sendServer msg
-            response    <- readClientMessage
-            return (started, response)
-
-    return responses
-
 --------------------------------------------------------------------------------
 -- Placeholder
 --------------------------------------------------------------------------------
 
 -- | Use this until we find suitable logging library
-logError :: Text -> IO ()
-logError _ = return ()
+--logError :: Text -> IO ()
+--logError _ = return ()
 
 --------------------------------------------------------------------------------
 -- Predicates

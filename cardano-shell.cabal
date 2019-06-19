@@ -28,6 +28,7 @@ library
     , Cardano.Shell.Configuration.Lib
     -- NodeIPC
     , Cardano.Shell.NodeIPC
+    , Cardano.Shell.NodeIPC.SimplePortServer
     -- Update system
     , CardanoShellSpec
     , Cardano.Shell.Update.Types

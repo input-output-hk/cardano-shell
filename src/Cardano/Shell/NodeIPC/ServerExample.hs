@@ -26,9 +26,10 @@ module Cardano.Shell.NodeIPC.ServerExample
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..),
+import           Cardano.Shell.NodeIPC.Lib (
                                             NodeIPCException (..), Port (..),
                                             ProtocolDuration (..), startIPC)
+import           Cardano.Shell.NodeIPC.SimplePortServer ()
 import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
@@ -39,6 +40,7 @@ import           System.Environment (lookupEnv, setEnv, unsetEnv)
 import           System.IO (BufferMode (..), hClose, hSetBuffering)
 import           System.Process (CreateProcess (..), StdStream (..), createPipe,
                                  createPipeFd, proc, withCreateProcess)
+import Cardano.Shell.NodeIPC.SimplePortServer
 
 -- | Create a pipe for interprocess communication and return a
 -- ('ReadHandle', 'WriteHandle') Handle pair.
@@ -68,7 +70,7 @@ exampleWithFD msgin = do
         (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
         -- Send message to client
         sendMessage clientWriteHandle msgin
-        startIPC SingleMessage clientReadHandle serverWriteHandle nodePort
+        startIPC SingleMessage clientReadHandle serverWriteHandle (handleIPCProtocol nodePort)
         `concurrently`
         receieveMessages serverReadHandle
 

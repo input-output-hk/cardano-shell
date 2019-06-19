@@ -43,21 +43,20 @@ module Cardano.Shell.NodeIPC
     ) where
 
 import           Cardano.Shell.NodeIPC.Lib (ClientHandles (..),
-                                            MessageSendFailure (..), MsgIn (..),
-                                            MsgOut (..), NodeIPCException (..),
+                                            MessageSendFailure (..),
+                                            NodeIPCException (..),
                                             Port (..), ProtocolDuration (..),
                                             ServerHandles (..),
                                             bracketFullDuplexAnonPipesHandles,
                                             clientIPCListener,
                                             closeFullDuplexAnonPipesHandles,
                                             createFullDuplexAnonPipesHandles,
-                                            handleIPCProtocol, isHandleClosed,
+                                            isHandleClosed,
                                             isIPCException,
                                             isNodeChannelCannotBeFound,
                                             isUnreadableHandle,
                                             isUnwritableHandle, serverReadWrite,
-                                            startIPC, startNodeJsIPC,
-                                            testStartNodeIPC)
+                                            startIPC, startNodeJsIPC)
 import           Cardano.Shell.NodeIPC.Message (MessageException (..),
                                                 ReadHandle (..),
                                                 WriteHandle (..), readMessage,
@@ -66,3 +65,4 @@ import           Cardano.Shell.NodeIPC.ServerExample (exampleServerWithProcess,
                                                       exampleWithFD,
                                                       getHandleFromEnv,
                                                       getReadWriteHandles)
+import Cardano.Shell.NodeIPC.SimplePortServer
