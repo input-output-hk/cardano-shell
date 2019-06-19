@@ -45,7 +45,7 @@ import           Data.Aeson (FromJSON (parseJSON), ToJSON (toEncoding),
                              genericToEncoding)
 import           Data.Aeson.Types (Options, SumEncoding (ObjectWithSingleField),
                                    sumEncoding)
-import           GHC.IO.Handle (hIsOpen, hIsReadable, hIsWritable)
+import           GHC.IO.Handle (hIsOpen, hIsReadable, hIsWritable, hIsEOF)
 import           GHC.IO.Handle.FD (fdToHandle)
 
 import           System.Environment (lookupEnv)
@@ -92,12 +92,20 @@ data ProtocolDuration
     -- ^ Runs forever responding to messages
     deriving (Eq, Show)
 
--- | Message expecting from Daedalus
+
+-- We look at the messages from the perspective of the client.
+--
+-- @MsgIn@ ---> CLIENT --> @MsgOut@
+--
+
+-- | Message from the server being sent to the client.
 data MsgIn
     = QueryPort
     -- ^ Ask which port to use
     | Ping
     -- ^ Ping
+    | Shutdown
+    -- ^ Shutdown message from the server
     | MessageInFailure MessageSendFailure
     deriving (Show, Eq, Generic)
 
@@ -112,6 +120,8 @@ data MsgOut
     -- ^ Reply of QueryPort
     | Pong
     -- ^ Reply of Ping
+    | ShutdownInitiated
+    -- ^ Reply of shutdown
     | MessageOutFailure MessageSendFailure
     deriving (Show, Eq, Generic)
 
@@ -181,6 +191,8 @@ data NodeIPCException
     -- ^ Exception thrown when there's something wrong with IPC
     | HandleClosed Handle
     -- ^ Given handle is closed therefore cannot be used
+    | HandleEOF Handle
+    -- ^ Given handle End Of File
     | UnreadableHandle Handle
     -- ^ Given handle cannot be used to read
     | UnwritableHandle Handle
@@ -196,6 +208,8 @@ instance Show NodeIPCException where
             "IOError has occured"
         HandleClosed h ->
             "Given handle is closed: " <> show h
+        HandleEOF h ->
+            "Given handle is at EOF: " <> show h
         UnreadableHandle h ->
             "Unable to read with given handle: " <> show h
         UnwritableHandle h ->
@@ -235,6 +249,9 @@ handleIPCProtocol :: forall m. (MonadIO m) => Port -> MsgIn -> m MsgOut
 handleIPCProtocol (Port port) = \case
     QueryPort          -> pure (ReplyPort port)
     Ping               -> pure Pong
+    -- Send message, flush buffer, shutdown. Since it's complicated to reason with another
+    -- thread that shuts down the program after some time, we do it immediately.
+    Shutdown           -> return ShutdownInitiated >> liftIO $ exitWith (ExitFailure 22)
     MessageInFailure f -> pure $ MessageOutFailure f
 
 -- | Start IPC listener with given Handles and Port
@@ -251,7 +268,7 @@ ipcListener
     -> Port
     -> m ()
 ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = do
-    checkHandles readHandle writeHandle
+    liftIO $ checkHandles readHandle writeHandle
     handleMsgIn `catches` [Handler handler, Handler handleMsgError] `finally` shutdown
   where
     handleMsgIn :: m ()
@@ -272,11 +289,6 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
     send :: MsgOut -> m ()
     send = sendMessage writeHandle
 
-    handler :: IOError -> m ()
-    handler err = do
-        liftIO $ when (isEOFError err) $ logError "its an eof"
-        throwM IPCException
-
     shutdown :: m ()
     shutdown = liftIO $ do
         hClose rHndl
@@ -288,19 +300,26 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
         liftIO $ logError "Unexpected message"
         send $ MessageOutFailure $ ParseError $ show err
 
-    -- | Check if given two handles are usable (i.e. Handle is open, can be used to read/write)
-    checkHandles :: ReadHandle -> WriteHandle -> m ()
-    checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = liftIO $ do
-        checkHandle rHandle hIsOpen (HandleClosed rHandle)
-        checkHandle wHandle hIsOpen (HandleClosed wHandle)
-        checkHandle rHandle hIsReadable (UnreadableHandle rHandle)
-        checkHandle wHandle hIsWritable (UnwritableHandle wHandle)
-      where
-        -- | Utility function for checking a handle.
-        checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCException -> IO ()
-        checkHandle handle pre exception = do
-            result <- pre handle
-            when (not result) $ throwM exception
+
+handler :: (MonadIO m, MonadCatch m) => IOError -> m ()
+handler err =
+    when (isEOFError err) $
+        throwM IPCException
+
+
+-- | Check if given two handles are usable (i.e. Handle is open, can be used to read/write)
+checkHandles :: ReadHandle -> WriteHandle -> IO ()
+checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = do
+    checkHandle rHandle hIsOpen (HandleClosed rHandle)
+    checkHandle wHandle hIsOpen (HandleClosed wHandle)
+    checkHandle rHandle hIsReadable (UnreadableHandle rHandle)
+    checkHandle wHandle hIsWritable (UnwritableHandle wHandle)
+  where
+    -- | Utility function for checking a handle.
+    checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCException -> IO ()
+    checkHandle handle pre exception = do
+        result <- pre handle
+        when (not result) $ throwM exception
 
 -- | Client side IPC protocol.
 clientIPCListener
@@ -334,8 +353,23 @@ data ClientHandles = ClientHandles
 -- and returns it's response, __after the client response arrives__.
 serverReadWrite :: ServerHandles -> MsgIn -> IO MsgOut
 serverReadWrite serverHandles msgIn = do
-    sendMessage (getServerWriteHandle serverHandles) msgIn
-    readMessage (getServerReadHandle serverHandles)
+
+    let readHandle      = getServerReadHandle serverHandles
+    let writeHandle     = getServerWriteHandle serverHandles
+
+    -- First check if the handles are valid!
+    checkHandles readHandle writeHandle
+
+    -- Then send message and __block__ read.
+    sendMessage writeHandle msgIn
+
+    -- Check if the handle is at End Of Line, we need to do this
+    -- here since we @hIsEOF@ __blocks__ as well.
+    whenM (hIsEOF . getReadHandle $ readHandle) $
+        throwM . HandleEOF . getReadHandle $ readHandle
+
+    -- Read message
+    readMessage readHandle
 
 -- | A bracket function that can be useful.
 bracketFullDuplexAnonPipesHandles

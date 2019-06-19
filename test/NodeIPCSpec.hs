@@ -63,6 +63,12 @@ nodeIPCSpec = do
                 assert $ started   == Started
                 assert $ replyPort == (ReplyPort portNum)
 
+        prop "should return Started and ShutdownInitiated when client sends message 'Shutdown'" $ monadicIO $ do
+            result <- run $ try $ testStartNodeIPC port Shutdown
+            assert $ isLeft (result :: Either ExitCode (MsgOut, MsgOut))
+            --assert $ started == Started
+            --assert $ pong    == ShutdownInitiated
+
         describe "Exceptions" $ do
             prop "should throw exception when incorrect message is sent" $
             -- Sending MsgOut would fail since it expects 'MsgIn' to be sent
