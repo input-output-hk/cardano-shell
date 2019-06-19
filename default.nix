@@ -46,10 +46,10 @@ in
 , pkgs ? commonLib.getPkgs { inherit config crossSystem system; }
 , withHoogle ? true
 }:
-let 
+let
   # We will instantiate the default-nix template with the
   # nix/pkgs.nix file...
-  defaultNix = commonLib.nix-tools.default-nix ./nix/pkgs.nix { 
+  defaultNix = commonLib.nix-tools.default-nix ./nix/pkgs.nix {
     inherit system crossSystem config pkgs;
   };
 in defaultNix // {
