@@ -24,7 +24,7 @@ import           Cardano.Shell.NodeIPC (MessageException,
                                         Port (..), ProtocolDuration (..),
                                         ReadHandle (..), WriteHandle (..),
                                         getReadWriteHandles, isHandleClosed,
-                                        isIPCException,
+                                        isIPCException, handleIPCProtocol,
                                         isNodeChannelCannotBeFound,
                                         isUnreadableHandle, isUnwritableHandle,
                                         readMessage, sendMessage, startIPC,
@@ -80,27 +80,27 @@ nodeIPCSpec = do
                     assert $ parseError == (MessageOutFailure $ ParseError errorMessage)
 
             it "should throw NodeIPCException when closed handle is given" $ monadicIO $ do
-                eResult <- run $ try $ do
+                eResult <- run $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
                     closedReadHandle <- (\(ReadHandle hndl) -> hClose hndl >> return (ReadHandle hndl)) readHandle
-                    startIPC SingleMessage closedReadHandle writeHandle port
-                assert $ isLeft (eResult :: Either NodeIPCException ())
+                    startIPC SingleMessage closedReadHandle writeHandle (handleIPCProtocol port)
+                assert $ isLeft (eResult :: Either NodeIPCException (Async (), MsgOut -> IO ()))
                 whenLeft eResult $ \exception -> assert $ isHandleClosed exception
 
             it "should throw NodeIPCException when unreadable handle is given" $ monadicIO $ do
-                eResult <- run $ try $ do
+                eResult <- run $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
                     let (unReadableHandle, _) = swapHandles readHandle writeHandle
-                    startIPC SingleMessage unReadableHandle writeHandle port
-                assert $ isLeft (eResult :: Either NodeIPCException ())
+                    startIPC SingleMessage unReadableHandle writeHandle (handleIPCProtocol port)
+                assert $ isLeft (eResult :: Either NodeIPCException (Async (), MsgOut -> IO ()))
                 whenLeft eResult $ \exception -> assert $ isUnreadableHandle exception
 
             it "should throw NodeIPCException when unwritable handle is given" $ monadicIO $ do
-                eResult <- run $ try $ do
+                eResult <- run $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
                     let (_, unWritableHandle) = swapHandles readHandle writeHandle
-                    startIPC SingleMessage readHandle unWritableHandle port
-                assert $ isLeft (eResult :: Either NodeIPCException ())
+                    startIPC SingleMessage readHandle unWritableHandle (handleIPCProtocol port)
+                assert $ isLeft (eResult :: Either NodeIPCException (Async (), MsgOut -> IO ()))
                 whenLeft eResult $ \exception -> assert $ isUnwritableHandle exception
 
         describe "Resource cleanup" $ do
@@ -126,7 +126,9 @@ nodeIPCSpec = do
                     handlesClosed <- run $ do
                         (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
                         (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-                        as <- async $ startIPC SingleMessage serverReadHandle clientWriteHandle port
+                        as <- async $ do
+                          _todo <- startIPC SingleMessage serverReadHandle clientWriteHandle (handleIPCProtocol port)
+                          pure ()
                         let readClientMessage = readMessage clientReadHandle
                             sendServer        = sendMessage serverWriteHandle
                         _ <- readClientMessage
@@ -138,8 +140,8 @@ nodeIPCSpec = do
 
     describe "startNodeJsIPC" $
         it "should throw NodeIPCException when it is not spawned by NodeJS process" $ monadicIO $ do
-            eResult <- run $ try $ startNodeJsIPC SingleMessage port
-            assert $ isLeft (eResult :: Either NodeIPCException ())
+            eResult <- run $ startNodeJsIPC SingleMessage (handleIPCProtocol port)
+            assert $ isLeft (eResult :: Either NodeIPCException (Async (), MsgOut -> IO ()))
             whenLeft eResult $ \exception -> assert $ isNodeChannelCannotBeFound exception
   where
     port :: Port
@@ -160,7 +162,9 @@ nodeIPCSpec = do
         (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
         (serverReadHandle, _)                 <- getReadWriteHandles
 
-        as <- async $ startIPC SingleMessage serverReadHandle clientWriteHandle port
+        as <- async $ do
+          _todo <- startIPC SingleMessage serverReadHandle clientWriteHandle (handleIPCProtocol port)
+          pure ()
         (_ :: MsgOut) <- readMessage clientReadHandle
         return (as, serverReadHandle, clientWriteHandle)
 

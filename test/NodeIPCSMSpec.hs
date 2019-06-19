@@ -35,6 +35,7 @@ import           Cardano.Shell.NodeIPC (MessageSendFailure (..), MsgIn (..),
                                         Port (..), ProtocolDuration (..),
                                         ServerHandles (..), clientIPCListener,
                                         closeFullDuplexAnonPipesHandles,
+                                        handleIPCProtocol,
                                         createFullDuplexAnonPipesHandles,
                                         readMessage, serverReadWrite)
 
@@ -78,7 +79,7 @@ withServerHandles runServer = do
 
     -- Create the IPC server, it's using async, but it can be a separate process.
     clientIPCAsync                  <-
-        liftIO $ async $ clientIPCListener MultiMessage clientHandles (Port port)
+        liftIO $ async $ clientIPCListener MultiMessage clientHandles (handleIPCProtocol $ Port port)
 
     -- Communication starts here
     started <- run $ readMessage (getServerReadHandle serverHandles)
