@@ -33,11 +33,12 @@ main = do
     (cmd:_) <- getArgs
     case cmd of
         "js"      -> Right <$> void (startNodeJsIPC SingleMessage port)
-        "haskell" -> either
-            (return . Left)
-            action
-            =<<
-            (getHandleFromEnv "NODE_CHANNEL_FD")
+        "haskell" -> do
+            eHandle <- getHandleFromEnv "NODE_CHANNEL_FD"
+            either
+                (\e -> return . Left $ e)
+                action
+                eHandle
         _         -> return . Right $ ()
   where
     action :: Handle -> IO (Either NodeIPCError ())
@@ -46,6 +47,6 @@ main = do
         let serverWriteHandle = WriteHandle serverWHandle
         let serverReadHandle  = ReadHandle stdin
         startIPC SingleMessage serverReadHandle serverWriteHandle port
-        `finally`
-        hClose serverWHandle
+            `finally`
+            hClose serverWHandle
 
