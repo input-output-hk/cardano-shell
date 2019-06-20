@@ -59,6 +59,7 @@ library
     , directory
     , formatting
     , iohk-monitoring
+    , optparse-applicative
     , process
     , QuickCheck
     , safe-exceptions
