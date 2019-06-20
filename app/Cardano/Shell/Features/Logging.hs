@@ -14,6 +14,9 @@ module Cardano.Shell.Features.Logging
     , mkLOMeta
     , LOMeta (..)
     , LOContent (..)
+    -- CLI argument parser
+    , CLIarguments (..)
+    , parse
     ) where
 
 import           Control.Exception.Safe (MonadCatch)
@@ -82,32 +85,25 @@ data LoggingLayer = LoggingLayer
 type LoggingCardanoFeature = CardanoFeatureInit NoDependency LoggingParameters LoggingLayer
 
 -- parser
-data LogOptions = LogOptions
+data CLIarguments = CLIarguments
     { logconfigfile :: FilePath
     }
 
-parser :: Parser LogOptions
-parser = LogOptions
+parse :: Parser CLIarguments
+parse = CLIarguments
       <$> strOption
           ( long "log-config"
          <> metavar "LOGCONFIG"
          <> value ""
          <> help "configuration file for logging" )
 
-parser_opts :: ParserInfo LogOptions
-parser_opts = info (parser <**> helper)
-    ( fullDesc
-    <> progDesc "Logging Feature"
-    <> header "cardano-shell: logging feature" )
-
-createLoggingFeature :: CardanoEnvironment -> CardanoConfiguration -> IO (LoggingLayer, CardanoFeature)
-createLoggingFeature cardanoEnvironment cardanoConfiguration = do
+createLoggingFeature :: CardanoEnvironment -> CardanoConfiguration ->  CLIarguments -> IO (LoggingLayer, CardanoFeature)
+createLoggingFeature cardanoEnvironment cardanoConfiguration cliargs = do
     -- we parse any additional configuration if there is any
     -- We don't know where the user wants to fetch the additional configuration from, it could be from
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
     -- loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ ccLogConfig cardanoConfiguration)
-    configopts <- execParser parser_opts
-    loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ logconfigfile configopts)
+    loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ logconfigfile cliargs)
 
     -- we construct the layer
     logCardanoFeat <- loggingCardanoFeatureInit loggingConfiguration
