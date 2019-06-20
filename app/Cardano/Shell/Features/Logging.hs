@@ -14,11 +14,15 @@ module Cardano.Shell.Features.Logging
     , mkLOMeta
     , LOMeta (..)
     , LOContent (..)
+    -- CLI argument parser
+    , CLIarguments (..)
+    , parse
     ) where
 
 import           Control.Exception.Safe (MonadCatch)
 import qualified Control.Monad.STM as STM
 import           Cardano.Prelude hiding (trace)
+import           Options.Applicative
 
 import           Cardano.BM.Configuration (Configuration)
 import qualified Cardano.BM.Configuration as Config
@@ -35,8 +39,7 @@ import           Cardano.Shell.Types (CardanoEnvironment, CardanoFeature (..),
                                       CardanoFeatureInit (..),
                                       NoDependency (..))
 
-import           Cardano.Shell.Constants.Types (CardanoConfiguration,
-                                                ccLogConfig)
+import           Cardano.Shell.Constants.Types (CardanoConfiguration)
 
 --------------------------------------------------------------------------------
 -- Loggging feature
@@ -81,12 +84,26 @@ data LoggingLayer = LoggingLayer
 
 type LoggingCardanoFeature = CardanoFeatureInit NoDependency LoggingParameters LoggingLayer
 
-createLoggingFeature :: CardanoEnvironment -> CardanoConfiguration -> IO (LoggingLayer, CardanoFeature)
-createLoggingFeature cardanoEnvironment cardanoConfiguration = do
+-- parser
+data CLIarguments = CLIarguments
+    { logconfigfile :: FilePath
+    }
+
+parse :: Parser CLIarguments
+parse = CLIarguments
+      <$> strOption
+          ( long "log-config"
+         <> metavar "LOGCONFIG"
+         <> value ""
+         <> help "configuration file for logging" )
+
+createLoggingFeature :: CardanoEnvironment -> CardanoConfiguration ->  CLIarguments -> IO (LoggingLayer, CardanoFeature)
+createLoggingFeature cardanoEnvironment cardanoConfiguration cliargs = do
     -- we parse any additional configuration if there is any
     -- We don't know where the user wants to fetch the additional configuration from, it could be from
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
-    loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ ccLogConfig cardanoConfiguration)
+    -- loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ ccLogConfig cardanoConfiguration)
+    loggingConfiguration    <-  LoggingParameters <$> (Config.setup $ logconfigfile cliargs)
 
     -- we construct the layer
     logCardanoFeat <- loggingCardanoFeatureInit loggingConfiguration

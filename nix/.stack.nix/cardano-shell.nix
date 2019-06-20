@@ -30,6 +30,7 @@
           (hsPkgs.directory)
           (hsPkgs.formatting)
           (hsPkgs.iohk-monitoring)
+          (hsPkgs.optparse-applicative)
           (hsPkgs.process)
           (hsPkgs.QuickCheck)
           (hsPkgs.safe-exceptions)
@@ -44,6 +45,7 @@
             (hsPkgs.base)
             (hsPkgs.cardano-shell)
             (hsPkgs.cardano-prelude)
+            (hsPkgs.optparse-applicative)
             (hsPkgs.safe-exceptions)
             (hsPkgs.stm)
             (hsPkgs.iohk-monitoring)
@@ -54,6 +56,7 @@
             (hsPkgs.base)
             (hsPkgs.cardano-shell)
             (hsPkgs.cardano-prelude)
+            (hsPkgs.optparse-applicative)
             ];
           };
         "cardano-launcher" = {
@@ -69,7 +72,7 @@
             (hsPkgs.filepath)
             (hsPkgs.formatting)
             (hsPkgs.safe-exceptions)
-            (hsPkgs.turtle)
+            (hsPkgs.optparse-applicative)
             ];
           };
         };

@@ -59,6 +59,7 @@ library
     , directory
     , formatting
     , iohk-monitoring
+    , optparse-applicative
     , process
     , QuickCheck
     , safe-exceptions
@@ -91,6 +92,7 @@ executable cardano-shell-exe
     , cardano-shell
     , cardano-prelude
     -- util
+    , optparse-applicative
     , safe-exceptions
     , stm
     -- features
@@ -118,6 +120,7 @@ executable node-ipc
       base >=4.7 && <5
     , cardano-shell
     , cardano-prelude
+    , optparse-applicative
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
@@ -154,7 +157,7 @@ executable cardano-launcher
     , formatting
     -- exception handling
     , safe-exceptions
-    , turtle
+    , optparse-applicative
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
