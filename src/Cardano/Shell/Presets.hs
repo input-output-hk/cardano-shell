@@ -6,19 +6,16 @@ module Cardano.Shell.Presets
 import           Cardano.Prelude
 
 import           Cardano.Shell.Constants.Types (Block (..),
-                                                BlockVersionData (..),
                                                 CardanoConfiguration (..),
                                                 Certificate (..), Core (..),
-                                                DLG (..), FakeAvvmBalance (..),
-                                                Genesis (..), Initializer (..),
+                                                DLG (..),
+                                                Genesis (..),
                                                 LastKnownBlockVersion (..),
                                                 NTP (..), Node (..),
-                                                ProtocolConstants (..),
-                                                SSC (..), SoftForkRule (..),
-                                                Spec (..), TLS (..), TXP (..),
-                                                TestBalance (..), Throttle (..),
-                                                TxFeePolicy (..),
-                                                TxSizeLinear (..), Update (..),
+                                                SSC (..),
+                                                TLS (..), TXP (..),
+                                                Throttle (..),
+                                                Update (..),
                                                 Wallet (..))
 
 --------------------------------------------------------------------------------

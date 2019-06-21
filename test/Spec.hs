@@ -5,7 +5,6 @@ module Main where
 
 import           Cardano.Prelude
 
-import           Control.Concurrent.Classy (MonadConc)
 import           Control.Exception.Safe (throwM)
 import           Test.DejaFu (abortsNever, deadlocksNever, exceptionsNever)
 import           Test.Hspec (Spec, describe, hspec)
@@ -48,14 +47,14 @@ validConcurrencySpec = do
   where
 
     -- | What happens when the application terminates nicely?
-    runApplicationSunnyDay :: forall m. (MonadIO m, MonadConc m) => m ()
+    runApplicationSunnyDay :: forall m. MonadIO m => m ()
     runApplicationSunnyDay = runApplication cardanoFeaturesInit application
       where
         application :: IO ()
         application = pure ()
 
     -- | What happens when the application terminates exceptionally?
-    runApplicationExceptional :: forall m. (MonadIO m, MonadConc m) => m ()
+    runApplicationExceptional :: forall m. MonadIO m => m ()
     runApplicationExceptional = runApplication cardanoFeaturesInit application
       where
 
