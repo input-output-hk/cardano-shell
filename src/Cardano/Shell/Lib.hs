@@ -18,7 +18,6 @@ import           Prelude (Show (..))
 
 import           Control.Exception.Safe (throwM)
 
-import           Control.Concurrent.Classy hiding (catch)
 import qualified Control.Concurrent.Classy.Async as CA
 import           Control.Concurrent.Classy.Async (async, cancel)
 
@@ -32,7 +31,6 @@ import           System.Directory (doesFileExist)
 import           Cardano.Shell.Types (ApplicationEnvironment (..),
                                       CardanoApplication (..),
                                       CardanoEnvironment, CardanoFeature (..),
-                                      applicationProductionMode,
                                       initializeCardanoEnvironment)
 
 import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
@@ -115,7 +113,7 @@ checkIfApplicationIsRunning cardanoConfiguration = do
 -- so when that dependency gets shut down all the other features that depend on it get
 -- shut down as well.
 runCardanoApplicationWithFeatures
-    :: forall m. (MonadIO m, MonadConc m)
+    :: forall m. MonadIO m
     => ApplicationEnvironment
     -> [CardanoFeature]
     -> CardanoApplication
@@ -151,7 +149,7 @@ type AllFeaturesInitFunction = CardanoConfiguration -> CardanoEnvironment -> IO 
 
 
 -- | The wrapper for the application providing modules.
-runApplication :: forall m. (MonadIO m, MonadConc m) => AllFeaturesInitFunction -> IO () -> m ()
+runApplication :: forall m. MonadIO m => AllFeaturesInitFunction -> IO () -> m ()
 runApplication initializeAllFeatures application = do
 
     -- General

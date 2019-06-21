@@ -105,9 +105,14 @@ exampleServerWithProcess msg = bracket acquire restore (action msg)
     action msgin (readHandle, _) = do
         withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"])
             { std_in = CreatePipe } $
-                \(Just stdIn) _ _ _ -> do
-                    sendMessage (WriteHandle stdIn) msgin
-                    receieveMessages readHandle
+                \mStdIn _ _ _ ->
+                    case mStdIn of
+                      Nothing ->
+                        panic "Cardano.Shell.NodeIPC.ServerExample.exampleServerWithProcess: Nothing"
+                      Just stdIn -> do
+                        sendMessage (WriteHandle stdIn) msgin
+                        receieveMessages readHandle
+
 
 -- | Read message wigh given 'ReadHandle'
 receieveMessages :: ReadHandle -> IO (MsgOut, MsgOut)
