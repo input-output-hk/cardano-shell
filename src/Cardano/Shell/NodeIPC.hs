@@ -16,7 +16,6 @@ module Cardano.Shell.NodeIPC
     , startIPC
     , handleIPCProtocol
     , clientIPCListener
-    , testStartNodeIPC
     , ServerHandles (..)
     , ClientHandles (..)
     , closeFullDuplexAnonPipesHandles
@@ -24,7 +23,7 @@ module Cardano.Shell.NodeIPC
     , bracketFullDuplexAnonPipesHandles
     , serverReadWrite
      -- ** Exceptions
-    , NodeIPCException(..)
+    , NodeIPCError(..)
     , MessageSendFailure(..)
     , MessageException(..)
      -- * Used for testing
@@ -35,7 +34,7 @@ module Cardano.Shell.NodeIPC
     , getReadWriteHandles
     , getHandleFromEnv
     -- * Predicates
-    , isIPCException
+    , isIPCError
     , isHandleClosed
     , isUnreadableHandle
     , isUnwritableHandle
@@ -44,25 +43,23 @@ module Cardano.Shell.NodeIPC
 
 import           Cardano.Shell.NodeIPC.Lib (ClientHandles (..),
                                             MessageSendFailure (..), MsgIn (..),
-                                            MsgOut (..), NodeIPCException (..),
+                                            MsgOut (..), NodeIPCError (..),
                                             Port (..), ProtocolDuration (..),
                                             ServerHandles (..),
                                             bracketFullDuplexAnonPipesHandles,
                                             clientIPCListener,
                                             closeFullDuplexAnonPipesHandles,
                                             createFullDuplexAnonPipesHandles,
-                                            handleIPCProtocol, isHandleClosed,
-                                            isIPCException,
+                                            getHandleFromEnv, handleIPCProtocol,
+                                            isHandleClosed, isIPCError,
                                             isNodeChannelCannotBeFound,
                                             isUnreadableHandle,
                                             isUnwritableHandle, serverReadWrite,
-                                            startIPC, startNodeJsIPC,
-                                            testStartNodeIPC)
+                                            startIPC, startNodeJsIPC)
 import           Cardano.Shell.NodeIPC.Message (MessageException (..),
                                                 ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
 import           Cardano.Shell.NodeIPC.ServerExample (exampleServerWithProcess,
                                                       exampleWithFD,
-                                                      getHandleFromEnv,
                                                       getReadWriteHandles)

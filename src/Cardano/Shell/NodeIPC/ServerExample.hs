@@ -21,21 +21,18 @@ module Cardano.Shell.NodeIPC.ServerExample
     , exampleServerWithProcess
     -- * For testing
     , getReadWriteHandles
-    , getHandleFromEnv
     ) where
 
 import           Cardano.Prelude
 
 import           Cardano.Shell.NodeIPC.Lib (MsgIn (..), MsgOut (..),
-                                            NodeIPCException (..), Port (..),
+                                            NodeIPCError (..), Port (..),
                                             ProtocolDuration (..), startIPC)
 import           Cardano.Shell.NodeIPC.Message (ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
-import           Control.Exception.Safe (throwM)
 import           GHC.IO.Handle.FD (fdToHandle)
-import           Prelude (String)
-import           System.Environment (lookupEnv, setEnv, unsetEnv)
+import           System.Environment (setEnv, unsetEnv)
 import           System.IO (BufferMode (..), hClose, hSetBuffering)
 import           System.Process (CreateProcess (..), StdStream (..), createPipe,
                                  createPipeFd, proc, withCreateProcess)
@@ -79,7 +76,7 @@ exampleWithFD msgin = do
 -- This will be the server, the one which sends the message (such as @Ping@, @QueryPort@)
 -- to get the response from the client.
 -- The client is executed via @stack exec node-ipc haskell@
-exampleServerWithProcess :: MsgIn -> IO (MsgOut, MsgOut)
+exampleServerWithProcess :: MsgIn -> IO (Either NodeIPCError (MsgOut, MsgOut))
 exampleServerWithProcess msg = bracket acquire restore (action msg)
   where
     acquire :: IO (ReadHandle, Handle)
@@ -101,13 +98,20 @@ exampleServerWithProcess msg = bracket acquire restore (action msg)
         hClose wHandle
         unsetEnv "NODE_CHANNEL_FD"
 
-    action :: MsgIn -> (ReadHandle, Handle) -> IO (MsgOut, MsgOut)
+    action :: MsgIn
+           -> (ReadHandle, Handle)
+           -> IO (Either NodeIPCError (MsgOut, MsgOut))
     action msgin (readHandle, _) = do
-        withCreateProcess (proc "stack" ["exec", "node-ipc", "haskell"])
-            { std_in = CreatePipe } $
-                \(Just stdIn) _ _ _ -> do
+        -- For some reason, @--no-nix@ argument is required for this function to run
+        -- currently asking DevOps regarding this.
+        withCreateProcess (proc "stack" ["exec", "--no-nix", "node-ipc", "haskell"])
+            { std_in = CreatePipe } $ \mStdIn _ _ _ -> maybe
+                (return . Left $ NoStdIn)
+                (\stdIn -> do
                     sendMessage (WriteHandle stdIn) msgin
-                    receieveMessages readHandle
+                    Right <$> receieveMessages readHandle
+                )
+                mStdIn
 
 -- | Read message wigh given 'ReadHandle'
 receieveMessages :: ReadHandle -> IO (MsgOut, MsgOut)
@@ -118,11 +122,3 @@ receieveMessages serverReadHandle = do
     reply   <- readServerMessage -- Reply
     return (started, reply)
 
-getHandleFromEnv :: String -> IO Handle
-getHandleFromEnv envName = do
-    mFdstring <- lookupEnv envName
-    case mFdstring of
-        Nothing -> throwM $ NodeChannelNotFound (strConv Lenient envName)
-        Just fdstring -> case readEither fdstring of
-            Left err -> throwM $ UnableToParseNodeChannel (strConv Lenient err)
-            Right fd -> liftIO $ fdToHandle fd
