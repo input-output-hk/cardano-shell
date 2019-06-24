@@ -110,7 +110,7 @@ exampleServerWithProcess msg = bracket acquire restore (action msg)
                         panic "Cardano.Shell.NodeIPC.ServerExample.exampleServerWithProcess: Nothing"
                       Just stdIn -> do
                         sendMessage (WriteHandle stdIn) msgin
-                        receieveMessages readHandle
+                        Right <$> receieveMessages readHandle
 
 
 -- | Read message wigh given 'ReadHandle'
