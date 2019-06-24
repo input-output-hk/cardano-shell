@@ -17,7 +17,6 @@ module Cardano.Shell.NodeIPC.Lib
     , ProtocolDuration (..)
     , handleIPCProtocol
     , clientIPCListener
-    , testStartNodeIPC
     , ServerHandles (..)
     , ClientHandles (..)
     , closeFullDuplexAnonPipesHandles
@@ -402,8 +401,8 @@ serverReadWrite serverHandles msgIn = runExceptT $ do
 
 -- | A bracket function that can be useful.
 bracketFullDuplexAnonPipesHandles
-    :: ((ServerHandles, ClientHandles) -> IO ())
-    -> IO ()
+    :: ((ServerHandles, ClientHandles) -> IO a)
+    -> IO a
 bracketFullDuplexAnonPipesHandles computationToRun =
     bracket
         createFullDuplexAnonPipesHandles
@@ -448,37 +447,6 @@ getReadWriteHandles = do
     let writeHandle = WriteHandle writeHndl
 
     return (readHandle, writeHandle)
-
-
--- | Test 'startIPC'
-testStartNodeIPC :: (ToJSON msg) => Port -> msg -> IO (MsgOut, MsgOut)
-testStartNodeIPC port msg = do
-    (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
-    (serverReadHandle, serverWriteHandle) <- getReadWriteHandles
-
-    -- Start the server
-    (_, responses) <-
-        startIPC
-            SingleMessage
-            serverReadHandle
-            clientWriteHandle
-            port
-        `concurrently`
-        do
-            -- Use these functions so you don't pass the wrong handle by mistake
-            let readClientMessage :: IO MsgOut
-                readClientMessage = readMessage clientReadHandle
-
-            let sendServer :: (ToJSON msg) => msg -> IO ()
-                sendServer = sendMessage serverWriteHandle
-
-            -- Communication starts here
-            started     <- readClientMessage
-            sendServer msg
-            response    <- readClientMessage
-            return (started, response)
-
-    return responses
 
 --------------------------------------------------------------------------------
 -- Placeholder

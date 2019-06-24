@@ -16,7 +16,6 @@ module Cardano.Shell.NodeIPC
     , startIPC
     , handleIPCProtocol
     , clientIPCListener
-    , testStartNodeIPC
     , ServerHandles (..)
     , ClientHandles (..)
     , closeFullDuplexAnonPipesHandles
@@ -56,8 +55,7 @@ import           Cardano.Shell.NodeIPC.Lib (ClientHandles (..),
                                             isNodeChannelCannotBeFound,
                                             isUnreadableHandle,
                                             isUnwritableHandle, serverReadWrite,
-                                            startIPC, startNodeJsIPC,
-                                            testStartNodeIPC)
+                                            startIPC, startNodeJsIPC)
 import           Cardano.Shell.NodeIPC.Message (MessageException (..),
                                                 ReadHandle (..),
                                                 WriteHandle (..), readMessage,
