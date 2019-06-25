@@ -24,7 +24,7 @@ module Cardano.Shell.NodeIPC
     , bracketFullDuplexAnonPipesHandles
     , serverReadWrite
      -- ** Exceptions
-    , NodeIPCException(..)
+    , NodeIPCError(..)
     , MessageSendFailure(..)
     , MessageException(..)
      -- * Used for testing
@@ -35,7 +35,7 @@ module Cardano.Shell.NodeIPC
     , getReadWriteHandles
     , getHandleFromEnv
     -- * Predicates
-    , isIPCException
+    , isIPCError
     , isHandleClosed
     , isUnreadableHandle
     , isUnwritableHandle
@@ -44,15 +44,15 @@ module Cardano.Shell.NodeIPC
 
 import           Cardano.Shell.NodeIPC.Lib (ClientHandles (..),
                                             MessageSendFailure (..), MsgIn (..),
-                                            MsgOut (..), NodeIPCException (..),
+                                            MsgOut (..), NodeIPCError (..),
                                             Port (..), ProtocolDuration (..),
                                             ServerHandles (..),
                                             bracketFullDuplexAnonPipesHandles,
                                             clientIPCListener,
                                             closeFullDuplexAnonPipesHandles,
                                             createFullDuplexAnonPipesHandles,
-                                            handleIPCProtocol, isHandleClosed,
-                                            isIPCException,
+                                            getHandleFromEnv, handleIPCProtocol,
+                                            isHandleClosed, isIPCError,
                                             isNodeChannelCannotBeFound,
                                             isUnreadableHandle,
                                             isUnwritableHandle, serverReadWrite,
@@ -64,5 +64,4 @@ import           Cardano.Shell.NodeIPC.Message (MessageException (..),
                                                 sendMessage)
 import           Cardano.Shell.NodeIPC.ServerExample (exampleServerWithProcess,
                                                       exampleWithFD,
-                                                      getHandleFromEnv,
                                                       getReadWriteHandles)

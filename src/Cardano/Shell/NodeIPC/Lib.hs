@@ -3,10 +3,12 @@
 <https://github.com/input-output-hk/cardano-shell/blob/develop/specs/CardanoShellSpec.pdf>
 -}
 
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 module Cardano.Shell.NodeIPC.Lib
     ( startNodeJsIPC
@@ -24,12 +26,13 @@ module Cardano.Shell.NodeIPC.Lib
     , serverReadWrite
     -- * Testing
     , getIPCHandle
+    , getHandleFromEnv
     , MsgIn(..)
     , MsgOut(..)
-    , NodeIPCException(..)
+    , NodeIPCError(..)
     , MessageSendFailure(..)
     -- * Predicates
-    , isIPCException
+    , isIPCError
     , isHandleClosed
     , isUnreadableHandle
     , isUnwritableHandle
@@ -38,30 +41,28 @@ module Cardano.Shell.NodeIPC.Lib
 
 import           Cardano.Prelude hiding (catches, finally, handle)
 
-import           Control.Exception.Safe (Handler (..), MonadCatch, MonadMask,
-                                         catches, finally, throwM)
+import           Control.Exception.Safe (Handler (..), catches, finally)
 import           Data.Aeson (FromJSON (parseJSON), ToJSON (toEncoding),
                              defaultOptions, genericParseJSON,
                              genericToEncoding)
 import           Data.Aeson.Types (Options, SumEncoding (ObjectWithSingleField),
                                    sumEncoding)
-import           GHC.IO.Handle (hIsOpen, hIsReadable, hIsWritable, hIsEOF)
+import           GHC.IO.Handle (hIsEOF, hIsOpen, hIsReadable, hIsWritable)
 import           GHC.IO.Handle.FD (fdToHandle)
 
 import           System.Environment (lookupEnv)
-import           System.Process (createPipe)
-
 import           System.IO (BufferMode (..), hClose, hFlush, hSetBuffering,
                             hSetNewlineMode, noNewlineTranslation)
 import           System.IO.Error (IOError, isEOFError)
-
+import           System.Process (createPipe)
 import           Test.QuickCheck (Arbitrary (..), Gen, arbitraryASCIIChar,
-                                  choose, elements, listOf1)
+                                  choose, elements, listOf1, oneof)
 
 import           Cardano.Shell.NodeIPC.Message (MessageException,
                                                 ReadHandle (..),
                                                 WriteHandle (..), readMessage,
                                                 sendMessage)
+import           Prelude (String)
 
 import qualified Prelude as P (Show (..))
 
@@ -110,7 +111,12 @@ data MsgIn
     deriving (Show, Eq, Generic)
 
 instance Arbitrary MsgIn where
-    arbitrary = elements [QueryPort, Ping]
+    arbitrary = oneof
+        [ return QueryPort
+        , return Ping
+        , MessageInFailure <$> arbitrary
+        -- , return Shutdown
+        ]
 
 -- | Message which is send out from Cardano-node
 data MsgOut
@@ -131,6 +137,12 @@ data MessageSendFailure
     | GeneralFailure
     deriving (Show, Eq, Generic)
 
+instance Arbitrary MessageSendFailure where
+    arbitrary = oneof
+        [ ParseError <$> genSafeText
+        , return GeneralFailure
+        ]
+
 instance Arbitrary MsgOut where
     arbitrary = do
         safeText   <- genSafeText
@@ -141,9 +153,9 @@ instance Arbitrary MsgOut where
             , Pong
             , MessageOutFailure $ ParseError safeText
             ]
-        where
-          genSafeText :: Gen Text
-          genSafeText = strConv Lenient <$> listOf1 arbitraryASCIIChar
+
+genSafeText :: Gen Text
+genSafeText = strConv Lenient <$> listOf1 arbitraryASCIIChar
 
 opts :: Options
 opts = defaultOptions { sumEncoding = ObjectWithSingleField }
@@ -182,12 +194,12 @@ instance Arbitrary Port where
     arbitrary = Port <$> arbitrary
 
 -- | Exception thrown from Node IPC protocol
-data NodeIPCException
+data NodeIPCError
     = NodeChannelNotFound Text
     -- ^ Node channel was not found
     | UnableToParseNodeChannel Text
     -- ^ Unable to parse given 'Text' as File descriptor
-    | IPCException
+    | IPCError
     -- ^ Exception thrown when there's something wrong with IPC
     | HandleClosed Handle
     -- ^ Given handle is closed therefore cannot be used
@@ -197,14 +209,16 @@ data NodeIPCException
     -- ^ Given handle cannot be used to read
     | UnwritableHandle Handle
     -- ^ Given handle cannot be used to write
+    | NoStdIn
+    deriving (Eq)
 
-instance Show NodeIPCException where
+instance Show NodeIPCError where
     show = \case
         NodeChannelNotFound envName ->
             "Environment variable cannot be found: " <> strConv Lenient envName
         UnableToParseNodeChannel err ->
             "Unable to parse file descriptor: " <> strConv Lenient err
-        IPCException ->
+        IPCError ->
             "IOError has occured"
         HandleClosed h ->
             "Given handle is closed: " <> show h
@@ -214,44 +228,59 @@ instance Show NodeIPCException where
             "Unable to read with given handle: " <> show h
         UnwritableHandle h ->
             "Unable to write with given handle: " <> show h
+        NoStdIn -> "createProcess returned Nothing when creating pipes for the subprocess"
 
-instance Exception NodeIPCException
-
--- | Acquire a Handle that can be used for IPC
-getIPCHandle :: IO Handle
-getIPCHandle = do
-    mFdstring <- liftIO $ lookupEnv "NODE_CHANNEL_FD"
+-- | Acquire a Handle that can be used for IPC from Environment
+getHandleFromEnv :: String -> IO (Either NodeIPCError Handle)
+getHandleFromEnv envName = runExceptT $ do
+    mFdstring <- liftIO $ lookupEnv envName
     case mFdstring of
-        Nothing -> throwM $ NodeChannelNotFound "NODE_CHANNEL_FD"
-        Just fdstring -> case readEither fdstring of
-            Left err -> throwM $ UnableToParseNodeChannel $ toS err
-            Right fd -> liftIO $ fdToHandle fd
+        Nothing -> throwError $ NodeChannelNotFound $ toS envName
+        Just fdstring ->
+            case readEither fdstring of
+                Left err -> throwError $ UnableToParseNodeChannel $ toS err
+                Right fd -> liftIO (fdToHandle fd)
+
+getIPCHandle :: IO (Either NodeIPCError Handle)
+getIPCHandle = getHandleFromEnv "NODE_CHANNEL_FD"
 
 -- | Start IPC with given 'ReadHandle', 'WriteHandle' and 'Port'
-startIPC :: forall m. (MonadIO m) => ProtocolDuration -> ReadHandle -> WriteHandle -> Port -> m ()
-startIPC protocolDuration readHandle writeHandle port = liftIO $ void $ ipcListener protocolDuration readHandle writeHandle port
+startIPC
+    :: ProtocolDuration
+    -> ReadHandle
+    -> WriteHandle
+    -> Port
+    -> IO (Either NodeIPCError ())
+startIPC protocolDuration readHandle writeHandle port =
+    runExceptT $ ipcListener protocolDuration readHandle writeHandle port
 
 -- | Start IPC with NodeJS
 --
 -- This only works if NodeJS spawns the Haskell executable as child process
 -- (See @server.js@ as an example)
-startNodeJsIPC :: forall m. (MonadIO m) => ProtocolDuration -> Port -> m ()
+startNodeJsIPC
+    :: ProtocolDuration
+    -> Port
+    -> IO (Either NodeIPCError ())
 startNodeJsIPC protocolDuration port = do
-    handle          <- liftIO $ getIPCHandle
-
-    let readHandle  = ReadHandle handle
-    let writeHandle = WriteHandle handle
-
-    liftIO $ void $ ipcListener protocolDuration readHandle writeHandle port
+    eHandle <- getIPCHandle
+    runIPCListener eHandle
+  where
+    runIPCListener :: Either NodeIPCError Handle -> IO (Either NodeIPCError ())
+    runIPCListener (Left nodeIPCError) = return . Left $ nodeIPCError
+    runIPCListener (Right handle) = do
+        let readHandle  = ReadHandle handle
+        let writeHandle = WriteHandle handle
+        liftIO $ runExceptT $ ipcListener protocolDuration readHandle writeHandle port
 
 -- | Function for handling the protocol
-handleIPCProtocol :: forall m. (MonadIO m) => Port -> MsgIn -> m MsgOut
+handleIPCProtocol :: Port -> MsgIn -> IO MsgOut
 handleIPCProtocol (Port port) = \case
     QueryPort          -> pure (ReplyPort port)
     Ping               -> pure Pong
     -- Send message, flush buffer, shutdown. Since it's complicated to reason with another
     -- thread that shuts down the program after some time, we do it immediately.
-    Shutdown           -> return ShutdownInitiated >> liftIO $ exitWith (ExitFailure 22)
+    Shutdown           -> return ShutdownInitiated >> exitWith (ExitFailure 22)
     MessageInFailure f -> pure $ MessageOutFailure f
 
 -- | Start IPC listener with given Handles and Port
@@ -261,17 +290,18 @@ handleIPCProtocol (Port port) = \case
 -- If it recieves 'QueryPort', then the listener
 -- responds with 'ReplyPort' with 'Port',
 ipcListener
-    :: forall m. (MonadIO m, MonadCatch m, MonadMask m)
-    => ProtocolDuration
+    :: ProtocolDuration
     -> ReadHandle
     -> WriteHandle
     -> Port
-    -> m ()
+    -> ExceptT NodeIPCError IO ()
 ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHandle wHndl) port = do
-    liftIO $ checkHandles readHandle writeHandle
-    handleMsgIn `catches` [Handler handler, Handler handleMsgError] `finally` shutdown
+    checkHandles readHandle writeHandle
+    handleMsgIn `catches` [Handler handler, Handler handleMsgError]
+    `finally`
+    shutdown
   where
-    handleMsgIn :: m ()
+    handleMsgIn :: ExceptT NodeIPCError IO ()
     handleMsgIn = do
         liftIO $ hSetNewlineMode rHndl noNewlineTranslation
         send Started -- Send the message first time the IPC is up!
@@ -281,34 +311,34 @@ ipcListener protocolDuration readHandle@(ReadHandle rHndl) writeHandle@(WriteHan
                                     MultiMessage  -> forever
 
         -- Fetch message and respond to it
-        frequencyFunction $ do
+        liftIO $ frequencyFunction $ do
             msgIn               <- readMessage readHandle        -- Read message
             messageByteString   <- handleIPCProtocol port msgIn  -- Respond
             sendMessage writeHandle messageByteString            -- Write to client/server
 
-    send :: MsgOut -> m ()
+    send :: MsgOut -> ExceptT NodeIPCError IO ()
     send = sendMessage writeHandle
 
-    shutdown :: m ()
-    shutdown = liftIO $ do
-        hClose rHndl
-        hClose wHndl
-        hFlush stdout
+    shutdown :: ExceptT NodeIPCError IO ()
+    shutdown = do
+        liftIO $ do
+            hClose rHndl
+            hClose wHndl
+            hFlush stdout
+        throwError IPCError
 
-    handleMsgError :: MessageException -> m ()
+    handleMsgError :: MessageException -> ExceptT NodeIPCError IO ()
     handleMsgError err = do
         liftIO $ logError "Unexpected message"
         send $ MessageOutFailure $ ParseError $ show err
 
-
-handler :: (MonadIO m, MonadCatch m) => IOError -> m ()
-handler err =
-    when (isEOFError err) $
-        throwM IPCException
+    handler :: IOError -> ExceptT NodeIPCError IO ()
+    handler err =
+        when (isEOFError err) $ shutdown
 
 
 -- | Check if given two handles are usable (i.e. Handle is open, can be used to read/write)
-checkHandles :: ReadHandle -> WriteHandle -> IO ()
+checkHandles :: ReadHandle -> WriteHandle -> ExceptT NodeIPCError IO ()
 checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = do
     checkHandle rHandle hIsOpen (HandleClosed rHandle)
     checkHandle wHandle hIsOpen (HandleClosed wHandle)
@@ -316,22 +346,21 @@ checkHandles (ReadHandle rHandle) (WriteHandle wHandle) = do
     checkHandle wHandle hIsWritable (UnwritableHandle wHandle)
   where
     -- | Utility function for checking a handle.
-    checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCException -> IO ()
+    checkHandle :: Handle -> (Handle -> IO Bool) -> NodeIPCError -> ExceptT NodeIPCError IO ()
     checkHandle handle pre exception = do
-        result <- pre handle
-        when (not result) $ throwM exception
+        result <- liftIO $ pre handle
+        when (not result) $ throwError exception
 
 -- | Client side IPC protocol.
 clientIPCListener
-    :: forall m. (MonadIO m, MonadMask m)
-    => ProtocolDuration
+    :: ProtocolDuration
     -> ClientHandles
     -> Port
     -- ^ This is really making things confusing. A Port is here,
     -- but it's determined on the client side, not before.
-    -> m ()
+    -> IO (Either NodeIPCError ())
 clientIPCListener duration clientHandles port =
-    ipcListener
+    runExceptT $ ipcListener
         duration
         (getClientReadHandle clientHandles)
         (getClientWriteHandle clientHandles)
@@ -351,8 +380,8 @@ data ClientHandles = ClientHandles
 
 -- | This is a __blocking call__ that sends the message to the client
 -- and returns it's response, __after the client response arrives__.
-serverReadWrite :: ServerHandles -> MsgIn -> IO MsgOut
-serverReadWrite serverHandles msgIn = do
+serverReadWrite :: ServerHandles -> MsgIn -> IO (Either NodeIPCError MsgOut)
+serverReadWrite serverHandles msgIn = runExceptT $ do
 
     let readHandle      = getServerReadHandle serverHandles
     let writeHandle     = getServerWriteHandle serverHandles
@@ -365,8 +394,8 @@ serverReadWrite serverHandles msgIn = do
 
     -- Check if the handle is at End Of Line, we need to do this
     -- here since we @hIsEOF@ __blocks__ as well.
-    whenM (hIsEOF . getReadHandle $ readHandle) $
-        throwM . HandleEOF . getReadHandle $ readHandle
+    whenM (liftIO . hIsEOF . getReadHandle $ readHandle) $
+        throwError . HandleEOF . getReadHandle $ readHandle
 
     -- Read message
     readMessage readHandle
@@ -463,27 +492,27 @@ logError _ = return ()
 -- Predicates
 --------------------------------------------------------------------------------
 
--- | Checks if given 'NodeIPCException' is 'IPCException'
-isIPCException :: NodeIPCException -> Bool
-isIPCException IPCException = True
-isIPCException _            = False
+-- | Checks if given 'NodeIPCError' is 'IPCError'
+isIPCError :: NodeIPCError -> Bool
+isIPCError IPCError = True
+isIPCError _        = False
 
--- | Checks if given 'NodeIPCException' is 'HandleClosed'
-isHandleClosed :: NodeIPCException -> Bool
+-- | Checks if given 'NodeIPCError' is 'HandleClosed'
+isHandleClosed :: NodeIPCError -> Bool
 isHandleClosed (HandleClosed _) = True
 isHandleClosed _                = False
 
--- | Checks if given 'NodeIPCException' is 'UnreadableHandle'
-isUnreadableHandle :: NodeIPCException -> Bool
+-- | Checks if given 'NodeIPCError' is 'UnreadableHandle'
+isUnreadableHandle :: NodeIPCError -> Bool
 isUnreadableHandle (UnreadableHandle _) = True
 isUnreadableHandle _                    = False
 
--- | Checks if given 'NodeIPCException' is 'UnwritableHandle'
-isUnwritableHandle :: NodeIPCException -> Bool
+-- | Checks if given 'NodeIPCError' is 'UnwritableHandle'
+isUnwritableHandle :: NodeIPCError -> Bool
 isUnwritableHandle (UnwritableHandle _) = True
 isUnwritableHandle _                    = False
 
--- | Checks if given 'NodeIPCException' is 'NodeChannelNotFound'
-isNodeChannelCannotBeFound :: NodeIPCException -> Bool
+-- | Checks if given 'NodeIPCError' is 'NodeChannelNotFound'
+isNodeChannelCannotBeFound :: NodeIPCError -> Bool
 isNodeChannelCannotBeFound (NodeChannelNotFound _) = True
 isNodeChannelCannotBeFound _                       = False

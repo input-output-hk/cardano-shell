@@ -1,6 +1,7 @@
 {-| Module testing Node IPC
 -}
 
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module NodeIPCSpec
@@ -12,20 +13,19 @@ import           Cardano.Prelude
 import           Data.Aeson (FromJSON, ToJSON, encode)
 import           GHC.IO.Handle (hIsOpen)
 import           System.IO (hClose)
-import           System.IO.Error (eofErrorType, mkIOError)
+import           System.IO.Error (eofErrorType, mkIOError, IOError)
 import           Test.Hspec (Spec, describe, it)
-import           Test.Hspec.QuickCheck (prop)
+import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Property)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import           Cardano.Shell.NodeIPC (MessageException,
                                         MessageSendFailure (..), MsgIn (..),
-                                        MsgOut (..), NodeIPCException (..),
+                                        MsgOut (..), NodeIPCError (..),
                                         Port (..), ProtocolDuration (..),
                                         ReadHandle (..), WriteHandle (..),
                                         getReadWriteHandles, isHandleClosed,
-                                        isIPCException,
-                                        isNodeChannelCannotBeFound,
+                                        isIPCError, isNodeChannelCannotBeFound,
                                         isUnreadableHandle, isUnwritableHandle,
                                         readMessage, sendMessage, startIPC,
                                         startNodeJsIPC, testStartNodeIPC)
@@ -49,69 +49,55 @@ nodeIPCSpec = do
                     assert $ isLeft (eResult :: Either MessageException MsgIn)
 
     describe "startIPC" $ do
-        it "should return Started and Pong when client sends message 'Ping'" $ monadicIO $ do
-            (started, pong) <- run $ do
-                testStartNodeIPC port Ping
-            assert $ started == Started
-            assert $ pong    == Pong
-
-        prop "should return Started and ReplyPort when client sends message 'QueryPort'" $
-            \(randomPort :: Port) -> monadicIO $ do
-                (started, replyPort) <- run $ do
-                    testStartNodeIPC randomPort QueryPort
-                let portNum = getPort randomPort
-                assert $ started   == Started
-                assert $ replyPort == (ReplyPort portNum)
+        modifyMaxSuccess (const 1000) $ prop "model based testing" $ 
+            -- Have both MsgIn and MsgOut in order to test failing cases
+            \(eMsg :: Either MsgOut MsgIn) (randomPort :: Port) -> monadicIO $ do
+                response <- run $ either
+                    (testStartNodeIPC randomPort)
+                    (testStartNodeIPC randomPort)
+                    eMsg
+                assert $ response == (Started, modelResponse randomPort eMsg)
 
         prop "should return Started and ShutdownInitiated when client sends message 'Shutdown'" $ monadicIO $ do
             result <- run $ try $ testStartNodeIPC port Shutdown
-            assert $ isLeft (result :: Either ExitCode (MsgOut, MsgOut))
+            assert $ isLeft (result :: Either IOError (MsgOut, MsgOut))
             --assert $ started == Started
             --assert $ pong    == ShutdownInitiated
 
         describe "Exceptions" $ do
-            prop "should throw exception when incorrect message is sent" $
-            -- Sending MsgOut would fail since it expects 'MsgIn' to be sent
-                \(randomMsg :: MsgOut) -> monadicIO $ do
-                    (started, parseError) <- run $ do
-                        testStartNodeIPC port randomMsg
-                    let errorMessage = "Failed to decode given blob: " <> toS (encode randomMsg)
-                    assert $ started    == Started
-                    assert $ parseError == (MessageOutFailure $ ParseError errorMessage)
-
-            it "should throw NodeIPCException when closed handle is given" $ monadicIO $ do
-                eResult <- run $ try $ do
+            it "should throw NodeIPCError when closed handle is given" $ monadicIO $ do
+                eResult <- run $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
                     closedReadHandle <- (\(ReadHandle hndl) -> hClose hndl >> return (ReadHandle hndl)) readHandle
                     startIPC SingleMessage closedReadHandle writeHandle port
-                assert $ isLeft (eResult :: Either NodeIPCException ())
+                assert $ isLeft (eResult :: Either NodeIPCError ())
                 whenLeft eResult $ \exception -> assert $ isHandleClosed exception
 
-            it "should throw NodeIPCException when unreadable handle is given" $ monadicIO $ do
-                eResult <- run $ try $ do
+            it "should throw NodeIPCError when unreadable handle is given" $ monadicIO $ do
+                eResult <- run $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
                     let (unReadableHandle, _) = swapHandles readHandle writeHandle
                     startIPC SingleMessage unReadableHandle writeHandle port
-                assert $ isLeft (eResult :: Either NodeIPCException ())
+                assert $ isLeft (eResult :: Either NodeIPCError ())
                 whenLeft eResult $ \exception -> assert $ isUnreadableHandle exception
 
-            it "should throw NodeIPCException when unwritable handle is given" $ monadicIO $ do
-                eResult <- run $ try $ do
+            it "should throw NodeIPCError when unwritable handle is given" $ monadicIO $ do
+                eResult <- run $ do
                     (readHandle, writeHandle) <- getReadWriteHandles
                     let (_, unWritableHandle) = swapHandles readHandle writeHandle
                     startIPC SingleMessage readHandle unWritableHandle port
-                assert $ isLeft (eResult :: Either NodeIPCException ())
+                assert $ isLeft (eResult :: Either NodeIPCError ())
                 whenLeft eResult $ \exception -> assert $ isUnwritableHandle exception
 
         describe "Resource cleanup" $ do
-            it "should throw NodeIPCException when IOError is being thrown" $ monadicIO $ do
-                eResult <- run $ try $ do
+            it "should throw NodeIPCError when IOError is being thrown" $ monadicIO $ do
+                eResult <- run $ do
                     (as, _, _) <- ipcTest
                     let ioerror = mkIOError eofErrorType "Failed with eofe" Nothing Nothing
                     cancelWith as ioerror
                     wait as
-                assert $ isLeft (eResult :: Either NodeIPCException ())
-                whenLeft eResult $ \exception -> assert $ isIPCException exception
+                assert $ isLeft (eResult :: Either NodeIPCError ())
+                whenLeft eResult $ \exception -> assert $ isIPCError exception
 
             it "should close used handles when exception is being thrown" $ monadicIO $ do
                 handlesClosed <- run $ do
@@ -132,14 +118,14 @@ nodeIPCSpec = do
                         _ <- readClientMessage
                         sendServer msg
                         (_ :: MsgOut) <- readClientMessage
-                        wait as
+                        _  <- wait as
                         areHandlesClosed serverReadHandle clientWriteHandle
                     assert handlesClosed
 
     describe "startNodeJsIPC" $
-        it "should throw NodeIPCException when it is not spawned by NodeJS process" $ monadicIO $ do
-            eResult <- run $ try $ startNodeJsIPC SingleMessage port
-            assert $ isLeft (eResult :: Either NodeIPCException ())
+        it "should throw NodeIPCError when it is not spawned by NodeJS process" $ monadicIO $ do
+            eResult <- run $ startNodeJsIPC SingleMessage port
+            assert $ isLeft (eResult :: Either NodeIPCError ())
             whenLeft eResult $ \exception -> assert $ isNodeChannelCannotBeFound exception
   where
     port :: Port
@@ -155,7 +141,7 @@ nodeIPCSpec = do
         writeIsOpen <- hIsOpen writeHandle
         return $ not $ and [readIsOpen, writeIsOpen]
 
-    ipcTest :: IO (Async (), ReadHandle, WriteHandle)
+    ipcTest :: IO (Async (Either NodeIPCError ()), ReadHandle, WriteHandle)
     ipcTest = do
         (clientReadHandle, clientWriteHandle) <- getReadWriteHandles
         (serverReadHandle, _)                 <- getReadWriteHandles
@@ -178,3 +164,18 @@ testMessage msg = monadicIO $ do
 whenLeft :: Applicative m => Either a b -> (a -> m ()) -> m ()
 whenLeft (Left x) f = f x
 whenLeft _        _ = pure ()
+
+-- Try to predict the @MsgOut@ with given @Port@ and @Either MsgOut MsgIn@
+modelResponse :: Port -> Either MsgOut MsgIn -> MsgOut
+modelResponse (Port portNumber) = \case
+    Left msgOut ->
+        let errorMessage = "Failed to decode given blob: " <> toS (encode msgOut)
+        in MessageOutFailure $ ParseError errorMessage
+    Right QueryPort -> 
+        ReplyPort portNumber
+    Right Ping ->
+        Pong
+    Right Shutdown ->
+        ShutdownInitiated
+    Right (MessageInFailure f) ->
+        MessageOutFailure f
