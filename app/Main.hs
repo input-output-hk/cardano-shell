@@ -2,9 +2,10 @@ module Main (main) where
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.Features.Logging (LoggingLayer (..),
+import           Cardano.Shell.Features.Logging (LoggingCLIArguments,
+                                                 LoggingLayer (..),
                                                  createLoggingFeature,
-                                                 parse)
+                                                 loggingParser)
 import           Cardano.Shell.Features.Networking (createNetworkingFeature)
 
 import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
@@ -26,16 +27,20 @@ main = do
 
     -- And example of an application that goes haywire.
     let application :: LoggingLayer -> IO ()
-        application ll = do
-            let logTrace   = llBasicTrace ll
-                logNotice  = llLogNotice  ll
-                appendName = llAppendName ll
+        application loggingLayer = do
+
+            let logTrace   = llBasicTrace loggingLayer
+            let logNotice  = llLogNotice  loggingLayer
+            let appendName = llAppendName loggingLayer
+
             logNotice logTrace "Hello from logging layer ..."
             logTrace' <- appendName "cardano-shell" logTrace
             logNotice logTrace' "Hello #2 from logging layer ..."
+
             _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
             _ <- throwIO UnknownFailureException
             _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
+
             pure ()
 
     let cardanoApplication :: LoggingLayer -> CardanoApplication
@@ -71,12 +76,11 @@ main = do
 initializeAllFeatures :: CardanoConfiguration -> CardanoEnvironment -> IO ([CardanoFeature], LoggingLayer)
 initializeAllFeatures cardanoConfiguration cardanoEnvironment = do
 
+    -- Here we parse the __CLI__ arguments for the actual application.
+    loggingCLIArguments             <- execParser parserWithInfo
+
     -- Here we initialize all the features
-    logargs <- execParser $ info (parse <**> helper)
-                                    ( fullDesc
-                                    <> progDesc "Logging Feature"
-                                    <> header "cardano-shell: logging feature" )
-    (loggingLayer, loggingFeature)  <- createLoggingFeature cardanoEnvironment cardanoConfiguration logargs
+    (loggingLayer, loggingFeature)  <- createLoggingFeature cardanoEnvironment cardanoConfiguration loggingCLIArguments
 
     (_           , networkFeature)  <- createNetworkingFeature loggingLayer cardanoEnvironment cardanoConfiguration
 
@@ -88,3 +92,11 @@ initializeAllFeatures cardanoConfiguration cardanoEnvironment = do
             ]
 
     pure (allCardanoFeatures, loggingLayer)
+  where
+    -- | Top level parser with info.
+    parserWithInfo :: ParserInfo LoggingCLIArguments
+    parserWithInfo = info (loggingParser <**> helper)
+        (  fullDesc
+        <> progDesc "Logging Feature"
+        <> header "cardano-shell: logging feature"
+        )
