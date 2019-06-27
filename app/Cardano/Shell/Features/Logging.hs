@@ -135,7 +135,7 @@ loggingCardanoFeatureInit loggingConfiguration = do
     let logConfig = lpConfiguration loggingConfiguration
     (baseTrace, switchBoard) <- setupTrace_ logConfig "cardano"
 
-    -- | Construct the @LoggingLayer@.
+    -- Construct the logging layer.
     let initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingConfiguration -> IO LoggingLayer
         initLogging _ _ _ _ = do
             pure $ LoggingLayer
@@ -153,7 +153,7 @@ loggingCardanoFeatureInit loggingConfiguration = do
                     , llBracketStmLogIO = Stm.bracketObserveLogIO logConfig
                     }
 
-    -- | Cleanup function which shuts down the switchboard.
+    -- Cleanup function which shuts down the switchboard.
     let cleanupLogging :: LoggingLayer -> IO ()
         cleanupLogging _ = shutdown switchBoard
 
