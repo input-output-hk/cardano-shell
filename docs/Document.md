@@ -1,6 +1,6 @@
 # Overview
 
-`cardano-shell` is an thin layer which brings all the other modules working
+`cardano-shell` is a thin layer which brings all the other modules working
 together and makes sure that they have the required resources 
 (configuration, exception handling, ...).
 
