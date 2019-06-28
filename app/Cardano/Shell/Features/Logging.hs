@@ -108,7 +108,7 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration (LoggingCLIArgument
     --
     -- Currently we parse outside the features since we want to have a complete parser for __every feature__.
 
-    whenM (doesFileExist loggingCLIArguments) $ do
+    whenM (not <$> doesFileExist loggingCLIArguments) $ do
         putTextLn "Cannot find the logging configuration file at location."
         throwIO $ FileNotFoundException loggingCLIArguments
 
@@ -132,8 +132,9 @@ createLoggingFeature cardanoEnvironment cardanoConfiguration (LoggingCLIArgument
 -- | Initialize `LoggingCardanoFeature`
 loggingCardanoFeatureInit :: LoggingConfiguration -> IO LoggingCardanoFeature
 loggingCardanoFeatureInit loggingConfiguration = do
-    let logConfig = lpConfiguration loggingConfiguration
-    (baseTrace, switchBoard) <- setupTrace_ logConfig "cardano"
+
+    let logConfig               = lpConfiguration loggingConfiguration
+    (baseTrace, switchBoard)    <- setupTrace_ logConfig "cardano"
 
     -- Construct the logging layer.
     let initLogging :: CardanoEnvironment -> NoDependency -> CardanoConfiguration -> LoggingConfiguration -> IO LoggingLayer
