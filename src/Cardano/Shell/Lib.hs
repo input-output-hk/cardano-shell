@@ -11,6 +11,8 @@ module Cardano.Shell.Lib
     , AllFeaturesInitFunction
     , initializeCardanoEnvironment
     , checkIfApplicationIsRunning
+    -- * additional re-exports
+    , doesFileExist
     ) where
 
 import           Cardano.Prelude hiding (async, cancel, (%))
