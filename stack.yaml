@@ -36,5 +36,4 @@ extra-deps:
   - libsystemd-journal-1.4.4
 
 nix:
-  enable: false
   shell-file: stack-shell.nix
