@@ -1,6 +1,6 @@
 let
   localPkgs = import ./. { };
-  mainShell = localPkgs.env;
+  mainShell = localPkgs.shell;
 in mainShell // {
   inherit (localPkgs) runCoveralls;
 }
