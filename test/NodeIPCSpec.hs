@@ -13,7 +13,7 @@ import           Cardano.Prelude
 import           Data.Aeson (FromJSON, ToJSON, encode)
 import           GHC.IO.Handle (hIsOpen)
 import           System.IO (hClose)
-import           System.IO.Error (IOError, eofErrorType, mkIOError)
+import           System.IO.Error (eofErrorType, mkIOError)
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Property)
@@ -32,7 +32,7 @@ import           Cardano.Shell.NodeIPC (ClientHandles (..), MessageException,
                                         isIPCError, isNodeChannelCannotBeFound,
                                         isUnreadableHandle, isUnwritableHandle,
                                         readMessage, sendMessage,
-                                        startNodeJsIPC)
+                                        serverReadWrite, startNodeJsIPC)
 
 -- | Test spec for node IPC
 nodeIPCSpec :: Spec
@@ -60,11 +60,11 @@ nodeIPCSpec = do
                     (testStartNodeIPC randomPort)
                     (testStartNodeIPC randomPort)
                     eMsg
-                assert $ response == (Started, modelResponse randomPort eMsg)
+                assert $ response == Right (Started, modelResponse randomPort eMsg)
 
         prop "should return Started and ShutdownInitiated when client sends message 'Shutdown'" $ monadicIO $ do
-            result <- run $ try $ testStartNodeIPC port Shutdown
-            assert $ isLeft (result :: Either IOError (MsgOut, MsgOut))
+            result <- run $ testStartNodeIPC port Shutdown
+            assert $ isLeft (result :: (Either NodeIPCError (MsgOut, MsgOut)))
             --assert $ started == Started
             --assert $ pong    == ShutdownInitiated
 
@@ -175,7 +175,11 @@ modelResponse (Port portNumber) = \case
         MessageOutFailure f
 
 -- | Test 'startIPC'
-testStartNodeIPC :: (ToJSON msg) => Port -> msg -> IO (MsgOut, MsgOut)
+testStartNodeIPC
+    :: (ToJSON msg)
+    => Port
+    -> msg
+    -> IO (Either NodeIPCError (MsgOut, MsgOut))
 testStartNodeIPC port msg = bracketFullDuplexAnonPipesHandles $
     \(serverHandles, clientHandles) -> do
         (_, responses) <-
@@ -185,11 +189,9 @@ testStartNodeIPC port msg = bracketFullDuplexAnonPipesHandles $
                 -- Use these functions so you don't pass the wrong handle by mistake
                 let readClientMessage :: IO MsgOut
                     readClientMessage = readMessage $ getServerReadHandle $ serverHandles
-
-                let sendServer :: (ToJSON msg) => msg -> IO ()
-                    sendServer = sendMessage $ getServerWriteHandle $ serverHandles
-                started     <- readClientMessage
-                sendServer msg
-                response    <- readClientMessage
-                return (started, response)
+                started  <- readClientMessage
+                eResponse <- serverReadWrite serverHandles msg
+                case eResponse of
+                    Left err       -> return . Left $ err
+                    Right response -> return . Right $ (started, response)
         return responses

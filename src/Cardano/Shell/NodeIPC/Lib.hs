@@ -379,7 +379,7 @@ data ClientHandles = ClientHandles
 
 -- | This is a __blocking call__ that sends the message to the client
 -- and returns it's response, __after the client response arrives__.
-serverReadWrite :: ServerHandles -> MsgIn -> IO (Either NodeIPCError MsgOut)
+serverReadWrite :: (ToJSON msgIn) => ServerHandles -> msgIn -> IO (Either NodeIPCError MsgOut)
 serverReadWrite serverHandles msgIn = runExceptT $ do
 
     let readHandle      = getServerReadHandle serverHandles
