@@ -35,6 +35,7 @@
           (hsPkgs.QuickCheck)
           (hsPkgs.safe-exceptions)
           (hsPkgs.stm)
+          (hsPkgs.async)
           (hsPkgs.text)
           (hsPkgs.transformers)
           ];
