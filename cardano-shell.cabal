@@ -7,8 +7,8 @@ bug-reports:    https://github.com/input-output-hk/cardano-shell/issues
 author:         IOHK
 maintainer:     operations@iohk.io
 copyright:      2018 IOHK
-license:        MIT
-license-file:   LICENSE
+license:        Apache-2.0
+license-files:  LICENSE, NOTICE
 build-type:     Simple
 cabal-version:  >= 1.10
 extra-source-files:
