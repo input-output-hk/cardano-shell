@@ -8,7 +8,7 @@ together and makes sure that they have the required resources
 
 For cardano-node to operate as an peer, various **features** are required:
 
-* Logging, to let the user know what's going on
+* Logging, to let the user know what's going on in the system
 * Block validation
 * Managing blockchain/stake
 * Communicating with other peers
