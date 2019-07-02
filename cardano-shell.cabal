@@ -28,6 +28,7 @@ library
     , Cardano.Shell.Configuration.Lib
     -- NodeIPC
     , Cardano.Shell.NodeIPC
+    , Cardano.Shell.DaedalusIPC
     -- Update system
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
@@ -64,6 +65,7 @@ library
     , QuickCheck
     , safe-exceptions
     , stm
+    , async
     , text
     , transformers
 
