@@ -1,1 +1,1 @@
-(import ./. { withHoogle = false; }).env
+(import ./. { withHoogle = false; }).shell

@@ -8,6 +8,10 @@ commonLib.nix-tools.release-nix {
   # are interested in building on CI via nix-tools.
   packages = [ "cardano-shell" ];
 
+  # non nix-tools jobs from default.nix that we want to build for
+  # all supported systems.
+  builds-on-supported-systems = [ "shell" ];
+
   # The set of jobs we consider crutial for each CI run.
   # if a single one of these fails, the build will be marked
   # as failed.
