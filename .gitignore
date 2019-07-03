@@ -12,6 +12,7 @@ configuration/server/
 
 # Config files
 .ghci
+cabal.project.local
 
 # Our custom build script (util-scripts/build.sh)
 b
