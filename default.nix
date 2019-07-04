@@ -55,12 +55,12 @@ let
 in defaultNix // {
   # ... and add additional packages we want to build on CI:
 
-  env = defaultNix.nix-tools.shellFor {
+  shell = defaultNix.nix-tools.shellFor {
     inherit withHoogle;
     # env will provide the dependencies of cardano-shell
     packages = ps: with ps; [ cardano-shell ];
     # This adds git to the shell, which is used by stack.
-    buildInputs = with pkgs; [ git stack commonLib.stack-hpc-coveralls ];
+    buildInputs = with pkgs; [ git stack commonLib.stack-hpc-coveralls pkgconfig systemd ];
   };
 
   runCoveralls = pkgs.stdenv.mkDerivation {

@@ -3,14 +3,18 @@
     flags = {
       disable-aggregation = false;
       disable-ekg = false;
+      disable-graylog = false;
       disable-prometheus = false;
       disable-gui = false;
       disable-monitoring = false;
       disable-observables = false;
+      disable-systemd = false;
+      disable-examples = false;
+      performance-test-queue = false;
       };
     package = {
       specVersion = "1.10";
-      identifier = { name = "iohk-monitoring"; version = "0.1.8.0"; };
+      identifier = { name = "iohk-monitoring"; version = "0.1.9.0"; };
       license = "MIT";
       copyright = "2018 IOHK";
       maintainer = "";
@@ -23,7 +27,7 @@
       };
     components = {
       "library" = {
-        depends = ((([
+        depends = ((((([
           (hsPkgs.base)
           (hsPkgs.contra-tracer)
           (hsPkgs.aeson)
@@ -61,9 +65,14 @@
           (hsPkgs.ekg-prometheus-adapter)
           (hsPkgs.prometheus)
           (hsPkgs.warp)
-          ]) ++ (pkgs.lib).optional (!flags.disable-gui) (hsPkgs.threepenny-gui)) ++ (if system.isWindows
+          ]) ++ (pkgs.lib).optional (!flags.disable-graylog) (hsPkgs.network)) ++ (pkgs.lib).optional (!flags.disable-gui) (hsPkgs.threepenny-gui)) ++ (if system.isWindows
           then [ (hsPkgs.Win32) ]
-          else [ (hsPkgs.unix) ]);
+          else [
+            (hsPkgs.unix)
+            ])) ++ (pkgs.lib).optionals (system.isLinux && !flags.disable-systemd) [
+          (hsPkgs.hsyslog)
+          (hsPkgs.libsystemd-journal)
+          ];
         };
       exes = {
         "example-simple" = {
@@ -86,11 +95,22 @@
             (hsPkgs.mtl)
             (hsPkgs.random)
             (hsPkgs.text)
+            (hsPkgs.unordered-containers)
             ] ++ (if system.isWindows
             then [ (hsPkgs.Win32) ]
             else [
               (hsPkgs.unix)
               ])) ++ (pkgs.lib).optional (system.isLinux) (hsPkgs.download);
+          };
+        "example-performance" = {
+          depends = [
+            (hsPkgs.base)
+            (hsPkgs.iohk-monitoring)
+            (hsPkgs.async)
+            (hsPkgs.criterion)
+            (hsPkgs.text)
+            (hsPkgs.unordered-containers)
+            ];
           };
         };
       tests = {
@@ -134,8 +154,8 @@
     } // {
     src = (pkgs.lib).mkDefault (pkgs.fetchgit {
       url = "https://github.com/input-output-hk/iohk-monitoring-framework";
-      rev = "cbe7ab32354f3838dc8c95c64109904c8f503347";
-      sha256 = "1yipq7ghjmk5h0cjdpqbq9s00iv6wpj7zqh5b2nk4a6pz93fm6rv";
+      rev = "e2dc8b2160bb2ccd1ef9817a6498cda06ad36580";
+      sha256 = "1mp9fqva9lckbpx2fgakfzsyw85x3mmcb0mpszxyp55sbj3vyw1y";
       });
     postUnpack = "sourceRoot+=/iohk-monitoring; echo source root reset to \$sourceRoot";
     }
