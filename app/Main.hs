@@ -34,7 +34,7 @@ main = do
             let appendName = llAppendName loggingLayer
 
             logNotice logTrace "Hello from logging layer ..."
-            logTrace' <- appendName "cardano-shell" logTrace
+            let logTrace' = appendName "cardano-shell" logTrace
             logNotice logTrace' "Hello #2 from logging layer ..."
 
             _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
