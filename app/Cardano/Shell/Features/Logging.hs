@@ -77,6 +77,7 @@ data LoggingLayer = LoggingLayer
     , llBracketMonadX   :: forall m a t.    (MonadIO m, Show a) => Trace m a -> Severity -> Text -> m t -> m t
     , llBracketStmIO    :: forall a t.      (Show a) => Trace IO a -> Severity -> Text -> STM.STM t -> IO t
     , llBracketStmLogIO :: forall a t.      (Show a) => Trace IO a -> Severity -> Text -> STM.STM (t,[(LOMeta, LOContent a)]) -> IO t
+    , llConfiguration   :: Configuration
     }
 
 --------------------------------
@@ -152,6 +153,7 @@ loggingCardanoFeatureInit loggingConfiguration = do
                     , llBracketMonadX   = Monadic.bracketObserveX logConfig
                     , llBracketStmIO    = Stm.bracketObserveIO logConfig
                     , llBracketStmLogIO = Stm.bracketObserveLogIO logConfig
+                    , llConfiguration   = logConfig
                     }
 
     -- Cleanup function which shuts down the switchboard.
