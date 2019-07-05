@@ -137,6 +137,28 @@ executable node-ipc
                        -Wredundant-constraints
                        -Wpartial-fields
 
+executable daedalus-ipc
+  main-is: app/daedalus-ipc.hs
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , cardano-shell
+    , cardano-prelude
+    , optparse-applicative
+    , safe-exceptions
+    , iohk-monitoring
+  default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
+                       OverloadedStrings
+
+  ghc-options:         -Wall
+                       -Werror
+                       -Wcompat
+                       -Wincomplete-record-updates
+                       -Wincomplete-uni-patterns
+                       -Wredundant-constraints
+                       -Wpartial-fields
+
 executable cardano-launcher
   main-is: Main.hs
   other-modules:
