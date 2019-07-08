@@ -2,7 +2,7 @@
   {
     flags = {};
     package = {
-      specVersion = "1.10";
+      specVersion = "2.2";
       identifier = { name = "cardano-shell"; version = "0.1.0.0"; };
       license = "MIT";
       copyright = "2018 IOHK";
@@ -97,6 +97,7 @@
             (hsPkgs.cardano-prelude)
             (hsPkgs.dhall)
             (hsPkgs.safe-exceptions)
+            (hsPkgs.process)
             (hsPkgs.QuickCheck)
             (hsPkgs.quickcheck-state-machine)
             (hsPkgs.tree-diff)
@@ -106,6 +107,9 @@
             (hsPkgs.concurrency)
             (hsPkgs.dejafu)
             (hsPkgs.hunit-dejafu)
+            ];
+          build-tools = [
+            (hsPkgs.buildPackages.cardano-shell or (pkgs.buildPackages.cardano-shell))
             ];
           };
         };
