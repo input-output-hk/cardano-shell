@@ -38,6 +38,10 @@ let
         # turtle seems to have the same issue.
         packages.turtle.doExactConfig = true;
       }
+
+      {
+        packages.cardano-shell.src = haskell.cleanSourceHaskell ../.;
+      }
     ];
   };
 
