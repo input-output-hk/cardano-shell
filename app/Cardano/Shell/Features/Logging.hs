@@ -24,6 +24,8 @@ import           Control.Exception.Safe (MonadCatch)
 import qualified Control.Monad.STM as STM
 import           Options.Applicative
 
+import           Cardano.BM.Data.Backend (Backend)
+import qualified Cardano.BM.Backend.Switchboard as Switchboard
 import           Cardano.BM.Configuration (Configuration)
 import qualified Cardano.BM.Configuration as Config
 import           Cardano.BM.Data.LogItem (LOContent (..), LOMeta (..),
@@ -78,6 +80,7 @@ data LoggingLayer = LoggingLayer
     , llBracketStmIO    :: forall a t.      (Show a) => Trace IO a -> Severity -> Text -> STM.STM t -> IO t
     , llBracketStmLogIO :: forall a t.      (Show a) => Trace IO a -> Severity -> Text -> STM.STM (t,[(LOMeta, LOContent a)]) -> IO t
     , llConfiguration   :: Configuration
+    , llAddBackend      :: Backend Text -> Text -> IO ()
     }
 
 --------------------------------
@@ -154,6 +157,7 @@ loggingCardanoFeatureInit loggingConfiguration = do
                     , llBracketStmIO    = Stm.bracketObserveIO logConfig
                     , llBracketStmLogIO = Stm.bracketObserveLogIO logConfig
                     , llConfiguration   = logConfig
+                    , llAddBackend      = Switchboard.addExternalBackend switchBoard
                     }
 
     -- Cleanup function which shuts down the switchboard.
