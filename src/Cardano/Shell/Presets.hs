@@ -8,14 +8,12 @@ import           Cardano.Prelude
 import           Cardano.Shell.Constants.Types (Block (..),
                                                 CardanoConfiguration (..),
                                                 Certificate (..), Core (..),
-                                                DLG (..),
-                                                Genesis (..),
+                                                DLG (..), Genesis (..),
                                                 LastKnownBlockVersion (..),
                                                 NTP (..), Node (..),
-                                                SSC (..),
-                                                TLS (..), TXP (..),
-                                                Throttle (..),
-                                                Update (..),
+                                                RequireNetworkMagic (..),
+                                                SSC (..), TLS (..), TXP (..),
+                                                Throttle (..), Update (..),
                                                 Wallet (..))
 
 --------------------------------------------------------------------------------
@@ -30,15 +28,15 @@ mainnetConfiguration =
     , ccDBPath              = "./db/"
     , ccApplicationLockFile = ""
     , ccCore =
-        Core
+        pure Core
           { coGenesis =
-              Genesis
+              pure Genesis
                 { geSrc             = "mainnet-genesis.json"
                 , geGenesisHash     = "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
                 , gePrevBlockHash   = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
                 }
-          , coRequiresNetworkMagic = "RequiresNoMagic"
-          , coDBSerializeVersion   = 0
+          , coRequiresNetworkMagic = Last $ Just RequireNetworkMagic
+          , coDBSerializeVersion   = Last Nothing
           }
     , ccNTP =
         NTP
@@ -150,15 +148,15 @@ devConfiguration =
     , ccLogConfig           = "./log-config.yaml"
     , ccApplicationLockFile = ""
     , ccCore     =
-      Core
+      pure Core
         { coGenesis  =
-          Genesis
+          pure Genesis
             { geSrc             = "testnet-genesis.json"
             , geGenesisHash     = "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
             , gePrevBlockHash   = "b7f76950bc4866423538ab7764fc1c7020b24a5f717a5bee3109ff2796567214"
             }
-        , coRequiresNetworkMagic = "RequiresNoMagic"
-        , coDBSerializeVersion   = 0
+        , coRequiresNetworkMagic = Last $ Just RequireNetworkMagic
+        , coDBSerializeVersion   = Last Nothing
         }
     , ccNTP =
         NTP

@@ -1,9 +1,14 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Cardano.Shell.Constants.Types
     ( CardanoConfiguration (..)
     , Core (..)
+    -- * specific for @Core@
+    , RequireNetworkMagic (..)
     , Genesis (..)
     , Spec (..)
     , Initializer (..)
+    -- * rest
     , TestBalance (..)
     , FakeAvvmBalance (..)
     , BlockVersionData (..)
@@ -44,7 +49,7 @@ data CardanoConfiguration = CardanoConfiguration
     -- ^ The location of the application lock file that is used
     -- as a semaphore se we can run just one application
     -- instance at a time.
-    , ccCore                :: !Core
+    , ccCore                :: !(Last Core)
     , ccNTP                 :: !NTP
     , ccUpdate              :: !Update
     , ccTXP                 :: !TXP
@@ -56,14 +61,38 @@ data CardanoConfiguration = CardanoConfiguration
     , ccWallet              :: !Wallet
     } deriving (Eq, Show)
 
+-- | Do we require network magic or not?
+-- Network magic allows the differentiation from mainnet and testnet.
+data RequireNetworkMagic
+    = RequireNetworkMagic
+    | NoRequireNetworkMagic
+    deriving (Eq, Show, Generic)
+
+-- | Core configuration.
 data Core = Core
-    { coGenesis              :: !Genesis
-    , coRequiresNetworkMagic :: !Text
-      -- ^ Bool-isomorphic flag indicating whether we're on testnet.
-      -- or mainnet/staging.
-    , coDBSerializeVersion   :: !Integer
-      -- ^ Versioning for values in node's DB.
-    } deriving (Eq, Show)
+    { coGenesis              :: !(Last Genesis)
+    -- ^ Genesis information
+    , coRequiresNetworkMagic :: !(Last RequireNetworkMagic)
+    -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
+    , coDBSerializeVersion   :: !(Last Integer)
+    -- ^ Versioning for values in node's DB.
+    } deriving (Eq, Show, Generic)
+
+instance Semigroup Core where
+    core1 <> core2 =
+        Core
+            { coGenesis                 = coGenesis core1 <> coGenesis core2
+            , coRequiresNetworkMagic    = coRequiresNetworkMagic core1 <> coRequiresNetworkMagic core2
+            , coDBSerializeVersion      = coDBSerializeVersion core1 <> coDBSerializeVersion core2
+            }
+
+instance Monoid Core where
+    mempty =
+        Core
+            { coGenesis                 = mempty
+            , coRequiresNetworkMagic    = mempty
+            , coDBSerializeVersion      = mempty
+            }
 
 -- | The genesis section.
 -- For now, we only store the path to the genesis file(s) and their hash.
@@ -78,7 +107,23 @@ data Genesis = Genesis
     { geSrc             :: !FilePath
     , geGenesisHash     :: !Text
     , gePrevBlockHash   :: !Text
-    } deriving (Eq, Show)
+    } deriving (Eq, Show, Generic)
+
+instance Semigroup Genesis where
+    genesis1 <> genesis2 =
+        Genesis
+            { geSrc             = geSrc genesis1 <> geSrc genesis2
+            , geGenesisHash     = geGenesisHash genesis1 <> geGenesisHash genesis2
+            , gePrevBlockHash   = gePrevBlockHash genesis1 <> gePrevBlockHash genesis2
+            }
+
+instance Monoid Genesis where
+    mempty =
+        Genesis
+            { geSrc             = mempty
+            , geGenesisHash     = mempty
+            , gePrevBlockHash   = mempty
+            }
 
 data Spec = Spec
     { spInitializer       :: !Initializer
