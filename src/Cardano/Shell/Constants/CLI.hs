@@ -19,13 +19,16 @@ import           Cardano.Shell.Constants.Types
 lastOption :: Parser a -> Parser (Last a)
 lastOption parser = Last <$> optional parser
 
+lastStrOption :: IsString a => Mod OptionFields a -> Parser (Last a)
+lastStrOption args = Last <$> optional (strOption args)
+
 --------------------------------------------------------------------------------
 -- Core
 --------------------------------------------------------------------------------
 
 -- | The parser for the logging specific arguments.
-configCoreCLIParser :: Parser Core
-configCoreCLIParser = Core
+configCoreCLIParser :: Parser PartialCore
+configCoreCLIParser = PartialCore
     <$> lastOption parseGenesis
     <*> lastOption parseNetworkMagic
     <*> lastOption parseDBVersion
@@ -56,20 +59,20 @@ parseDBVersion =
         )
 
 -- | CLI parser for @Genesis@.
-parseGenesis :: Parser Genesis
+parseGenesis :: Parser PartialGenesis
 parseGenesis =
-    Genesis
-        <$> strOption
+    PartialGenesis
+        <$> lastStrOption
            ( long "src-file-path"
           <> metavar "SRC-FILE-PATH"
           <> help "The filepath to the genesis file."
            )
-        <*> strOption
+        <*> lastStrOption
            ( long "genesis-hash"
           <> metavar "GENESIS-HASH"
           <> help "The genesis hash value."
            )
-        <*> strOption
+        <*> lastStrOption
            ( long "prev-block-hash"
           <> metavar "PREV-BLOCK-HASH"
           <> help "The hash of the previous block."
