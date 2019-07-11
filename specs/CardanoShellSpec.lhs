@@ -674,7 +674,7 @@ Let's take a look at some of the key functions we will use:
 > blockchainContents = getBlockchainContents
 
 > fetchUniqueUpdatesFromBlockchain (Blockchain blockchain) =
->     let foldrInstallerVersions installerVersions (_epoch, slots) = installerVersions <> filter isJust (map slotContainsInstaller slots)
+>     let foldrInstallerVersions installerVersions (epoch, slots) = installerVersions <> filter isJust (map slotContainsInstaller slots)
 >     in  Set.fromList $ catMaybes (foldl foldrInstallerVersions mempty (Map.toList blockchain))
 
 %endif

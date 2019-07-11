@@ -100,7 +100,6 @@ loggingParser = LoggingCLIArguments
     <$> strOption
         ( long "log-config"
        <> metavar "LOGCONFIG"
-       <> value ""
        <> help "Configuration file for logging"
         )
 

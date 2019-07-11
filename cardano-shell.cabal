@@ -33,6 +33,7 @@ library
     , Cardano.Shell.Update.Types
     -- Constants
     , Cardano.Shell.Constants.Types
+    , Cardano.Shell.Constants.CLI
     , Cardano.Shell.Presets
     -- Features
     , Cardano.Shell.Features.Logging
