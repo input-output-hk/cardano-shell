@@ -76,7 +76,7 @@ createNetworkingFeature loggingLayer cardanoEnvironment cardanoConfiguration = d
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
     networkingConfiguration <-  pure "THIS IS AN EXAMPLE OF A CONFIGURATION!"
 
-    putTextLn $ "The DB version" <> (show $ coDBSerializeVersion <$> ccCore cardanoConfiguration)
+    putTextLn $ "The DB version" <> (show $ coDBSerializeVersion $ ccCore cardanoConfiguration)
 
     -- we construct the layer
     networkingLayer         <- (featureInit networkingCardanoFeatureInit) cardanoEnvironment loggingLayer cardanoConfiguration networkingConfiguration

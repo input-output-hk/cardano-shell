@@ -6,9 +6,11 @@ module Cardano.Shell.Presets
 import           Cardano.Prelude
 
 import           Cardano.Shell.Constants.Types (Block (..),
-                                                CardanoConfiguration (..),
-                                                Certificate (..), Core (..),
-                                                DLG (..), Genesis (..),
+                                                PartialCardanoConfiguration (..),
+                                                Certificate (..),
+                                                PartialCore (..),
+                                                DLG (..),
+                                                PartialGenesis (..),
                                                 LastKnownBlockVersion (..),
                                                 NTP (..), Node (..),
                                                 RequireNetworkMagic (..),
@@ -20,25 +22,25 @@ import           Cardano.Shell.Constants.Types (Block (..),
 -- Cardano Mainnet Configuration
 --------------------------------------------------------------------------------
 
-mainnetConfiguration :: CardanoConfiguration
+mainnetConfiguration :: PartialCardanoConfiguration
 mainnetConfiguration =
-  CardanoConfiguration
-    { ccLogPath             = "./logs/"
-    , ccLogConfig           = "./configuration/log-configuration.yaml"
-    , ccDBPath              = "./db/"
-    , ccApplicationLockFile = ""
-    , ccCore =
-        pure Core
-          { coGenesis =
-              pure Genesis
-                { geSrc             = "mainnet-genesis.json"
-                , geGenesisHash     = "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
-                , gePrevBlockHash   = "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
+  PartialCardanoConfiguration
+    { pccLogPath             = pure "./logs/"
+    , pccLogConfig           = pure "./configuration/log-configuration.yaml"
+    , pccDBPath              = pure "./db/"
+    , pccApplicationLockFile = pure ""
+    , pccCore =
+        pure PartialCore
+          { pcoGenesis =
+              pure PartialGenesis
+                { pgeSrc             = pure "mainnet-genesis.json"
+                , pgeGenesisHash     = pure "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
+                , pgePrevBlockHash   = pure "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
                 }
-          , coRequiresNetworkMagic = Last $ Just RequireNetworkMagic
-          , coDBSerializeVersion   = Last Nothing
+          , pcoRequiresNetworkMagic = pure RequireNetworkMagic
+          , pcoDBSerializeVersion   = mempty
           }
-    , ccNTP =
+    , pccNTP = pure
         NTP
           { ntpResponseTimeout = 30000000
           , ntpPollDelay       = 1800000000
@@ -48,7 +50,7 @@ mainnetConfiguration =
               , "3.pool.ntp.org"
               ]
           }
-    , ccUpdate =
+    , pccUpdate = pure
         Update
           { upApplicationName       = "cardano-sl"
           , upApplicationVersion    = 1
@@ -59,22 +61,22 @@ mainnetConfiguration =
                 , lkbvAlt   = 0
                 }
                                                }
-    , ccTXP =
+    , pccTXP = pure
         TXP
           { txpMemPoolLimitTx = 200
           , txpAssetLockedSrcAddress = []
           }
-    , ccSSC =
+    , pccSSC = pure
         SSC
           { sscMPCSendInterval               = 100
           , sscMdNoCommitmentsEpochThreshold = 3
           , sscNoReportNoSecretsForEpoch1    = True
           }
-    , ccDLG =
+    , pccDLG = pure
         DLG { dlgCacheParam          = 500
             , dlgMessageCacheTimeout = 30
             }
-    , ccBlock =
+    , pccBlock = pure
         Block
           { blNetworkDiameter        = 18
           , blRecoveryHeadersMessage = 2200
@@ -86,7 +88,7 @@ mainnetConfiguration =
           , blCriticalForkThreshold  = 3
           , blFixedTimeCQ            = 3600
           }
-    , ccNode =
+    , pccNode = pure
         Node
           { noNetworkConnectionTimeout     = 15000
           , noConversationEstablishTimeout = 30000
@@ -96,7 +98,7 @@ mainnetConfiguration =
           , noWalletTxCreationDisabled     = False
           , noExplorerExtendedApi          = False
           }
-    , ccTLS =
+    , pccTLS = pure
         TLS
           { tlsCA =
               Certificate
@@ -124,7 +126,7 @@ mainnetConfiguration =
                 , certAltDNS       = []
                 }
                                             }
-    , ccWallet =
+    , pccWallet = pure
         Wallet
           { waThrottle =
               SetThrottle
@@ -140,26 +142,26 @@ mainnetConfiguration =
 -- Cardano Dev Configuration
 --------------------------------------------------------------------------------
 
-devConfiguration :: CardanoConfiguration
+devConfiguration :: PartialCardanoConfiguration
 devConfiguration =
-  CardanoConfiguration
-    { ccLogPath             = "./logs/"
-    , ccDBPath              = "./db/"
-    , ccLogConfig           = "./log-config.yaml"
-    , ccApplicationLockFile = ""
-    , ccCore     =
-      pure Core
-        { coGenesis  =
-          pure Genesis
-            { geSrc             = "testnet-genesis.json"
-            , geGenesisHash     = "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
-            , gePrevBlockHash   = "b7f76950bc4866423538ab7764fc1c7020b24a5f717a5bee3109ff2796567214"
+  PartialCardanoConfiguration
+    { pccLogPath             = pure "./logs/"
+    , pccDBPath              = pure "./db/"
+    , pccLogConfig           = pure "./log-config.yaml"
+    , pccApplicationLockFile = pure ""
+    , pccCore                = pure
+      PartialCore
+        { pcoGenesis  =
+          pure PartialGenesis
+            { pgeSrc             = pure "testnet-genesis.json"
+            , pgeGenesisHash     = pure "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
+            , pgePrevBlockHash   = pure "b7f76950bc4866423538ab7764fc1c7020b24a5f717a5bee3109ff2796567214"
             }
-        , coRequiresNetworkMagic = Last $ Just RequireNetworkMagic
-        , coDBSerializeVersion   = Last Nothing
+        , pcoRequiresNetworkMagic = pure RequireNetworkMagic
+        , pcoDBSerializeVersion   = mempty
         }
-    , ccNTP =
-        NTP
+    , pccNTP                 = pure
+         NTP
           { ntpResponseTimeout = 30000000
           , ntpPollDelay       = 1800000000
           , ntpServers         =
@@ -168,7 +170,7 @@ devConfiguration =
             , "3.pool.ntp.org"
             ]
           }
-    , ccUpdate =
+    , pccUpdate              = pure
         Update
           { upApplicationName       = "cardano-sl"
           , upApplicationVersion    = 0
@@ -179,23 +181,23 @@ devConfiguration =
               , lkbvAlt   = 0
               }
                                                }
-    , ccTXP =
+    , pccTXP                 = pure
         TXP
           { txpMemPoolLimitTx = 200
           , txpAssetLockedSrcAddress = []
           }
-    , ccSSC =
+    , pccSSC                 = pure
         SSC
           { sscMPCSendInterval = 10
           , sscMdNoCommitmentsEpochThreshold = 3
           , sscNoReportNoSecretsForEpoch1    = False
           }
-    , ccDLG =
+    , pccDLG                 = pure
         DLG
           { dlgCacheParam          = 500
           , dlgMessageCacheTimeout = 30
           }
-    , ccBlock =
+    , pccBlock               = pure
         Block
           { blNetworkDiameter        = 3
           , blRecoveryHeadersMessage = 20
@@ -207,7 +209,7 @@ devConfiguration =
           , blCriticalForkThreshold  = 2
           , blFixedTimeCQ            = 10
           }
-    , ccNode =
+    , pccNode                = pure
         Node
           { noNetworkConnectionTimeout     = 15000
           , noConversationEstablishTimeout = 30000
@@ -217,7 +219,7 @@ devConfiguration =
           , noWalletTxCreationDisabled     = False
           , noExplorerExtendedApi          = False
           }
-    , ccTLS =
+    , pccTLS                 = pure
         TLS
           { tlsCA =
               Certificate
@@ -246,7 +248,7 @@ devConfiguration =
                 , certAltDNS       = []
                 }
           }
-    , ccWallet =
+    , pccWallet              = pure
         Wallet
           { waThrottle =  SetThrottle
             { thEnabled = False

@@ -1,11 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Cardano.Shell.Constants.Types
-    ( CardanoConfiguration (..)
-    , Core (..)
+    ( CardanoConfiguration (..), PartialCardanoConfiguration (..)
+    , Core (..), PartialCore (..)
     -- * specific for @Core@
     , RequireNetworkMagic (..)
-    , Genesis (..)
+    , Genesis (..), PartialGenesis (..)
     , Spec (..)
     , Initializer (..)
     -- * rest
@@ -49,7 +50,7 @@ data CardanoConfiguration = CardanoConfiguration
     -- ^ The location of the application lock file that is used
     -- as a semaphore se we can run just one application
     -- instance at a time.
-    , ccCore                :: !(Last Core)
+    , ccCore                :: !Core
     , ccNTP                 :: !NTP
     , ccUpdate              :: !Update
     , ccTXP                 :: !TXP
@@ -61,6 +62,23 @@ data CardanoConfiguration = CardanoConfiguration
     , ccWallet              :: !Wallet
     } deriving (Eq, Show)
 
+data PartialCardanoConfiguration = PartialCardanoConfiguration
+    { pccLogPath             :: !(Last FilePath)
+    , pccLogConfig           :: !(Last FilePath)
+    , pccDBPath              :: !(Last FilePath)
+    , pccApplicationLockFile :: !(Last FilePath)
+    , pccCore                :: !(Last PartialCore)
+    , pccNTP                 :: !(Last NTP)
+    , pccUpdate              :: !(Last Update)
+    , pccTXP                 :: !(Last TXP)
+    , pccSSC                 :: !(Last SSC)
+    , pccDLG                 :: !(Last DLG)
+    , pccBlock               :: !(Last Block)
+    , pccNode                :: !(Last Node)
+    , pccTLS                 :: !(Last TLS)
+    , pccWallet              :: !(Last Wallet)
+    } deriving (Eq, Show)
+
 -- | Do we require network magic or not?
 -- Network magic allows the differentiation from mainnet and testnet.
 data RequireNetworkMagic
@@ -70,28 +88,34 @@ data RequireNetworkMagic
 
 -- | Core configuration.
 data Core = Core
-    { coGenesis              :: !(Last Genesis)
+    { coGenesis              :: !Genesis
     -- ^ Genesis information
-    , coRequiresNetworkMagic :: !(Last RequireNetworkMagic)
+    , coRequiresNetworkMagic :: !RequireNetworkMagic
     -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
-    , coDBSerializeVersion   :: !(Last Integer)
+    , coDBSerializeVersion   :: !Integer
     -- ^ Versioning for values in node's DB.
     } deriving (Eq, Show, Generic)
 
-instance Semigroup Core where
+data PartialCore = PartialCore
+    { pcoGenesis              :: !(Last PartialGenesis)
+    , pcoRequiresNetworkMagic :: !(Last RequireNetworkMagic)
+    , pcoDBSerializeVersion   :: !(Last Integer)
+    } deriving (Eq, Show, Generic)
+
+instance Semigroup PartialCore where
     core1 <> core2 =
-        Core
-            { coGenesis                 = coGenesis core1 <> coGenesis core2
-            , coRequiresNetworkMagic    = coRequiresNetworkMagic core1 <> coRequiresNetworkMagic core2
-            , coDBSerializeVersion      = coDBSerializeVersion core1 <> coDBSerializeVersion core2
+        PartialCore
+            { pcoGenesis                 = pcoGenesis core1 <> pcoGenesis core2
+            , pcoRequiresNetworkMagic    = pcoRequiresNetworkMagic core1 <> pcoRequiresNetworkMagic core2
+            , pcoDBSerializeVersion      = pcoDBSerializeVersion core1 <> pcoDBSerializeVersion core2
             }
 
-instance Monoid Core where
+instance Monoid PartialCore where
     mempty =
-        Core
-            { coGenesis                 = mempty
-            , coRequiresNetworkMagic    = mempty
-            , coDBSerializeVersion      = mempty
+        PartialCore
+            { pcoGenesis                 = mempty
+            , pcoRequiresNetworkMagic    = mempty
+            , pcoDBSerializeVersion      = mempty
             }
 
 -- | The genesis section.
@@ -109,20 +133,26 @@ data Genesis = Genesis
     , gePrevBlockHash   :: !Text
     } deriving (Eq, Show, Generic)
 
-instance Semigroup Genesis where
+data PartialGenesis = PartialGenesis
+    { pgeSrc            :: !(Last FilePath)
+    , pgeGenesisHash    :: !(Last Text)
+    , pgePrevBlockHash  :: !(Last Text)
+    } deriving (Eq, Show, Generic)
+
+instance Semigroup PartialGenesis where
     genesis1 <> genesis2 =
-        Genesis
-            { geSrc             = geSrc genesis1 <> geSrc genesis2
-            , geGenesisHash     = geGenesisHash genesis1 <> geGenesisHash genesis2
-            , gePrevBlockHash   = gePrevBlockHash genesis1 <> gePrevBlockHash genesis2
+        PartialGenesis
+            { pgeSrc             = pgeSrc genesis1 <> pgeSrc genesis2
+            , pgeGenesisHash     = pgeGenesisHash genesis1 <> pgeGenesisHash genesis2
+            , pgePrevBlockHash   = pgePrevBlockHash genesis1 <> pgePrevBlockHash genesis2
             }
 
-instance Monoid Genesis where
+instance Monoid PartialGenesis where
     mempty =
-        Genesis
-            { geSrc             = mempty
-            , geGenesisHash     = mempty
-            , gePrevBlockHash   = mempty
+        PartialGenesis
+            { pgeSrc             = mempty
+            , pgeGenesisHash     = mempty
+            , pgePrevBlockHash   = mempty
             }
 
 data Spec = Spec

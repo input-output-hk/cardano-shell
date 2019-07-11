@@ -10,8 +10,9 @@ import           Cardano.Shell.Features.Logging (LoggingCLIArguments,
                                                  loggingParser)
 import           Cardano.Shell.Features.Networking (createNetworkingFeature)
 
-import           Cardano.Shell.Constants.Types (CardanoConfiguration (..),
-                                                Core (..))
+import           Cardano.Shell.Configuration.Lib (finaliseCardanoConfiguration)
+import           Cardano.Shell.Constants.Types (PartialCardanoConfiguration (..),
+                                                PartialCore (..))
 import           Cardano.Shell.Constants.CLI (configCoreCLIParser)
 import           Cardano.Shell.Lib
 import           Cardano.Shell.Presets (mainnetConfiguration)
@@ -22,7 +23,7 @@ import           Options.Applicative
 
 -- | The product type of all command line arguments.
 -- All here being - from all the features.
-data CLIArguments = CLIArguments !LoggingCLIArguments !Core
+data CLIArguments = CLIArguments !LoggingCLIArguments !PartialCore
 
 main :: IO ()
 main = do
@@ -82,19 +83,19 @@ main = do
 -- anytime.
 -- Another interesting thing is that we stack the effects ONLY when we use a function from
 -- another layer, and we don't get all the effects, just the ones the function contains.
-initializeAllFeatures :: CardanoConfiguration -> CardanoEnvironment -> IO ([CardanoFeature], LoggingLayer)
-initializeAllFeatures cardanoConfiguration cardanoEnvironment = do
+initializeAllFeatures :: PartialCardanoConfiguration -> CardanoEnvironment -> IO ([CardanoFeature], LoggingLayer)
+initializeAllFeatures partialConfig cardanoEnvironment = do
 
     -- Here we parse the __CLI__ arguments for the actual application.
-    CLIArguments loggingCLIArguments coreConfig <- execParser parserWithInfo
+    CLIArguments loggingCLIArguments coreCLI <- execParser parserWithInfo
 
-    -- TODO(KS): Looks like we might need to include lenses at some point?
-    let cardanoConfiguration' = cardanoConfiguration { ccCore = ccCore cardanoConfiguration <> pure coreConfig }
+    finalConfig <- either (throwIO . ConfigurationError) pure $
+          finaliseCardanoConfiguration $ partialConfig { pccCore = pccCore partialConfig <> pure coreCLI }
 
     -- Here we initialize all the features
-    (loggingLayer, loggingFeature)  <- createLoggingFeature cardanoEnvironment cardanoConfiguration' loggingCLIArguments
+    (loggingLayer, loggingFeature)  <- createLoggingFeature cardanoEnvironment finalConfig loggingCLIArguments
 
-    (_           , networkFeature)  <- createNetworkingFeature loggingLayer cardanoEnvironment cardanoConfiguration'
+    (_           , networkFeature)  <- createNetworkingFeature loggingLayer cardanoEnvironment finalConfig
 
     -- Here we return all the features.
     let allCardanoFeatures :: [CardanoFeature]
