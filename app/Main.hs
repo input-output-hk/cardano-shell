@@ -89,22 +89,7 @@ initializeAllFeatures cardanoConfiguration cardanoEnvironment = do
     CLIArguments loggingCLIArguments coreConfig <- execParser parserWithInfo
 
     -- TODO(KS): Looks like we might need to include lenses at some point?
-    let cardanoConfiguration' = CardanoConfiguration
-                                    { ccCore                    = ccCore cardanoConfiguration <> pure coreConfig
-                                    , ccLogPath                 = ccLogPath cardanoConfiguration
-                                    , ccLogConfig               = ccLogConfig cardanoConfiguration
-                                    , ccDBPath                  = ccDBPath cardanoConfiguration
-                                    , ccApplicationLockFile     = ccApplicationLockFile cardanoConfiguration
-                                    , ccNTP                     = ccNTP cardanoConfiguration
-                                    , ccUpdate                  = ccUpdate cardanoConfiguration
-                                    , ccTXP                     = ccTXP cardanoConfiguration
-                                    , ccSSC                     = ccSSC cardanoConfiguration
-                                    , ccDLG                     = ccDLG cardanoConfiguration
-                                    , ccBlock                   = ccBlock cardanoConfiguration
-                                    , ccNode                    = ccNode cardanoConfiguration
-                                    , ccTLS                     = ccTLS cardanoConfiguration
-                                    , ccWallet                  = ccWallet cardanoConfiguration
-                                    }
+    let cardanoConfiguration' = cardanoConfiguration { ccCore = ccCore cardanoConfiguration <> pure coreConfig }
 
     -- Here we initialize all the features
     (loggingLayer, loggingFeature)  <- createLoggingFeature cardanoEnvironment cardanoConfiguration' loggingCLIArguments
