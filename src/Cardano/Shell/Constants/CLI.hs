@@ -63,8 +63,8 @@ parseGenesis :: Parser PartialGenesis
 parseGenesis =
     PartialGenesis
         <$> lastStrOption
-           ( long "src-file-path"
-          <> metavar "SRC-FILE-PATH"
+           ( long "genesis-file"
+          <> metavar "FILEPATH"
           <> help "The filepath to the genesis file."
            )
         <*> lastStrOption
