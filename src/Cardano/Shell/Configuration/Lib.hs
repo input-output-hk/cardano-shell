@@ -42,41 +42,43 @@ lastToEither errMsg (Last x) = maybe (Left errMsg) Right x
 -- in the partial options monoid approach, after all the parametrisation layers have been merged,
 -- and we're intending to use the resultant config -- they ensure that all values are defined.
 --
+-- NOTE: we should look into applying generic programming and/or TH for this boilerlate.
+--
 finaliseCardanoConfiguration :: PartialCardanoConfiguration -> Either Text CardanoConfiguration
 finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
-  ccLogPath                <- lastToEither "Unspecified ccLogPath"      pccLogPath
-  ccLogConfig              <- lastToEither "Unspecified ccLogConfig"    pccLogConfig
-  ccDBPath                 <- lastToEither "Unspecified ccDBPath"       pccDBPath
-  ccApplicationLockFile    <- lastToEither "Unspecified ccApplicationLockFile"
-                                                                        pccApplicationLockFile
-  ccCore                   <- join $ finaliseCore <$>
-                              lastToEither "Unspecified ccCore"         pccCore
-  ccNTP                    <- lastToEither "Unspecified ccNTP"          pccNTP
-  ccUpdate                 <- lastToEither "Unspecified ccUpdate"       pccUpdate
-  ccTXP                    <- lastToEither "Unspecified ccTXP"          pccTXP
-  ccSSC                    <- lastToEither "Unspecified ccSSC"          pccSSC
-  ccDLG                    <- lastToEither "Unspecified ccDLG"          pccDLG
-  ccBlock                  <- lastToEither "Unspecified ccBlock"        pccBlock
-  ccNode                   <- lastToEither "Unspecified ccNode"         pccNode
-  ccTLS                    <- lastToEither "Unspecified ccTLS"          pccTLS
-  ccWallet                 <- lastToEither "Unspecified ccWallet"       pccWallet
-
-  pure CardanoConfiguration{..}
+    ccLogPath                <- lastToEither "Unspecified ccLogPath"      pccLogPath
+    ccLogConfig              <- lastToEither "Unspecified ccLogConfig"    pccLogConfig
+    ccDBPath                 <- lastToEither "Unspecified ccDBPath"       pccDBPath
+    ccApplicationLockFile    <- lastToEither "Unspecified ccApplicationLockFile"
+                                                                          pccApplicationLockFile
+    ccCore                   <- join $ finaliseCore <$>
+                                lastToEither "Unspecified ccCore"         pccCore
+    ccNTP                    <- lastToEither "Unspecified ccNTP"          pccNTP
+    ccUpdate                 <- lastToEither "Unspecified ccUpdate"       pccUpdate
+    ccTXP                    <- lastToEither "Unspecified ccTXP"          pccTXP
+    ccSSC                    <- lastToEither "Unspecified ccSSC"          pccSSC
+    ccDLG                    <- lastToEither "Unspecified ccDLG"          pccDLG
+    ccBlock                  <- lastToEither "Unspecified ccBlock"        pccBlock
+    ccNode                   <- lastToEither "Unspecified ccNode"         pccNode
+    ccTLS                    <- lastToEither "Unspecified ccTLS"          pccTLS
+    ccWallet                 <- lastToEither "Unspecified ccWallet"       pccWallet
+  
+    pure CardanoConfiguration{..}
 
 finaliseCore :: PartialCore -> Either Text Core
 finaliseCore PartialCore{..} = do
-  coGenesis                 <- join $ finaliseGenesis <$>
-                               lastToEither "Unspecified coGenesis"                 pcoGenesis
-  coRequiresNetworkMagic    <- lastToEither "Unspecified coRequiresNetworkMagic"    pcoRequiresNetworkMagic
-  coDBSerializeVersion      <- lastToEither "Unspecified coDBSerializeVersion"      pcoDBSerializeVersion
-  pure Core{..}
+    coGenesis                <- join $ finaliseGenesis <$>
+                                lastToEither "Unspecified coGenesis"                 pcoGenesis
+    coRequiresNetworkMagic   <- lastToEither "Unspecified coRequiresNetworkMagic"    pcoRequiresNetworkMagic
+    coDBSerializeVersion     <- lastToEither "Unspecified coDBSerializeVersion"      pcoDBSerializeVersion
+    pure Core{..}
 
 finaliseGenesis :: PartialGenesis -> Either Text Genesis
 finaliseGenesis PartialGenesis{..} = do
-  geSrc                     <- lastToEither "Unspecified geSrc"                     pgeSrc
-  geGenesisHash             <- lastToEither "Unspecified geGenesisHash"             pgeGenesisHash
-  gePrevBlockHash           <- lastToEither "Unspecified gePrevBlockHash"           pgePrevBlockHash
-  pure Genesis{..}
+    geSrc                    <- lastToEither "Unspecified geSrc"                     pgeSrc
+    geGenesisHash            <- lastToEither "Unspecified geGenesisHash"             pgeGenesisHash
+    gePrevBlockHash          <- lastToEither "Unspecified gePrevBlockHash"           pgePrevBlockHash
+    pure Genesis{..}
 
 -- | Generate 'TopologyConfig' with given 'Cluster'
 mkTopology :: Cluster -> IO TopologyConfig
