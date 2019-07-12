@@ -125,7 +125,7 @@
 >
 > type List a = [a]
 > type Pair a b = (a, b)
-> 
+>
 > pattern Pair :: forall a b. a -> b -> (a, b)
 > pattern Pair x y = (x, y)
 
@@ -133,14 +133,14 @@
 > x `implies` y = not x || y
 > infixr 1 `implies`
 
-> data ServerMessage 
+> data ServerMessage
 >    = QueryPort
 >    | Ping
 
 > instance Eq ServerMessage
 > instance Ord ServerMessage
 
-> data ClientMessage 
+> data ClientMessage
 >    = Started
 >    | Pong
 >    | ReplyPort Word16
@@ -189,7 +189,7 @@ This document is a high-level specification of how the pieces that make Cardano 
 
 The introduction. WIP!
 
-\newpage 
+\newpage
 \section{TLA+}
 \label{sec:tla}
 
@@ -202,7 +202,7 @@ The other parts are just experiments waiting for completion.\\
 
 For example, this is what I started to do to check how the update system will work, but realized that it would have to be really quite more involved so I stopped at that point (in the interest of time) - \url{https://github.com/input-output-hk/cardano-shell/blob/develop/specs/tla/UpdateSystem.pdf}.
 
-\newpage 
+\newpage
 \section{IPC and communication between Daedalus and Node}
 \label{sec:ipc}
 
@@ -244,7 +244,7 @@ What does this bring us? It brings us the ability to \textbf{decouple} our imple
     \postlevel
     \begin{callself}{ss}{Start IPC}{}
     \end{callself}
-    
+
     \postlevel
     \begin{call}{ss}{What is your port number?}{nd}{Node port number}
     \end{call}
@@ -255,7 +255,7 @@ What does this bring us? It brings us the ability to \textbf{decouple} our imple
   \label{fig:ipcSimpleFig}
 \end{figure}
 
-\newpage 
+\newpage
 \subsection{IPC simple communication}
 \label{sec:ipcSimple}
 
@@ -295,7 +295,7 @@ Very simple transformation rules can be applied here.
 
 And that's it. Let's now take a look at a more involved case where we care about exceptional situations.
 
-\newpage 
+\newpage
 \subsection{IPC simple communication with exceptions}
 \label{sec:ipcSimpleExceptions}
 
@@ -329,7 +329,7 @@ The other situation just halts the protocol, which we can observe as bottom.
 
 And this is a simplified way we can observe any exception situation in this communication.
 
-\newpage 
+\newpage
 \subsection{IPC protocol communication with exceptions}
 \label{sec:ipcProtocol}
 
@@ -365,7 +365,7 @@ The other situation just halts the protocol, which we can observe as bottom.
     \AxiomC{$Started$}
     \UnaryInfC{$QueryPort$}
     \AxiomC{}
-    \UnaryInfC{$\neg MessageSendFailure$}   
+    \UnaryInfC{$\neg MessageSendFailure$}
     \BinaryInfC{$ReplyPort \{ \textbf{port} \mid port < 65535 \wedge port > 0 \}$}
     \DisplayProof
 \end{equation}
@@ -389,7 +389,7 @@ The state machine diagram that can be used to represent this can be seen here.\\
         \node[state, accepting, right of=q2] (q3) {$Pong$};
         \node[state, below of=q1] (q4) {$QueryPort$};
         \node[state, accepting, right of=q4] (q5) {$ReplyPort$};
-        \draw 
+        \draw
             (q1) edge[above] node{} (q2)
             (q2) edge[above] node{} (q3)
             (q3) edge[bend left, below] node{} (q1) %return
@@ -418,7 +418,7 @@ The state machine diagram that can be used to represent this can be seen here.\\
         \begin{call}{se}{QueryPort}{cl}{ReplyPort PORT}
         \end{call}
     %\end{sdloop}
-    
+
   \end{sequencediagram}
 
   \caption{Message protocol for the full IPC implementation.}
@@ -483,13 +483,13 @@ For example, for the \textbf{QueryPort-ReplyPort} protocol:
 \]
 
 \newpage
-\newpage 
+\newpage
 \section{Update mechanism}
 \label{sec:update}
 
 % https://tex.stackexchange.com/questions/207240/drawing-simple-sequence-diagram/209079
 
-Currently, the \textit{Daedalus} and the \textit{Node} (this is what I'm calling the node, thus the uppercase) communicate via \textbf{JSON API} once they have settled in on a port via which to communicate (see \hyperref[sec:ipc]{here}). 
+Currently, the \textit{Daedalus} and the \textit{Node} (this is what I'm calling the node, thus the uppercase) communicate via \textbf{JSON API} once they have settled in on a port via which to communicate (see \hyperref[sec:ipc]{here}).
 First of all, we need to understand that the blocks in the blockchain contain the version of \textit{Daedalus} (the frontend).
 We can say that \textit{Daedalus}, also known as \textit{frontend} is the \textit{Server}, and that the \textit{Node}, also known as \textit{backend} is the \textit{Client}, which are the same things under different names.
 We can imagine that each block can contain a version of the frontend, which is essentially a hash signature from the installer. That is something that can change in the future, but we can simplify our life by imagining that what the blockchain contains is the link for the installer (which, when simplified, it does).
@@ -579,7 +579,7 @@ As you can imagine, this fits very nicely into testing, for example \textbf{stat
 
 We can advance such idea by increasing the number of updates in the blockchain and by asssigning different versions of the installers to each update.
 
-\newpage 
+\newpage
 \section{Update mechanism with Launcher}
 \label{sec:updateWithLauncher}
 
@@ -594,17 +594,17 @@ A simple communication between the frontend and the blockchain (backend) can be 
     \newinst{da}{Daedalus}{Daedalus}
     \newinst{cn}{Cardano node}{CardanoNode}
     \newinst{bl}{Blockchain}{Blockchain}
-    
+
     \postlevel
     \mess{us}{Starts the wallet}{cl}
-    
+
     \postlevel
     \begin{callself}{cl}{Checks for presence of installer file, if available then start the update installer}{}
     \end{callself}
-    
+
     \postlevel
     \mess{cl}{Starts the Daedalus frontend with node arguments}{da}
-    
+
     \postlevel
     \mess{da}{Starts the node with node arguments from Daedalus}{cn}
 
@@ -614,24 +614,24 @@ A simple communication between the frontend and the blockchain (backend) can be 
 
     \postlevel
     \begin{call}{da}{GET api/internal/next-update}{cn}{Return the applicationName and version }
-    
+
         \postlevel
         \begin{call}{cn}{Any new updates on the blockchain?}{bl}{Found new update linux64 HASH}
         \end{call}
-        
+
     \end{call}
-    
+
     \postlevel
     \begin{call}{da}{"An update is available - restart?"}{us}{Yes, update now}
     \end{call}
-    
+
     \postlevel
     \begin{call}{da}{GET /api/internal/apply-update}{cn}{Exit failure 20}
     \end{call}
-    
+
     \postlevel
     \mess{da}{Exit failure 20}{cl}
-    
+
     \postlevel
     \begin{callself}{cl}{Restart}{}
     \end{callself}
@@ -654,7 +654,7 @@ For now, we can abstract over that and say that each platform has it's own speci
 
 Let's take a look at some of the key functions we will use:
 
-%It's really sad to separate the declaration from the definition, but that's what a 
+%It's really sad to separate the declaration from the definition, but that's what a
 % specification is all about, isn't it!?!
 
 > uniqueKeys :: Ord k => Map k v -> Set k
