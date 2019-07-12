@@ -61,6 +61,16 @@
             (hsPkgs.safe-exceptions)
             ];
           };
+        "daedalus-ipc" = {
+          depends = [
+            (hsPkgs.base)
+            (hsPkgs.cardano-shell)
+            (hsPkgs.cardano-prelude)
+            (hsPkgs.optparse-applicative)
+            (hsPkgs.safe-exceptions)
+            (hsPkgs.iohk-monitoring)
+            ];
+          };
         "cardano-launcher" = {
           depends = [
             (hsPkgs.base)
