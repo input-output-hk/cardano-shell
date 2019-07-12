@@ -1,4 +1,4 @@
-resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/fda38e60007a019c0c8569e8a0fc08f2102c92cc/snapshot.yaml
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/d673b92f2a2d9354d102514d0a0fa74f8248b14a/snapshot.yaml
 
 packages:
 - .
@@ -8,13 +8,13 @@ extra-deps:
   - pretty-show-1.9.5               # Used for quickcheck-state-machine.
 
   - git: https://github.com/input-output-hk/cardano-prelude
-    commit: fda38e60007a019c0c8569e8a0fc08f2102c92cc
+    commit: d673b92f2a2d9354d102514d0a0fa74f8248b14a
     subdirs:
       - .
       - test
 
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
-    commit: e67ac43fc26e3a47ffcf1a10666f2ccd34ce8b1a
+    commit: b2022cf7f5925e486f9e0a31f6f6d02145d5ebda
     subdirs:
       - contra-tracer
       - iohk-monitoring
