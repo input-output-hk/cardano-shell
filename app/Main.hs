@@ -11,9 +11,9 @@ import           Cardano.Shell.Features.Logging (LoggingCLIArguments,
 import           Cardano.Shell.Features.Networking (createNetworkingFeature)
 
 import           Cardano.Shell.Configuration.Lib (finaliseCardanoConfiguration)
-import           Cardano.Shell.Constants.Types (PartialCardanoConfiguration (..),
-                                                PartialCore (..))
 import           Cardano.Shell.Constants.CLI (configCoreCLIParser)
+import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfiguration (..),
+                                                       PartialCore (..))
 import           Cardano.Shell.Lib
 import           Cardano.Shell.Presets (mainnetConfiguration)
 import           Cardano.Shell.Types

@@ -5,14 +5,14 @@ module Cardano.Shell.Presets
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.Constants.Types (Block (..),
-                                                PartialCardanoConfiguration (..),
-                                                Certificate (..),
-                                                PartialCore (..),
+import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfiguration (..),
+                                                       PartialCore (..),
+                                                       PartialGenesis (..),
+                                                       PartialNode (..))
+import           Cardano.Shell.Constants.Types (Block (..), Certificate (..),
                                                 DLG (..),
-                                                PartialGenesis (..),
                                                 LastKnownBlockVersion (..),
-                                                NTP (..), Node (..),
+                                                NTP (..),
                                                 RequireNetworkMagic (..),
                                                 SSC (..), TLS (..), TXP (..),
                                                 Throttle (..), Update (..),
@@ -89,14 +89,14 @@ mainnetConfiguration =
           , blFixedTimeCQ            = 3600
           }
     , pccNode = pure
-        Node
-          { noNetworkConnectionTimeout     = 15000
-          , noConversationEstablishTimeout = 30000
-          , noBlockRetrievalQueueSize      = 100
-          , noPendingTxResubmissionPeriod  = 7
-          , noWalletProductionApi          = True
-          , noWalletTxCreationDisabled     = False
-          , noExplorerExtendedApi          = False
+        PartialNode
+          { pnoNetworkConnectionTimeout     = pure 15000
+          , pnoConversationEstablishTimeout = pure 30000
+          , pnoBlockRetrievalQueueSize      = pure 100
+          , pnoPendingTxResubmissionPeriod  = pure 7
+          , pnoWalletProductionApi          = pure True
+          , pnoWalletTxCreationDisabled     = pure False
+          , pnoExplorerExtendedApi          = pure False
           }
     , pccTLS = pure
         TLS
@@ -210,14 +210,14 @@ devConfiguration =
           , blFixedTimeCQ            = 10
           }
     , pccNode                = pure
-        Node
-          { noNetworkConnectionTimeout     = 15000
-          , noConversationEstablishTimeout = 30000
-          , noBlockRetrievalQueueSize      = 100
-          , noPendingTxResubmissionPeriod  = 7
-          , noWalletProductionApi          = False
-          , noWalletTxCreationDisabled     = False
-          , noExplorerExtendedApi          = False
+        PartialNode
+          { pnoNetworkConnectionTimeout     = pure 15000
+          , pnoConversationEstablishTimeout = pure 30000
+          , pnoBlockRetrievalQueueSize      = pure 100
+          , pnoPendingTxResubmissionPeriod  = pure 7
+          , pnoWalletProductionApi          = pure False
+          , pnoWalletTxCreationDisabled     = pure False
+          , pnoExplorerExtendedApi          = pure False
           }
     , pccTLS                 = pure
         TLS
