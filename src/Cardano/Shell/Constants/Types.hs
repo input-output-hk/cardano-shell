@@ -2,11 +2,11 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Cardano.Shell.Constants.Types
-    ( CardanoConfiguration (..), PartialCardanoConfiguration (..)
-    , Core (..), PartialCore (..)
+    ( CardanoConfiguration (..)
+    , Core (..)
     -- * specific for @Core@
     , RequireNetworkMagic (..)
-    , Genesis (..), PartialGenesis (..)
+    , Genesis (..)
     , Spec (..)
     , Initializer (..)
     -- * rest
@@ -32,6 +32,8 @@ module Cardano.Shell.Constants.Types
     ) where
 
 import           Cardano.Prelude
+
+
 
 --------------------------------------------------------------------------------
 -- Cardano Configuration Data Structures
@@ -62,23 +64,6 @@ data CardanoConfiguration = CardanoConfiguration
     , ccWallet              :: !Wallet
     } deriving (Eq, Show)
 
-data PartialCardanoConfiguration = PartialCardanoConfiguration
-    { pccLogPath             :: !(Last FilePath)
-    , pccLogConfig           :: !(Last FilePath)
-    , pccDBPath              :: !(Last FilePath)
-    , pccApplicationLockFile :: !(Last FilePath)
-    , pccCore                :: !(Last PartialCore)
-    , pccNTP                 :: !(Last NTP)
-    , pccUpdate              :: !(Last Update)
-    , pccTXP                 :: !(Last TXP)
-    , pccSSC                 :: !(Last SSC)
-    , pccDLG                 :: !(Last DLG)
-    , pccBlock               :: !(Last Block)
-    , pccNode                :: !(Last Node)
-    , pccTLS                 :: !(Last TLS)
-    , pccWallet              :: !(Last Wallet)
-    } deriving (Eq, Show)
-
 -- | Do we require network magic or not?
 -- Network magic allows the differentiation from mainnet and testnet.
 data RequireNetworkMagic
@@ -96,28 +81,6 @@ data Core = Core
     -- ^ Versioning for values in node's DB.
     } deriving (Eq, Show, Generic)
 
-data PartialCore = PartialCore
-    { pcoGenesis              :: !(Last PartialGenesis)
-    , pcoRequiresNetworkMagic :: !(Last RequireNetworkMagic)
-    , pcoDBSerializeVersion   :: !(Last Integer)
-    } deriving (Eq, Show, Generic)
-
-instance Semigroup PartialCore where
-    core1 <> core2 =
-        PartialCore
-            { pcoGenesis                 = pcoGenesis core1 <> pcoGenesis core2
-            , pcoRequiresNetworkMagic    = pcoRequiresNetworkMagic core1 <> pcoRequiresNetworkMagic core2
-            , pcoDBSerializeVersion      = pcoDBSerializeVersion core1 <> pcoDBSerializeVersion core2
-            }
-
-instance Monoid PartialCore where
-    mempty =
-        PartialCore
-            { pcoGenesis                 = mempty
-            , pcoRequiresNetworkMagic    = mempty
-            , pcoDBSerializeVersion      = mempty
-            }
-
 -- | The genesis section.
 -- For now, we only store the path to the genesis file(s) and their hash.
 -- The rest is in the hands of the modules/features that need to use it.
@@ -132,28 +95,6 @@ data Genesis = Genesis
     , geGenesisHash     :: !Text
     , gePrevBlockHash   :: !Text
     } deriving (Eq, Show, Generic)
-
-data PartialGenesis = PartialGenesis
-    { pgeSrc            :: !(Last FilePath)
-    , pgeGenesisHash    :: !(Last Text)
-    , pgePrevBlockHash  :: !(Last Text)
-    } deriving (Eq, Show, Generic)
-
-instance Semigroup PartialGenesis where
-    genesis1 <> genesis2 =
-        PartialGenesis
-            { pgeSrc             = pgeSrc genesis1 <> pgeSrc genesis2
-            , pgeGenesisHash     = pgeGenesisHash genesis1 <> pgeGenesisHash genesis2
-            , pgePrevBlockHash   = pgePrevBlockHash genesis1 <> pgePrevBlockHash genesis2
-            }
-
-instance Monoid PartialGenesis where
-    mempty =
-        PartialGenesis
-            { pgeSrc             = mempty
-            , pgeGenesisHash     = mempty
-            , pgePrevBlockHash   = mempty
-            }
 
 data Spec = Spec
     { spInitializer       :: !Initializer

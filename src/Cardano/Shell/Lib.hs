@@ -20,8 +20,8 @@ import           Prelude (Show (..))
 
 import           Control.Exception.Safe (throwM)
 
-import qualified Control.Concurrent.Classy.Async as CA
 import           Control.Concurrent.Classy.Async (async, cancel)
+import qualified Control.Concurrent.Classy.Async as CA
 
 import           GHC.IO.Handle.Lock (LockMode (..), hTryLock)
 
@@ -35,7 +35,8 @@ import           Cardano.Shell.Types (ApplicationEnvironment (..),
                                       CardanoEnvironment, CardanoFeature (..),
                                       initializeCardanoEnvironment)
 
-import           Cardano.Shell.Constants.Types (CardanoConfiguration (..), PartialCardanoConfiguration (..))
+import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfiguration (..))
+import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 
 import           Cardano.Shell.Presets (mainnetConfiguration)
 

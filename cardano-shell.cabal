@@ -32,6 +32,7 @@ library
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
     -- Constants
+    , Cardano.Shell.Constants.PartialTypes
     , Cardano.Shell.Constants.Types
     , Cardano.Shell.Constants.CLI
     , Cardano.Shell.Presets
