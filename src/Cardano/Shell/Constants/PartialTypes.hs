@@ -9,6 +9,8 @@ module Cardano.Shell.Constants.PartialTypes
     , RequireNetworkMagic (..)
     ) where
 
+import           Data.Function (on)
+
 import           Cardano.Prelude
 
 import           Cardano.Shell.Constants.Types
@@ -96,3 +98,26 @@ data PartialNode = PartialNode
       -- ^ Enable explorer extended API for fetching more.
     } deriving (Eq, Show)
 
+instance Semigroup PartialNode where
+    x <> y =
+        PartialNode
+            { pnoNetworkConnectionTimeout     = on (<>) pnoNetworkConnectionTimeout     x y
+            , pnoConversationEstablishTimeout = on (<>) pnoConversationEstablishTimeout x y
+            , pnoBlockRetrievalQueueSize      = on (<>) pnoBlockRetrievalQueueSize      x y
+            , pnoPendingTxResubmissionPeriod  = on (<>) pnoPendingTxResubmissionPeriod  x y
+            , pnoWalletProductionApi          = on (<>) pnoWalletProductionApi          x y
+            , pnoWalletTxCreationDisabled     = on (<>) pnoWalletTxCreationDisabled     x y
+            , pnoExplorerExtendedApi          = on (<>) pnoExplorerExtendedApi          x y
+            }
+
+instance Monoid PartialNode where
+    mempty =
+        PartialNode
+            { pnoNetworkConnectionTimeout     = mempty
+            , pnoConversationEstablishTimeout = mempty
+            , pnoBlockRetrievalQueueSize      = mempty
+            , pnoPendingTxResubmissionPeriod  = mempty
+            , pnoWalletProductionApi          = mempty
+            , pnoWalletTxCreationDisabled     = mempty
+            , pnoExplorerExtendedApi          = mempty
+            }
