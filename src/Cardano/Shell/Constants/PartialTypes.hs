@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia        #-}
+{-# LANGUAGE DeriveGeneric      #-}
 
 module Cardano.Shell.Constants.PartialTypes
     ( PartialCardanoConfiguration (..)
@@ -9,9 +11,9 @@ module Cardano.Shell.Constants.PartialTypes
     , RequireNetworkMagic (..)
     ) where
 
-import           Data.Function (on)
-
 import           Cardano.Prelude
+
+import           Data.Monoid.Generic
 
 import           Cardano.Shell.Constants.Types
 
@@ -31,7 +33,7 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
     , pccNode                :: !(Last PartialNode)
     , pccTLS                 :: !(Last TLS)
     , pccWallet              :: !(Last Wallet)
-    } deriving (Eq, Show)
+    } deriving (Eq, Show, Generic)
 
 -- | Partial @Core@ configuration.
 data PartialCore = PartialCore
@@ -39,22 +41,8 @@ data PartialCore = PartialCore
     , pcoRequiresNetworkMagic :: !(Last RequireNetworkMagic)
     , pcoDBSerializeVersion   :: !(Last Integer)
     } deriving (Eq, Show, Generic)
-
-instance Semigroup PartialCore where
-    x <> y =
-        PartialCore
-            { pcoGenesis                 = on (<>) pcoGenesis              x y
-            , pcoRequiresNetworkMagic    = on (<>) pcoRequiresNetworkMagic x y
-            , pcoDBSerializeVersion      = on (<>) pcoDBSerializeVersion   x y
-            }
-
-instance Monoid PartialCore where
-    mempty =
-        PartialCore
-            { pcoGenesis                 = mempty
-            , pcoRequiresNetworkMagic    = mempty
-            , pcoDBSerializeVersion      = mempty
-            }
+    deriving Semigroup via GenericSemigroup PartialCore
+    deriving Monoid    via GenericMonoid PartialCore
 
 -- | Partial @Genesis@.
 data PartialGenesis = PartialGenesis
@@ -62,22 +50,8 @@ data PartialGenesis = PartialGenesis
     , pgeGenesisHash   :: !(Last Text)
     , pgePrevBlockHash :: !(Last Text)
     } deriving (Eq, Show, Generic)
-
-instance Semigroup PartialGenesis where
-    x <> y =
-        PartialGenesis
-            { pgeSrc             = on (<>) pgeSrc           x y
-            , pgeGenesisHash     = on (<>) pgeGenesisHash   x y
-            , pgePrevBlockHash   = on (<>) pgePrevBlockHash x y
-            }
-
-instance Monoid PartialGenesis where
-    mempty =
-        PartialGenesis
-            { pgeSrc             = mempty
-            , pgeGenesisHash     = mempty
-            , pgePrevBlockHash   = mempty
-            }
+    deriving Semigroup via GenericSemigroup PartialGenesis
+    deriving Monoid    via GenericMonoid PartialGenesis
 
 --- | Top-level Cardano SL node configuration
 data PartialNode = PartialNode
@@ -96,28 +70,7 @@ data PartialNode = PartialNode
       -- pending transactions by the wallet.
     , pnoExplorerExtendedApi          :: !(Last Bool)
       -- ^ Enable explorer extended API for fetching more.
-    } deriving (Eq, Show)
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialNode
+    deriving Monoid    via GenericMonoid PartialNode
 
-instance Semigroup PartialNode where
-    x <> y =
-        PartialNode
-            { pnoNetworkConnectionTimeout     = on (<>) pnoNetworkConnectionTimeout     x y
-            , pnoConversationEstablishTimeout = on (<>) pnoConversationEstablishTimeout x y
-            , pnoBlockRetrievalQueueSize      = on (<>) pnoBlockRetrievalQueueSize      x y
-            , pnoPendingTxResubmissionPeriod  = on (<>) pnoPendingTxResubmissionPeriod  x y
-            , pnoWalletProductionApi          = on (<>) pnoWalletProductionApi          x y
-            , pnoWalletTxCreationDisabled     = on (<>) pnoWalletTxCreationDisabled     x y
-            , pnoExplorerExtendedApi          = on (<>) pnoExplorerExtendedApi          x y
-            }
-
-instance Monoid PartialNode where
-    mempty =
-        PartialNode
-            { pnoNetworkConnectionTimeout     = mempty
-            , pnoConversationEstablishTimeout = mempty
-            , pnoBlockRetrievalQueueSize      = mempty
-            , pnoPendingTxResubmissionPeriod  = mempty
-            , pnoWalletProductionApi          = mempty
-            , pnoWalletTxCreationDisabled     = mempty
-            , pnoExplorerExtendedApi          = mempty
-            }

@@ -37,6 +37,7 @@
           (hsPkgs.stm)
           (hsPkgs.text)
           (hsPkgs.transformers)
+          (hsPkgs.generic-monoid)
           ];
         };
       exes = {
