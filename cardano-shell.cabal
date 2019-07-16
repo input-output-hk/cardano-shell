@@ -68,6 +68,7 @@ library
     , stm
     , text
     , transformers
+    , generic-monoid
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
