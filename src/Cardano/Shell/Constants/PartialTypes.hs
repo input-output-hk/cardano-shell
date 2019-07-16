@@ -9,6 +9,8 @@ module Cardano.Shell.Constants.PartialTypes
     , RequireNetworkMagic (..)
     ) where
 
+import           Data.Function (on)
+
 import           Cardano.Prelude
 
 import           Cardano.Shell.Constants.Types
@@ -39,11 +41,11 @@ data PartialCore = PartialCore
     } deriving (Eq, Show, Generic)
 
 instance Semigroup PartialCore where
-    core1 <> core2 =
+    x <> y =
         PartialCore
-            { pcoGenesis                 = pcoGenesis core1 <> pcoGenesis core2
-            , pcoRequiresNetworkMagic    = pcoRequiresNetworkMagic core1 <> pcoRequiresNetworkMagic core2
-            , pcoDBSerializeVersion      = pcoDBSerializeVersion core1 <> pcoDBSerializeVersion core2
+            { pcoGenesis                 = on (<>) pcoGenesis              x y
+            , pcoRequiresNetworkMagic    = on (<>) pcoRequiresNetworkMagic x y
+            , pcoDBSerializeVersion      = on (<>) pcoDBSerializeVersion   x y
             }
 
 instance Monoid PartialCore where
@@ -62,11 +64,11 @@ data PartialGenesis = PartialGenesis
     } deriving (Eq, Show, Generic)
 
 instance Semigroup PartialGenesis where
-    genesis1 <> genesis2 =
+    x <> y =
         PartialGenesis
-            { pgeSrc             = pgeSrc genesis1 <> pgeSrc genesis2
-            , pgeGenesisHash     = pgeGenesisHash genesis1 <> pgeGenesisHash genesis2
-            , pgePrevBlockHash   = pgePrevBlockHash genesis1 <> pgePrevBlockHash genesis2
+            { pgeSrc             = on (<>) pgeSrc           x y
+            , pgeGenesisHash     = on (<>) pgeGenesisHash   x y
+            , pgePrevBlockHash   = on (<>) pgePrevBlockHash x y
             }
 
 instance Monoid PartialGenesis where
@@ -96,3 +98,26 @@ data PartialNode = PartialNode
       -- ^ Enable explorer extended API for fetching more.
     } deriving (Eq, Show)
 
+instance Semigroup PartialNode where
+    x <> y =
+        PartialNode
+            { pnoNetworkConnectionTimeout     = on (<>) pnoNetworkConnectionTimeout     x y
+            , pnoConversationEstablishTimeout = on (<>) pnoConversationEstablishTimeout x y
+            , pnoBlockRetrievalQueueSize      = on (<>) pnoBlockRetrievalQueueSize      x y
+            , pnoPendingTxResubmissionPeriod  = on (<>) pnoPendingTxResubmissionPeriod  x y
+            , pnoWalletProductionApi          = on (<>) pnoWalletProductionApi          x y
+            , pnoWalletTxCreationDisabled     = on (<>) pnoWalletTxCreationDisabled     x y
+            , pnoExplorerExtendedApi          = on (<>) pnoExplorerExtendedApi          x y
+            }
+
+instance Monoid PartialNode where
+    mempty =
+        PartialNode
+            { pnoNetworkConnectionTimeout     = mempty
+            , pnoConversationEstablishTimeout = mempty
+            , pnoBlockRetrievalQueueSize      = mempty
+            , pnoPendingTxResubmissionPeriod  = mempty
+            , pnoWalletProductionApi          = mempty
+            , pnoWalletTxCreationDisabled     = mempty
+            , pnoExplorerExtendedApi          = mempty
+            }
