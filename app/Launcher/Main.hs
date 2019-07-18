@@ -18,9 +18,8 @@ import           Formatting.Buildable (Buildable (..))
 
 import           Control.Exception.Safe (throwM)
 
-import           Cardano.Shell.Update.Lib (runUpdater)
-import           Cardano.Shell.Configuration.Types (Cluster (..),
-                                                    LauncherConfig (..),
+-- import           Cardano.Shell.Update.Lib (runUpdater, updaterData)
+import           Cardano.Shell.Configuration.Types (LauncherConfig (..),
                                                     WalletArguments (..),
                                                     WalletPath (..))
 
@@ -40,7 +39,7 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
 main :: IO ()
 main = do
 
-  -- _ <- runUpdater Mainnet
+  -- _ <- runUpdater updaterData
         
     let launcherConfig :: LauncherConfig
         launcherConfig = LauncherConfig
