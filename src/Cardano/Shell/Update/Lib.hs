@@ -10,7 +10,7 @@ module Cardano.Shell.Update.Lib
 import           Cardano.Prelude
 
 import           Distribution.System (OS (..), buildOS)
-import           Prelude (String)
+import           System.Directory (doesFileExist)
 import           System.Process (proc, withCreateProcess)
 
 import           Cardano.Shell.Configuration.Lib (mkLauncher)
@@ -22,14 +22,13 @@ import qualified Cardano.Shell.Configuration.Types as Config (Cluster (..),
 runUpdater :: Config.Cluster -> IO ()
 runUpdater cluster = do
     launcherConfig <- mkLauncher (toConfigOS buildOS) cluster
-    withCreateProcess (proc (toS $ Config.lUpdaterPath launcherConfig) (cmd launcherConfig))
-        $ \_in _out _err _ -> return ()
+    let path = toS $ Config.lUpdaterPath launcherConfig
+    let args = map toS $ Config.lUpdaterArgs launcherConfig
+    let archive = maybe [] (\arch -> [toS arch]) (Config.lUpdateArchive launcherConfig)
+    whenM (doesFileExist path) $ do
+        withCreateProcess (proc (toS $ Config.lUpdaterPath launcherConfig) (args <> archive))
+            $ \_in _out _err _ -> return ()
   where
-    cmd :: Config.Launcher -> [String]
-    cmd launcherConfig =
-        let archive = maybe [] (\arch -> [toS arch]) (Config.lUpdateArchive launcherConfig)
-        in (map toS $ Config.lUpdaterArgs launcherConfig) <> archive
-
     toConfigOS :: OS -> Config.OS
     toConfigOS = \case
         Windows -> Config.Win64
