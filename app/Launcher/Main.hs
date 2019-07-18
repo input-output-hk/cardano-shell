@@ -18,7 +18,9 @@ import           Formatting.Buildable (Buildable (..))
 
 import           Control.Exception.Safe (throwM)
 
-import           Cardano.Shell.Configuration.Types (LauncherConfig (..),
+import           Cardano.Shell.Update.Lib (runUpdater)
+import           Cardano.Shell.Configuration.Types (Cluster (..),
+                                                    LauncherConfig (..),
                                                     WalletArguments (..),
                                                     WalletPath (..))
 
@@ -38,6 +40,8 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
 main :: IO ()
 main = do
 
+  -- _ <- runUpdater Mainnet
+        
     let launcherConfig :: LauncherConfig
         launcherConfig = LauncherConfig
             { lcfgFilePath    = "./configuration/cert-configuration.yaml"

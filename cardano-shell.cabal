@@ -31,6 +31,7 @@ library
     -- Update system
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
+    , Cardano.Shell.Update.Lib
     -- Constants
     , Cardano.Shell.Constants.PartialTypes
     , Cardano.Shell.Constants.Types
@@ -42,7 +43,6 @@ library
       Cardano.Shell.NodeIPC.Lib
     , Cardano.Shell.NodeIPC.Message
     , Cardano.Shell.NodeIPC.ServerExample
-
   hs-source-dirs:
       app
     , src
