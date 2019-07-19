@@ -93,7 +93,6 @@ data Core = Core
 data Genesis = Genesis
     { geSrc             :: !FilePath
     , geGenesisHash     :: !Text
-    , gePrevBlockHash   :: !Text
     } deriving (Eq, Show, Generic)
 
 data Spec = Spec
