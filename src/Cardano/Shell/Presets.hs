@@ -34,7 +34,6 @@ mainnetConfiguration =
               pure PartialGenesis
                 { pgeSrc             = pure "mainnet-genesis.json"
                 , pgeGenesisHash     = pure "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
-                , pgePrevBlockHash   = pure "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
                 }
           , pcoRequiresNetworkMagic = pure RequireNetworkMagic
           , pcoDBSerializeVersion   = pure 0
@@ -154,7 +153,6 @@ devConfiguration =
           pure PartialGenesis
             { pgeSrc             = pure "testnet-genesis.json"
             , pgeGenesisHash     = pure "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
-            , pgePrevBlockHash   = pure "b7f76950bc4866423538ab7764fc1c7020b24a5f717a5bee3109ff2796567214"
             }
         , pcoRequiresNetworkMagic = pure RequireNetworkMagic
         , pcoDBSerializeVersion   = pure 0

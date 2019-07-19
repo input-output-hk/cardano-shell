@@ -88,7 +88,6 @@ finaliseGenesis PartialGenesis{..} = do
 
     geSrc                    <- lastToEither "Unspecified geSrc"                     pgeSrc
     geGenesisHash            <- lastToEither "Unspecified geGenesisHash"             pgeGenesisHash
-    gePrevBlockHash          <- lastToEither "Unspecified gePrevBlockHash"           pgePrevBlockHash
 
     pure Genesis{..}
 

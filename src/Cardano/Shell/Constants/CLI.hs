@@ -52,11 +52,6 @@ configGenesisCLIParser =
           <> metavar "GENESIS-HASH"
           <> help "The genesis hash value."
            )
-        <*> lastStrOption
-           ( long "prev-block-hash"
-          <> metavar "PREV-BLOCK-HASH"
-          <> help "The hash of the previous block."
-           )
 
 -- | Parser for the network magic options.
 configNetworkMagicCLIParser :: Parser RequireNetworkMagic

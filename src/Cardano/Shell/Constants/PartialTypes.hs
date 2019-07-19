@@ -49,7 +49,6 @@ data PartialCore = PartialCore
 data PartialGenesis = PartialGenesis
     { pgeSrc           :: !(Last FilePath)
     , pgeGenesisHash   :: !(Last Text)
-    , pgePrevBlockHash :: !(Last Text)
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialGenesis
     deriving Monoid    via GenericMonoid PartialGenesis
