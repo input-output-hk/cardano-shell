@@ -29,13 +29,16 @@ import           Cardano.Shell.Configuration.Types (BlockchainConfig,
                                                     OSConfig, TopologyConfig,
                                                     WalletConfig, renderCluster,
                                                     renderOS)
-import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..), PartialCardanoConfiguration (..),
+import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..),
+                                                       PartialCardanoConfiguration (..),
+                                                       PartialStaticKeyMaterial (..),
                                                        PartialCore (..),
                                                        PartialGenesis (..),
                                                        PartialNode (..))
 import           Cardano.Shell.Constants.Types (Block (..),
                                                 CardanoConfiguration (..),
                                                 Core (..), Genesis (..),
+                                                StaticKeyMaterial (..),
                                                 Node (..))
 
 -- | Converting a @Last@ to an @Either@
@@ -77,6 +80,8 @@ finaliseCore :: PartialCore -> Either Text Core
 finaliseCore PartialCore{..} = do
     coGenesis                <- join $ finaliseGenesis <$>
                                 lastToEither "Unspecified coGenesis"                 pcoGenesis
+    coStaticKeyMaterial      <- join $ finaliseStaticKeyMaterial <$>
+                                lastToEither "Unspecified coStaticKeyMaterial"       pcoStaticKeyMaterial
     coRequiresNetworkMagic   <- lastToEither "Unspecified coRequiresNetworkMagic"    pcoRequiresNetworkMagic
     coDBSerializeVersion     <- lastToEither "Unspecified coDBSerializeVersion"      pcoDBSerializeVersion
 
@@ -90,6 +95,14 @@ finaliseGenesis PartialGenesis{..} = do
     geGenesisHash            <- lastToEither "Unspecified geGenesisHash"             pgeGenesisHash
 
     pure Genesis{..}
+
+finaliseStaticKeyMaterial :: PartialStaticKeyMaterial -> Either Text StaticKeyMaterial
+finaliseStaticKeyMaterial PartialStaticKeyMaterial{..} = do
+
+    skmSigningKeyFile        <- lastToEither "Unspecified skmSigningKeyFile"         pskmSigningKeyFile
+    skmDlgCertFile           <- lastToEither "Unspecified skmDlgCertFile"            pskmDlgCertFile
+
+    pure StaticKeyMaterial{..}
 
 -- | Finalize the @PartialNode@, convert to @Node@.
 finaliseNode :: PartialNode -> Either Text Node

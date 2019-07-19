@@ -6,6 +6,7 @@ module Cardano.Shell.Constants.PartialTypes
     ( PartialCardanoConfiguration (..)
     , PartialCore (..)
     , PartialGenesis (..)
+    , PartialStaticKeyMaterial (..)
     , PartialNode (..)
     , PartialBlock (..)
     -- * re-exports
@@ -39,6 +40,7 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
 -- | Partial @Core@ configuration.
 data PartialCore = PartialCore
     { pcoGenesis              :: !(Last PartialGenesis)
+    , pcoStaticKeyMaterial    :: !(Last PartialStaticKeyMaterial)
     , pcoRequiresNetworkMagic :: !(Last RequireNetworkMagic)
     , pcoDBSerializeVersion   :: !(Last Integer)
     } deriving (Eq, Show, Generic)
@@ -52,6 +54,13 @@ data PartialGenesis = PartialGenesis
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialGenesis
     deriving Monoid    via GenericMonoid PartialGenesis
+
+data PartialStaticKeyMaterial = PartialStaticKeyMaterial
+    { pskmSigningKeyFile :: !(Last FilePath)
+    , pskmDlgCertFile    :: !(Last FilePath)
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialStaticKeyMaterial
+    deriving Monoid    via GenericMonoid    PartialStaticKeyMaterial
 
 --- | Top-level Cardano SL node configuration
 data PartialNode = PartialNode
