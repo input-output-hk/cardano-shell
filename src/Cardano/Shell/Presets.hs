@@ -5,7 +5,9 @@ module Cardano.Shell.Presets
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..), PartialCardanoConfiguration (..),
+import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..),
+                                                       PartialCardanoConfiguration (..),
+                                                       PartialStaticKeyMaterial (..),
                                                        PartialCore (..),
                                                        PartialGenesis (..),
                                                        PartialNode (..))
@@ -34,6 +36,11 @@ mainnetConfiguration =
               pure PartialGenesis
                 { pgeSrc             = pure "mainnet-genesis.json"
                 , pgeGenesisHash     = pure "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
+                }
+          , pcoStaticKeyMaterial =
+              pure PartialStaticKeyMaterial
+                { pskmSigningKeyFile = mempty
+                , pskmDlgCertFile    = mempty
                 }
           , pcoRequiresNetworkMagic = pure RequireNetworkMagic
           , pcoDBSerializeVersion   = pure 0
@@ -153,6 +160,11 @@ devConfiguration =
           pure PartialGenesis
             { pgeSrc             = pure "testnet-genesis.json"
             , pgeGenesisHash     = pure "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
+            }
+        , pcoStaticKeyMaterial =
+          pure PartialStaticKeyMaterial
+            { pskmSigningKeyFile = mempty
+            , pskmDlgCertFile    = mempty
             }
         , pcoRequiresNetworkMagic = pure RequireNetworkMagic
         , pcoDBSerializeVersion   = pure 0

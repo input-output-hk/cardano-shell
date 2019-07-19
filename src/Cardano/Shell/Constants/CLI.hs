@@ -2,6 +2,7 @@ module Cardano.Shell.Constants.CLI
     ( configCoreCLIParser
     -- * Core CLI parsers
     , configGenesisCLIParser
+    , configStaticKeyMaterialCLIParser
     , configNetworkMagicCLIParser
     , configDBVersionCLIParser
     -- * Node
@@ -35,6 +36,7 @@ lastStrOption args = Last <$> optional (strOption args)
 configCoreCLIParser :: Parser PartialCore
 configCoreCLIParser = PartialCore
     <$> lastOption configGenesisCLIParser
+    <*> lastOption configStaticKeyMaterialCLIParser
     <*> lastOption configNetworkMagicCLIParser
     <*> lastOption configDBVersionCLIParser
 
@@ -68,6 +70,20 @@ configNetworkMagicCLIParser = requiredNetworkMagicParser <|> noRequiredNetworkMa
         ( long "no-require-network-magic"
        <> help "Doesn not require network magic"
         )
+
+configStaticKeyMaterialCLIParser :: Parser PartialStaticKeyMaterial
+configStaticKeyMaterialCLIParser =
+    PartialStaticKeyMaterial
+        <$> lastStrOption
+           ( long "signing-key"
+          <> metavar "FILEPATH"
+          <> help "Path to the signing key."
+           )
+        <*> lastStrOption
+           ( long "delegation-certificate"
+          <> metavar "FILEPATH"
+          <> help "Path to the delegation certificate."
+           )
 
 -- | The parser for the DB version.
 configDBVersionCLIParser :: Parser Integer
@@ -178,4 +194,3 @@ configBlockCLIParser =
           <> metavar "FIXED-TIME-CQ"
           <> help "Chain quality will be also calculated for this amount of seconds."
            )
-
