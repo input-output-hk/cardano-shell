@@ -6,6 +6,8 @@ module Cardano.Shell.Constants.CLI
     , configDBVersionCLIParser
     -- * Node
     , configNodeCLIParser
+    -- * Block
+    , configBlockCLIParser
     ) where
 
 import           Cardano.Prelude hiding (option)
@@ -126,5 +128,59 @@ configNodeCLIParser =
            ( long "explorer-extended-api"
           <> metavar "EXPLORER-EXTENDED-API-ENABLE"
           <> help "Enable explorer extended API for fetching more."
+           )
+
+--------------------------------------------------------------------------------
+-- Block
+--------------------------------------------------------------------------------
+
+-- | Block CLI parser.
+configBlockCLIParser :: Parser PartialBlock
+configBlockCLIParser =
+    PartialBlock
+        <$> option auto
+           ( long "network-diameter"
+          <> metavar "NETWORK-DIAMETER-TIME"
+          <> help "Estimated time needed to broadcast message from one node to all other nodes."
+           )
+        <*> option auto
+           ( long "recovery-headers-amount"
+          <> metavar "RECOVERY-HEADERS-AMOUNT"
+          <> help "Maximum amount of headers node can put into headers message while in 'after offline' or 'recovery' mode."
+           )
+        <*> option auto
+           ( long "stream-window"
+          <> metavar "STREAM-WINDOW-CAPACITY"
+          <> help "Number of blocks to have inflight."
+           )
+        <*> option auto
+           ( long "noncritical-cq-bootstrap"
+          <> metavar "NONCRITICAL-CQ-BOOTSTRAP"
+          <> help "If chain quality in bootstrap era is less than this value, non critical misbehavior will be reported."
+           )
+        <*> option auto
+           ( long "critical-cq-bootstrap"
+          <> metavar "CRITICAL-CQ-BOOTSTRAP"
+          <> help "If chain quality in bootstrap era is less than this value, critical misbehavior will be reported."
+           )
+        <*> option auto
+           ( long "noncritical-cq"
+          <> metavar "NONCRITICAL-CQ"
+          <> help "If chain quality after bootstrap era is less than this value, non critical misbehavior will be reported."
+           )
+        <*> option auto
+           ( long "critical-cq"
+          <> metavar "CRITICAL-CQ"
+          <> help "If chain quality after bootstrap era is less than this value, critical misbehavior will be reported."
+           )
+        <*> option auto
+           ( long "critical-fork-threshold"
+          <> metavar "CRITICAL-FORK-THRESHOLD"
+          <> help "Number of blocks such that if so many blocks are rolled back, it requires immediate reaction."
+           )
+        <*> option auto
+           ( long "fixed-time-cq"
+          <> metavar "FIXED-TIME-CQ"
+          <> help "Chain quality will be also calculated for this amount of seconds."
            )
 
