@@ -38,7 +38,7 @@
           (hsPkgs.text)
           (hsPkgs.transformers)
           (hsPkgs.generic-monoid)
-          ];
+          ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {
         "cardano-shell-exe" = {
