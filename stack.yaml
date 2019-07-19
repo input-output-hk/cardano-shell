@@ -36,6 +36,5 @@ extra-deps:
   - containers-0.5.11.0
   - libsystemd-journal-1.4.4
 
-
 nix:
   shell-file: stack-shell.nix
