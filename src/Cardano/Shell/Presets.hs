@@ -37,7 +37,7 @@ mainnetConfiguration =
                 , pgePrevBlockHash   = pure "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
                 }
           , pcoRequiresNetworkMagic = pure RequireNetworkMagic
-          , pcoDBSerializeVersion   = mempty
+          , pcoDBSerializeVersion   = pure 0
           }
     , pccNTP = pure
         NTP
@@ -157,7 +157,7 @@ devConfiguration =
             , pgePrevBlockHash   = pure "b7f76950bc4866423538ab7764fc1c7020b24a5f717a5bee3109ff2796567214"
             }
         , pcoRequiresNetworkMagic = pure RequireNetworkMagic
-        , pcoDBSerializeVersion   = mempty
+        , pcoDBSerializeVersion   = pure 0
         }
     , pccNTP                 = pure
          NTP
