@@ -300,7 +300,7 @@ data Wallet = Wallet
     } deriving (Eq, Show)
 
 -- | Rate-limiting/throttling parameters
-data Throttle = SetThrottle
+data Throttle = Throttle
     { thEnabled :: !Bool
     , thRate    :: !Int
     , thPeriod  :: !Text
