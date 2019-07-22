@@ -17,7 +17,7 @@ import qualified Data.Text as T
 import           Distribution.System (OS (..), buildOS)
 import           System.Directory (doesFileExist, removeFile)
 import           System.Environment (getExecutablePath)
-import           System.Process (proc, withCreateProcess, waitForProcess)
+import           System.Process (proc, waitForProcess, withCreateProcess)
 #ifdef mingw32_HOST_OS
 import           System.Win32.Process (getCurrentProcessId)
 #endif
@@ -30,11 +30,26 @@ data UpdaterData = UpdaterData
     , udArchivePath :: Maybe FilePath
     }
 
+-- Windows: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/win64.dhall#L32-L35
+-- MacOS: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/macos64.dhall#L31-L34
+-- Linux: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/linux64.dhall#L29-L32
 updaterData :: UpdaterData
 updaterData = case buildOS of
-    Windows -> UpdaterData "WindowsPath" ["Windows", "Args"] (Just "Window path") Nothing
-    OSX     -> UpdaterData "MacPath" [] Nothing (Just "ArchivePath")
-    _       -> UpdaterData "LinuxPath" [] Nothing (Just "LinuxPath")
+    Windows -> UpdaterData
+        "Installer.exe"
+        []
+        (Just "Installer.bat")
+        Nothing
+    OSX     -> UpdaterData
+        "/usr/bin/open"
+        ["-FW"]
+        Nothing
+        (Just "\\${HOME}/Library/Application Support/Daedalus/installer.pkg")
+    _       -> UpdaterData
+        "/bin/update-runner"
+        []
+        Nothing
+        (Just "\\${XDG_DATA_HOME}/Daedalus/installer.sh")
 
 data UpdateError
     = UpdateFailed Int
@@ -78,7 +93,7 @@ runUpdater ud = do
         withCreateProcess (proc path (args <> archive))
             -- WIP
             $ \_in _out _err ph -> waitForProcess ph
-            
+
     whenJust (Just a) f = f a
     whenJust Nothing  _ = return ()
 
