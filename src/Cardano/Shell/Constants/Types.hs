@@ -7,6 +7,7 @@ module Cardano.Shell.Constants.Types
     -- * specific for @Core@
     , RequireNetworkMagic (..)
     , Genesis (..)
+    , StaticKeyMaterial (..)
     , Spec (..)
     , Initializer (..)
     -- * rest
@@ -75,6 +76,8 @@ data RequireNetworkMagic
 data Core = Core
     { coGenesis              :: !Genesis
     -- ^ Genesis information
+    , coStaticKeyMaterial    :: !StaticKeyMaterial
+    -- ^ Static key material required to run the protocol
     , coRequiresNetworkMagic :: !RequireNetworkMagic
     -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
     , coDBSerializeVersion   :: !Integer
@@ -93,7 +96,13 @@ data Core = Core
 data Genesis = Genesis
     { geSrc             :: !FilePath
     , geGenesisHash     :: !Text
-    , gePrevBlockHash   :: !Text
+    } deriving (Eq, Show, Generic)
+
+-- | In principle, this should be indexed by the protocol.
+--   But we're assuming Byron/PBFT for now.
+data StaticKeyMaterial = StaticKeyMaterial
+    { skmSigningKeyFile :: !FilePath
+    , skmDlgCertFile    :: !FilePath
     } deriving (Eq, Show, Generic)
 
 data Spec = Spec

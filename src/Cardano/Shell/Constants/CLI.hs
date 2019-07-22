@@ -2,10 +2,13 @@ module Cardano.Shell.Constants.CLI
     ( configCoreCLIParser
     -- * Core CLI parsers
     , configGenesisCLIParser
+    , configStaticKeyMaterialCLIParser
     , configNetworkMagicCLIParser
     , configDBVersionCLIParser
     -- * Node
     , configNodeCLIParser
+    -- * Block
+    , configBlockCLIParser
     ) where
 
 import           Cardano.Prelude hiding (option)
@@ -33,6 +36,7 @@ lastStrOption args = Last <$> optional (strOption args)
 configCoreCLIParser :: Parser PartialCore
 configCoreCLIParser = PartialCore
     <$> lastOption configGenesisCLIParser
+    <*> lastOption configStaticKeyMaterialCLIParser
     <*> lastOption configNetworkMagicCLIParser
     <*> lastOption configDBVersionCLIParser
 
@@ -50,11 +54,6 @@ configGenesisCLIParser =
           <> metavar "GENESIS-HASH"
           <> help "The genesis hash value."
            )
-        <*> lastStrOption
-           ( long "prev-block-hash"
-          <> metavar "PREV-BLOCK-HASH"
-          <> help "The hash of the previous block."
-           )
 
 -- | Parser for the network magic options.
 configNetworkMagicCLIParser :: Parser RequireNetworkMagic
@@ -71,6 +70,20 @@ configNetworkMagicCLIParser = requiredNetworkMagicParser <|> noRequiredNetworkMa
         ( long "no-require-network-magic"
        <> help "Doesn not require network magic"
         )
+
+configStaticKeyMaterialCLIParser :: Parser PartialStaticKeyMaterial
+configStaticKeyMaterialCLIParser =
+    PartialStaticKeyMaterial
+        <$> lastStrOption
+           ( long "signing-key"
+          <> metavar "FILEPATH"
+          <> help "Path to the signing key."
+           )
+        <*> lastStrOption
+           ( long "delegation-certificate"
+          <> metavar "FILEPATH"
+          <> help "Path to the delegation certificate."
+           )
 
 -- | The parser for the DB version.
 configDBVersionCLIParser :: Parser Integer
@@ -128,3 +141,56 @@ configNodeCLIParser =
           <> help "Enable explorer extended API for fetching more."
            )
 
+--------------------------------------------------------------------------------
+-- Block
+--------------------------------------------------------------------------------
+
+-- | Block CLI parser.
+configBlockCLIParser :: Parser PartialBlock
+configBlockCLIParser =
+    PartialBlock
+        <$> option auto
+           ( long "network-diameter"
+          <> metavar "NETWORK-DIAMETER-TIME"
+          <> help "Estimated time needed to broadcast message from one node to all other nodes."
+           )
+        <*> option auto
+           ( long "recovery-headers-amount"
+          <> metavar "RECOVERY-HEADERS-AMOUNT"
+          <> help "Maximum amount of headers node can put into headers message while in 'after offline' or 'recovery' mode."
+           )
+        <*> option auto
+           ( long "stream-window"
+          <> metavar "STREAM-WINDOW-CAPACITY"
+          <> help "Number of blocks to have inflight."
+           )
+        <*> option auto
+           ( long "noncritical-cq-bootstrap"
+          <> metavar "NONCRITICAL-CQ-BOOTSTRAP"
+          <> help "If chain quality in bootstrap era is less than this value, non critical misbehavior will be reported."
+           )
+        <*> option auto
+           ( long "critical-cq-bootstrap"
+          <> metavar "CRITICAL-CQ-BOOTSTRAP"
+          <> help "If chain quality in bootstrap era is less than this value, critical misbehavior will be reported."
+           )
+        <*> option auto
+           ( long "noncritical-cq"
+          <> metavar "NONCRITICAL-CQ"
+          <> help "If chain quality after bootstrap era is less than this value, non critical misbehavior will be reported."
+           )
+        <*> option auto
+           ( long "critical-cq"
+          <> metavar "CRITICAL-CQ"
+          <> help "If chain quality after bootstrap era is less than this value, critical misbehavior will be reported."
+           )
+        <*> option auto
+           ( long "critical-fork-threshold"
+          <> metavar "CRITICAL-FORK-THRESHOLD"
+          <> help "Number of blocks such that if so many blocks are rolled back, it requires immediate reaction."
+           )
+        <*> option auto
+           ( long "fixed-time-cq"
+          <> metavar "FIXED-TIME-CQ"
+          <> help "Chain quality will be also calculated for this amount of seconds."
+           )

@@ -5,12 +5,13 @@ module Cardano.Shell.Presets
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfiguration (..),
+import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..),
+                                                       PartialCardanoConfiguration (..),
+                                                       PartialStaticKeyMaterial (..),
                                                        PartialCore (..),
                                                        PartialGenesis (..),
                                                        PartialNode (..))
-import           Cardano.Shell.Constants.Types (Block (..), Certificate (..),
-                                                DLG (..),
+import           Cardano.Shell.Constants.Types (Certificate (..), DLG (..),
                                                 LastKnownBlockVersion (..),
                                                 NTP (..),
                                                 RequireNetworkMagic (..),
@@ -35,7 +36,11 @@ mainnetConfiguration =
               pure PartialGenesis
                 { pgeSrc             = pure "mainnet-genesis.json"
                 , pgeGenesisHash     = pure "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
-                , pgePrevBlockHash   = pure "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
+                }
+          , pcoStaticKeyMaterial =
+              pure PartialStaticKeyMaterial
+                { pskmSigningKeyFile = mempty
+                , pskmDlgCertFile    = mempty
                 }
           , pcoRequiresNetworkMagic = pure RequireNetworkMagic
           , pcoDBSerializeVersion   = pure 0
@@ -77,16 +82,16 @@ mainnetConfiguration =
             , dlgMessageCacheTimeout = 30
             }
     , pccBlock = pure
-        Block
-          { blNetworkDiameter        = 18
-          , blRecoveryHeadersMessage = 2200
-          , blStreamWindow           = 2048
-          , blNonCriticalCQBootstrap = 0.95
-          , blNonCriticalCQ          = 0.8
-          , blCriticalCQBootstrap    = 0.8888
-          , blCriticalCQ             = 0.654321
-          , blCriticalForkThreshold  = 3
-          , blFixedTimeCQ            = 3600
+        PartialBlock
+          { pblNetworkDiameter        = pure 18
+          , pblRecoveryHeadersMessage = pure 2200
+          , pblStreamWindow           = pure 2048
+          , pblNonCriticalCQBootstrap = pure 0.95
+          , pblNonCriticalCQ          = pure 0.8
+          , pblCriticalCQBootstrap    = pure 0.8888
+          , pblCriticalCQ             = pure 0.654321
+          , pblCriticalForkThreshold  = pure 3
+          , pblFixedTimeCQ            = pure 3600
           }
     , pccNode = pure
         PartialNode
@@ -155,7 +160,11 @@ devConfiguration =
           pure PartialGenesis
             { pgeSrc             = pure "testnet-genesis.json"
             , pgeGenesisHash     = pure "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
-            , pgePrevBlockHash   = pure "b7f76950bc4866423538ab7764fc1c7020b24a5f717a5bee3109ff2796567214"
+            }
+        , pcoStaticKeyMaterial =
+          pure PartialStaticKeyMaterial
+            { pskmSigningKeyFile = mempty
+            , pskmDlgCertFile    = mempty
             }
         , pcoRequiresNetworkMagic = pure RequireNetworkMagic
         , pcoDBSerializeVersion   = pure 0
@@ -198,16 +207,16 @@ devConfiguration =
           , dlgMessageCacheTimeout = 30
           }
     , pccBlock               = pure
-        Block
-          { blNetworkDiameter        = 3
-          , blRecoveryHeadersMessage = 20
-          , blStreamWindow           = 2048
-          , blNonCriticalCQBootstrap = 0.95
-          , blNonCriticalCQ          = 0.8
-          , blCriticalCQBootstrap    = 0.8888
-          , blCriticalCQ             = 0.654321
-          , blCriticalForkThreshold  = 2
-          , blFixedTimeCQ            = 10
+        PartialBlock
+          { pblNetworkDiameter        = pure 3
+          , pblRecoveryHeadersMessage = pure 20
+          , pblStreamWindow           = pure 2048
+          , pblNonCriticalCQBootstrap = pure 0.95
+          , pblNonCriticalCQ          = pure 0.8
+          , pblCriticalCQBootstrap    = pure 0.8888
+          , pblCriticalCQ             = pure 0.654321
+          , pblCriticalForkThreshold  = pure 2
+          , pblFixedTimeCQ            = pure 10
           }
     , pccNode                = pure
         PartialNode

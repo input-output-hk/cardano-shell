@@ -6,7 +6,9 @@ module Cardano.Shell.Constants.PartialTypes
     ( PartialCardanoConfiguration (..)
     , PartialCore (..)
     , PartialGenesis (..)
+    , PartialStaticKeyMaterial (..)
     , PartialNode (..)
+    , PartialBlock (..)
     -- * re-exports
     , RequireNetworkMagic (..)
     ) where
@@ -29,7 +31,7 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
     , pccTXP                 :: !(Last TXP)
     , pccSSC                 :: !(Last SSC)
     , pccDLG                 :: !(Last DLG)
-    , pccBlock               :: !(Last Block)
+    , pccBlock               :: !(Last PartialBlock)
     , pccNode                :: !(Last PartialNode)
     , pccTLS                 :: !(Last TLS)
     , pccWallet              :: !(Last Wallet)
@@ -38,6 +40,7 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
 -- | Partial @Core@ configuration.
 data PartialCore = PartialCore
     { pcoGenesis              :: !(Last PartialGenesis)
+    , pcoStaticKeyMaterial    :: !(Last PartialStaticKeyMaterial)
     , pcoRequiresNetworkMagic :: !(Last RequireNetworkMagic)
     , pcoDBSerializeVersion   :: !(Last Integer)
     } deriving (Eq, Show, Generic)
@@ -48,10 +51,16 @@ data PartialCore = PartialCore
 data PartialGenesis = PartialGenesis
     { pgeSrc           :: !(Last FilePath)
     , pgeGenesisHash   :: !(Last Text)
-    , pgePrevBlockHash :: !(Last Text)
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialGenesis
     deriving Monoid    via GenericMonoid PartialGenesis
+
+data PartialStaticKeyMaterial = PartialStaticKeyMaterial
+    { pskmSigningKeyFile :: !(Last FilePath)
+    , pskmDlgCertFile    :: !(Last FilePath)
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialStaticKeyMaterial
+    deriving Monoid    via GenericMonoid    PartialStaticKeyMaterial
 
 --- | Top-level Cardano SL node configuration
 data PartialNode = PartialNode
@@ -73,4 +82,28 @@ data PartialNode = PartialNode
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialNode
     deriving Monoid    via GenericMonoid PartialNode
+
+-- | Partial @Block@ configuration.
+data PartialBlock = PartialBlock
+    { pblNetworkDiameter        :: !(Last Int)
+      -- ^Estimated time needed to broadcast message from one node to all other nodes.
+    , pblRecoveryHeadersMessage :: !(Last Int)
+      -- ^Maximum amount of headers node can put into headers message while in "after offline" or "recovery" mode.
+    , pblStreamWindow           :: !(Last Int)
+      -- ^ Number of blocks to have inflight
+    , pblNonCriticalCQBootstrap :: !(Last Double)
+      -- ^ If chain quality in bootstrap era is less than this value, non critical misbehavior will be reported.
+    , pblNonCriticalCQ          :: !(Last Double)
+      -- ^ If chain quality after bootstrap era is less than this value, non critical misbehavior will be reported.
+    , pblCriticalCQ             :: !(Last Double)
+      -- ^ If chain quality after bootstrap era is less than this value, critical misbehavior will be reported.
+    , pblCriticalCQBootstrap    :: !(Last Double)
+      -- ^ If chain quality in bootstrap era is less than this value, critical misbehavior will be reported.
+    , pblCriticalForkThreshold  :: !(Last Int)
+      -- ^ Number of blocks such that if so many blocks are rolled back, it requires immediate reaction.
+    , pblFixedTimeCQ            :: !(Last Int)
+      -- ^ Chain quality will be also calculated for this amount of seconds.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialBlock
+    deriving Monoid    via GenericMonoid PartialBlock
 

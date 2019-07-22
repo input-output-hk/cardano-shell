@@ -62,6 +62,7 @@ in defaultNix // {
     # This adds git to the shell, which is used by stack.
     buildInputs = with pkgs; [
       defaultNix.nix-tools._raw.cabal-install.components.exes.cabal
+      defaultNix.nix-tools._raw.ghcid.components.exes.ghcid
       git
       pkgconfig
       stack

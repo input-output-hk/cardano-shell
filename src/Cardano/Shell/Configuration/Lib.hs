@@ -29,12 +29,16 @@ import           Cardano.Shell.Configuration.Types (BlockchainConfig,
                                                     OSConfig, TopologyConfig,
                                                     WalletConfig, renderCluster,
                                                     renderOS)
-import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfiguration (..),
+import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..),
+                                                       PartialCardanoConfiguration (..),
+                                                       PartialStaticKeyMaterial (..),
                                                        PartialCore (..),
                                                        PartialGenesis (..),
                                                        PartialNode (..))
-import           Cardano.Shell.Constants.Types (CardanoConfiguration (..),
+import           Cardano.Shell.Constants.Types (Block (..),
+                                                CardanoConfiguration (..),
                                                 Core (..), Genesis (..),
+                                                StaticKeyMaterial (..),
                                                 Node (..))
 
 -- | Converting a @Last@ to an @Either@
@@ -62,7 +66,8 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
     ccTXP                    <- lastToEither "Unspecified ccTXP"          pccTXP
     ccSSC                    <- lastToEither "Unspecified ccSSC"          pccSSC
     ccDLG                    <- lastToEither "Unspecified ccDLG"          pccDLG
-    ccBlock                  <- lastToEither "Unspecified ccBlock"        pccBlock
+    ccBlock                  <- join $ finaliseBlock <$>
+                                    lastToEither "Unspecified ccBlock"    pccBlock
     ccNode                   <- join $ finaliseNode <$>
                                     lastToEither "Unspecified ccNode"     pccNode
     ccTLS                    <- lastToEither "Unspecified ccTLS"          pccTLS
@@ -70,24 +75,36 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
 
     pure CardanoConfiguration{..}
 
+-- | Finalize the @PartialCore@, convert to @Core@.
 finaliseCore :: PartialCore -> Either Text Core
 finaliseCore PartialCore{..} = do
     coGenesis                <- join $ finaliseGenesis <$>
                                 lastToEither "Unspecified coGenesis"                 pcoGenesis
+    coStaticKeyMaterial      <- join $ finaliseStaticKeyMaterial <$>
+                                lastToEither "Unspecified coStaticKeyMaterial"       pcoStaticKeyMaterial
     coRequiresNetworkMagic   <- lastToEither "Unspecified coRequiresNetworkMagic"    pcoRequiresNetworkMagic
     coDBSerializeVersion     <- lastToEither "Unspecified coDBSerializeVersion"      pcoDBSerializeVersion
 
     pure Core{..}
 
+-- | Finalize the @PartialGenesis@, convert to @Genesis@.
 finaliseGenesis :: PartialGenesis -> Either Text Genesis
 finaliseGenesis PartialGenesis{..} = do
 
     geSrc                    <- lastToEither "Unspecified geSrc"                     pgeSrc
     geGenesisHash            <- lastToEither "Unspecified geGenesisHash"             pgeGenesisHash
-    gePrevBlockHash          <- lastToEither "Unspecified gePrevBlockHash"           pgePrevBlockHash
 
     pure Genesis{..}
 
+finaliseStaticKeyMaterial :: PartialStaticKeyMaterial -> Either Text StaticKeyMaterial
+finaliseStaticKeyMaterial PartialStaticKeyMaterial{..} = do
+
+    skmSigningKeyFile        <- lastToEither "Unspecified skmSigningKeyFile"         pskmSigningKeyFile
+    skmDlgCertFile           <- lastToEither "Unspecified skmDlgCertFile"            pskmDlgCertFile
+
+    pure StaticKeyMaterial{..}
+
+-- | Finalize the @PartialNode@, convert to @Node@.
 finaliseNode :: PartialNode -> Either Text Node
 finaliseNode PartialNode{..} = do
 
@@ -107,6 +124,22 @@ finaliseNode PartialNode{..} = do
                                         pnoExplorerExtendedApi
 
     pure Node{..}
+
+-- | Finalize the @PartialBlock@, convert to @Block@.
+finaliseBlock :: PartialBlock -> Either Text Block
+finaliseBlock PartialBlock{..} = do
+
+    blNetworkDiameter        <- lastToEither "Unspecified blNetworkDiameter"        pblNetworkDiameter
+    blRecoveryHeadersMessage <- lastToEither "Unspecified blRecoveryHeadersMessage" pblRecoveryHeadersMessage
+    blStreamWindow           <- lastToEither "Unspecified blStreamWindow"           pblStreamWindow
+    blNonCriticalCQBootstrap <- lastToEither "Unspecified blNonCriticalCQBootstrap" pblNonCriticalCQBootstrap
+    blNonCriticalCQ          <- lastToEither "Unspecified blNonCriticalCQ"          pblNonCriticalCQ
+    blCriticalCQ             <- lastToEither "Unspecified blCriticalCQ"             pblCriticalCQ
+    blCriticalCQBootstrap    <- lastToEither "Unspecified blCriticalCQBootstrap"    pblCriticalCQBootstrap
+    blCriticalForkThreshold  <- lastToEither "Unspecified blCriticalForkThreshold"  pblCriticalForkThreshold
+    blFixedTimeCQ            <- lastToEither "Unspecified blFixedTimeCQ"            pblFixedTimeCQ
+
+    pure Block{..}
 
 
 -- | Generate 'TopologyConfig' with given 'Cluster'
