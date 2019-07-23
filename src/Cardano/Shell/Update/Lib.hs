@@ -15,6 +15,7 @@ import           Cardano.Prelude
 
 import qualified Data.Text as T
 import           Distribution.System (OS (..), buildOS)
+import           Prelude (String)
 import           System.Directory (doesFileExist, removeFile)
 import           System.Environment (getExecutablePath)
 import           System.Process (proc, waitForProcess, withCreateProcess)
@@ -72,7 +73,7 @@ runUpdater ud = do
     let path = udPath ud
     let args = map toS $ udArgs ud
     let mWindowPath = udWindowsPath ud
-    let archive = maybe [] (\arch -> [toS arch]) (udArchivePath ud)
+    let archive = maybe mempty (\arch -> toS arch) (udArchivePath ud)
     updaterExists <- doesFileExist path
     if updaterExists
         then do
@@ -87,16 +88,28 @@ runUpdater ud = do
                         removeFile updateArchivePath
                     return . Right $ ()
                 ExitFailure code -> return . Left $ UpdateFailed code
-        else return . Left $ UpdaterDoesNotExist
+        else
+            return . Left $ UpdaterDoesNotExist
   where
+    runCmd :: FilePath -> [String] -> FilePath -> IO ExitCode
     runCmd path args archive =
-        withCreateProcess (proc path (args <> archive))
+        withCreateProcess (proc path (args <> [archive]))
             -- WIP
             $ \_in _out _err ph -> waitForProcess ph
 
+    whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
     whenJust (Just a) f = f a
     whenJust Nothing  _ = return ()
 
+-- | Create @.bat@ file on given @FilePath@
+--
+-- https://github.com/input-output-hk/cardano-sl/blob/develop/tools/src/launcher/Main.hs#L585
+--
+-- The installer cant write to cardano-launcher.exe while it is running
+-- so you must fully stop launcher before you can start the installer.
+-- Because of this, we need a @.bat@ file which will run the update procedure and
+-- re-launch the launcher.
+-- Only Windows has this problem.
 writeWindowsUpdaterRunner :: FilePath -> IO ()
 writeWindowsUpdaterRunner runnerPath = do
     exePath <- getExecutablePath
