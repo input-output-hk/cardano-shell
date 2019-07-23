@@ -183,6 +183,7 @@ test-suite cardano-shell-test
   other-modules:
       Paths_cardano_shell
       DhallConfigSpec
+      UpdaterSpec
   if !os(windows)
     other-modules:
       NodeIPCSpec

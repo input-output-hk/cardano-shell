@@ -7,8 +7,11 @@
 
 module Cardano.Shell.Update.Lib
     ( UpdaterData(..)
+    , UpdateError(..)
+    , RunCmdFunc
     , updaterData
     , runUpdater
+    , runUpdater'
     ) where
 
 import           Cardano.Prelude
@@ -55,7 +58,7 @@ updaterData = case buildOS of
 data UpdateError
     = UpdateFailed Int
     | UpdaterDoesNotExist
-    deriving Show
+    deriving (Eq, Show)
 
 -- | Run the update system
 --
@@ -68,8 +71,20 @@ data UpdateError
 -- Check that @udPath@ exists, but instead of running the command directly, you
 -- first have to generate a @.bat@ file which will act as a script.
 -- After it being generated, you run that script.
-runUpdater :: UpdaterData -> IO (Either UpdateError ())
-runUpdater ud = do
+runUpdater :: UpdaterData -> IO (Either UpdateError ExitCode)
+runUpdater = runUpdater' runCmd
+  where
+    runCmd :: FilePath -> [String] -> FilePath -> IO ExitCode
+    runCmd path args archive =
+        withCreateProcess (proc path (args <> [archive]))
+            $ \_in _out _err ph -> waitForProcess ph
+
+type RunCmdFunc = FilePath -> [String] -> FilePath -> IO ExitCode
+
+-- | @runUpdater@ but can inject any runCommand function.
+-- This is used for testing.
+runUpdater' :: RunCmdFunc -> UpdaterData -> IO (Either UpdateError ExitCode)
+runUpdater' runCommand ud = do
     let path = udPath ud
     let args = map toS $ udArgs ud
     let mWindowPath = udWindowsPath ud
@@ -78,25 +93,19 @@ runUpdater ud = do
     if updaterExists
         then do
             exitCode <- case mWindowPath of
-                Nothing -> runCmd path args archive
+                Nothing -> runCommand path args archive
                 Just windowsPath -> do
                     writeWindowsUpdaterRunner windowsPath
-                    runCmd windowsPath args archive
+                    runCommand windowsPath args archive
             case exitCode of
                 ExitSuccess -> do
                     whenJust (udArchivePath ud) $ \updateArchivePath -> do
                         removeFile updateArchivePath
-                    return . Right $ ()
+                    return . Right $ ExitSuccess
                 ExitFailure code -> return . Left $ UpdateFailed code
         else
             return . Left $ UpdaterDoesNotExist
   where
-    runCmd :: FilePath -> [String] -> FilePath -> IO ExitCode
-    runCmd path args archive =
-        withCreateProcess (proc path (args <> [archive]))
-            -- WIP
-            $ \_in _out _err ph -> waitForProcess ph
-
     whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
     whenJust (Just a) f = f a
     whenJust Nothing  _ = return ()
