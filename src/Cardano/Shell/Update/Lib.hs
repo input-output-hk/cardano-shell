@@ -40,20 +40,20 @@ data UpdaterData = UpdaterData
 updaterData :: UpdaterData
 updaterData = case buildOS of
     Windows -> UpdaterData
-        "Installer.exe"
-        []
-        (Just "Installer.bat")
-        Nothing
+                   "Installer.exe"
+                   []
+                   (Just "Installer.bat")
+                   Nothing
     OSX     -> UpdaterData
-        "/usr/bin/open"
-        ["-FW"]
-        Nothing
-        (Just "\\${HOME}/Library/Application Support/Daedalus/installer.pkg")
+                    "/usr/bin/open"
+                    ["-FW"]
+                    Nothing
+                    (Just "\\${HOME}/Library/Application Support/Daedalus/installer.pkg")
     _       -> UpdaterData
-        "/bin/update-runner"
-        []
-        Nothing
-        (Just "\\${XDG_DATA_HOME}/Daedalus/installer.sh")
+                    "/bin/update-runner"
+                    []
+                    Nothing
+                    (Just "\\${XDG_DATA_HOME}/Daedalus/installer.sh")
 
 data UpdateError
     = UpdateFailed Int
