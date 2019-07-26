@@ -20,6 +20,7 @@ import           Cardano.Shell.Types (CardanoFeature (..))
 import           DhallConfigSpec (dhallConfigSpec, mkConfigSpec)
 import           NodeIPCSMSpec (nodeIPCSMSpec)
 import           NodeIPCSpec (nodeIPCSpec)
+import           UpdaterSpec (updaterSpec)
 
 -- | Entry point for tests.
 main :: IO ()
@@ -29,6 +30,7 @@ main = hspec $ do
     describe "Cardano configurations" mkConfigSpec
     describe "NodeIPC state machine" nodeIPCSMSpec
     describe "NodeIPC" nodeIPCSpec
+    describe "Update system" updaterSpec
 
 -- | A valid concurrency specification.
 validConcurrencySpec :: Spec

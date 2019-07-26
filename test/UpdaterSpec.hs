@@ -30,7 +30,7 @@ updaterSpec = describe "Update system" $ do
 testUpdaterData :: UpdaterData
 testUpdaterData =
     UpdaterData
-        "./test/test.sh"
+        "./test/testUpdater.sh"
         []
         ""
 

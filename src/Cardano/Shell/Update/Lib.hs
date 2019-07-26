@@ -98,7 +98,7 @@ runUpdater' runCommand ud = do
                 _ -> runCommand path args archive
             case exitCode of
                 ExitSuccess -> do
-                    removeFile archive
+                    whenM (doesFileExist archive) $ removeFile archive
                     return . Right $ ExitSuccess
                 ExitFailure code -> return . Left $ UpdateFailed code
         else
