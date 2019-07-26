@@ -4,6 +4,7 @@
 dist/*
 dist-newstyle/*
 .ghc.environment.*
+stack.yaml.lock
 
 # From daedalus-bridge
 node_modules/*
