@@ -8,11 +8,8 @@ import           Cardano.Prelude
 import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..), PartialCardanoConfiguration (..),
                                                        PartialCertificate (..),
                                                        PartialCore (..),
-                                                       PartialGenesis (..),
                                                        PartialNode (..),
-                                                       PartialStaticKeyMaterial (..),
                                                        PartialTLS (..),
-                                                       PartialThrottle (..),
                                                        PartialWallet (..))
 import           Cardano.Shell.Constants.Types (DLG (..),
                                                 LastKnownBlockVersion (..),
@@ -33,18 +30,12 @@ mainnetConfiguration =
     , pccApplicationLockFile = pure ""
     , pccCore =
         pure PartialCore
-          { pcoGenesis =
-              pure PartialGenesis
-                { pgeSrc             = pure "mainnet-genesis.json"
-                , pgeGenesisHash     = pure "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
-                }
-          , pcoStaticKeyMaterial =
-              pure PartialStaticKeyMaterial
-                { pskmSigningKeyFile = mempty
-                , pskmDlgCertFile    = mempty
-                }
-          , pcoRequiresNetworkMagic = pure RequireNetworkMagic
-          , pcoDBSerializeVersion   = pure 0
+          { pcoGenesisFile              = pure "mainnet-genesis.json"
+          , pcoGenesisHash              = pure "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
+          , pcoStaticKeySigningKeyFile  = pure "TEST"
+          , pcoStaticKeyDlgCertFile     = pure "TEST"
+          , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
+          , pcoDBSerializeVersion       = pure 0
           }
     , pccNTP = pure
         NTP
@@ -84,7 +75,7 @@ mainnetConfiguration =
             }
     , pccBlock = pure
         PartialBlock
-          { pblNetworkDiameter        = pure 18
+          { pblNetworkDiameter        = mempty --pure 18
           , pblRecoveryHeadersMessage = pure 2200
           , pblStreamWindow           = pure 2048
           , pblNonCriticalCQBootstrap = pure 0.95
@@ -135,14 +126,11 @@ mainnetConfiguration =
           }
     , pccWallet =
         pure PartialWallet
-          { pwaThrottle =
-              pure PartialThrottle
-                { pthEnabled = pure False
-                , pthRate    = pure 0
-                , pthPeriod  = pure ""
-                , pthBurst   = pure 0
-                }
-          }
+            { pthEnabled = pure False
+            , pthRate    = pure 0
+            , pthPeriod  = pure ""
+            , pthBurst   = pure 0
+            }
     }
 
 --------------------------------------------------------------------------------
@@ -156,23 +144,17 @@ devConfiguration =
     , pccDBPath              = pure "./db/"
     , pccLogConfig           = pure "./log-config.yaml"
     , pccApplicationLockFile = pure ""
-    , pccCore                = pure
-      PartialCore
-        { pcoGenesis  =
-          pure PartialGenesis
-            { pgeSrc             = pure "testnet-genesis.json"
-            , pgeGenesisHash     = pure "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
-            }
-        , pcoStaticKeyMaterial =
-          pure PartialStaticKeyMaterial
-            { pskmSigningKeyFile = mempty
-            , pskmDlgCertFile    = mempty
-            }
-        , pcoRequiresNetworkMagic = pure RequireNetworkMagic
-        , pcoDBSerializeVersion   = pure 0
-        }
-    , pccNTP                 = pure
-         NTP
+    , pccCore                =
+        pure PartialCore
+          { pcoGenesisFile              = pure "testnet-genesis.json"
+          , pcoGenesisHash              = pure "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
+          , pcoStaticKeySigningKeyFile  = mempty
+          , pcoStaticKeyDlgCertFile     = mempty
+          , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
+          , pcoDBSerializeVersion       = pure 0
+          }
+    , pccNTP                 =
+        pure NTP
           { ntpResponseTimeout = 30000000
           , ntpPollDelay       = 1800000000
           , ntpServers         =
@@ -261,13 +243,10 @@ devConfiguration =
           }
     , pccWallet =
         pure PartialWallet
-          { pwaThrottle =
-            pure PartialThrottle
-              { pthEnabled = pure False
-              , pthRate    = pure 0
-              , pthPeriod  = pure ""
-              , pthBurst   = pure 0
-              }
-          }
+            { pthEnabled = pure False
+            , pthRate    = pure 0
+            , pthPeriod  = pure ""
+            , pthBurst   = pure 0
+            }
     }
 

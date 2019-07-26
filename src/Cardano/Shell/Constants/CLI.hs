@@ -1,10 +1,9 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Cardano.Shell.Constants.CLI
-    ( configCoreCLIParser
+    (
     -- * Core CLI parsers
-    , configGenesisCLIParser
-    , configStaticKeyMaterialCLIParser
-    , configNetworkMagicCLIParser
-    , configDBVersionCLIParser
+      configCoreCLIParser
     -- * Node
     , configNodeCLIParser
     -- * Block
@@ -14,7 +13,6 @@ module Cardano.Shell.Constants.CLI
     , configCertificateCLIParser
     -- * Wallet
     , configWalletCLIParser
-    , configThrottleCLIParser
     ) where
 
 import           Cardano.Prelude hiding (option)
@@ -31,6 +29,23 @@ import           Cardano.Shell.Constants.PartialTypes
 lastOption :: Parser a -> Parser (Last a)
 lastOption parser = Last <$> optional parser
 
+--auto :: Read a => ReadM a
+--option :: ReadM a -> Mod OptionFields a -> Parser a
+lastAutoOption :: forall a. Read a => Mod OptionFields a -> Parser (Last a)
+lastAutoOption args = lastOption (option auto args)
+
+lastIntOption :: Mod OptionFields Int -> Parser (Last Int)
+lastIntOption = lastAutoOption
+
+lastDoubleOption :: Mod OptionFields Double -> Parser (Last Double)
+lastDoubleOption = lastAutoOption
+
+lastBoolOption :: Mod OptionFields Bool -> Parser (Last Bool)
+lastBoolOption = lastAutoOption
+
+boolOption :: Mod OptionFields Bool -> Parser Bool
+boolOption = option auto
+
 lastStrOption :: IsString a => Mod OptionFields a -> Parser (Last a)
 lastStrOption args = Last <$> optional (strOption args)
 
@@ -39,66 +54,55 @@ lastStrOption args = Last <$> optional (strOption args)
 --------------------------------------------------------------------------------
 
 -- | The parser for the logging specific arguments.
-configCoreCLIParser :: Parser PartialCore
-configCoreCLIParser = PartialCore
-    <$> lastOption configGenesisCLIParser
-    <*> lastOption configStaticKeyMaterialCLIParser
-    <*> lastOption configNetworkMagicCLIParser
-    <*> lastOption configDBVersionCLIParser
-
--- | CLI parser for @Genesis@.
-configGenesisCLIParser :: Parser PartialGenesis
-configGenesisCLIParser =
-    PartialGenesis
-        <$> lastStrOption
+configCoreCLIParser :: Parser (Last PartialCore)
+configCoreCLIParser = lastOption $ PartialCore
+    <$> lastStrOption
            ( long "genesis-file"
           <> metavar "FILEPATH"
           <> help "The filepath to the genesis file."
            )
-        <*> lastStrOption
+    <*> lastStrOption
            ( long "genesis-hash"
           <> metavar "GENESIS-HASH"
           <> help "The genesis hash value."
            )
-
--- | Parser for the network magic options.
-configNetworkMagicCLIParser :: Parser RequireNetworkMagic
-configNetworkMagicCLIParser = requiredNetworkMagicParser <|> noRequiredNetworkMagicParser
-  where
-    requiredNetworkMagicParser :: Parser RequireNetworkMagic
-    requiredNetworkMagicParser = flag' RequireNetworkMagic
-        ( long "require-network-magic"
-       <> help "Requires network magic"
-        )
-
-    noRequiredNetworkMagicParser :: Parser RequireNetworkMagic
-    noRequiredNetworkMagicParser = flag' NoRequireNetworkMagic
-        ( long "no-require-network-magic"
-       <> help "Doesn not require network magic"
-        )
-
-configStaticKeyMaterialCLIParser :: Parser PartialStaticKeyMaterial
-configStaticKeyMaterialCLIParser =
-    PartialStaticKeyMaterial
-        <$> lastStrOption
+    <*> lastStrOption
            ( long "signing-key"
           <> metavar "FILEPATH"
           <> help "Path to the signing key."
            )
-        <*> lastStrOption
+    <*> lastStrOption
            ( long "delegation-certificate"
           <> metavar "FILEPATH"
           <> help "Path to the delegation certificate."
            )
+    <*> lastOption configNetworkMagicCLIParser
+    <*> lastOption configDBVersionCLIParser
+  where
+    -- | Parser for the network magic options.
+    configNetworkMagicCLIParser :: Parser RequireNetworkMagic
+    configNetworkMagicCLIParser = requiredNetworkMagicParser <|> noRequiredNetworkMagicParser
+      where
+        requiredNetworkMagicParser :: Parser RequireNetworkMagic
+        requiredNetworkMagicParser = flag' RequireNetworkMagic
+            ( long "require-network-magic"
+           <> help "Requires network magic"
+            )
 
--- | The parser for the DB version.
-configDBVersionCLIParser :: Parser Integer
-configDBVersionCLIParser =
-    option auto
-        ( long "db-version"
-       <> metavar "DB-VERSION"
-       <> help "The version of the DB."
-        )
+        noRequiredNetworkMagicParser :: Parser RequireNetworkMagic
+        noRequiredNetworkMagicParser = flag' NoRequireNetworkMagic
+            ( long "no-require-network-magic"
+           <> help "Doesn not require network magic"
+            )
+
+    -- | The parser for the DB version.
+    configDBVersionCLIParser :: Parser Integer
+    configDBVersionCLIParser =
+        option auto
+            ( long "db-version"
+           <> metavar "DB-VERSION"
+           <> help "The version of the DB."
+            )
 
 --------------------------------------------------------------------------------
 -- Node
@@ -150,50 +154,50 @@ configNodeCLIParser =
 --------------------------------------------------------------------------------
 
 -- | Block CLI parser.
-configBlockCLIParser :: Parser PartialBlock
+configBlockCLIParser :: Parser (Last PartialBlock)
 configBlockCLIParser =
-    PartialBlock
-        <$> option auto
+    lastOption $ PartialBlock
+        <$> lastIntOption
            ( long "network-diameter"
           <> metavar "NETWORK-DIAMETER-TIME"
           <> help "Estimated time needed to broadcast message from one node to all other nodes."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "recovery-headers-amount"
           <> metavar "RECOVERY-HEADERS-AMOUNT"
           <> help "Maximum amount of headers node can put into headers message while in 'after offline' or 'recovery' mode."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "stream-window"
           <> metavar "STREAM-WINDOW-CAPACITY"
           <> help "Number of blocks to have inflight."
            )
-        <*> option auto
+        <*> lastDoubleOption
            ( long "noncritical-cq-bootstrap"
           <> metavar "NONCRITICAL-CQ-BOOTSTRAP"
           <> help "If chain quality in bootstrap era is less than this value, non critical misbehavior will be reported."
            )
-        <*> option auto
+        <*> lastDoubleOption
            ( long "critical-cq-bootstrap"
           <> metavar "CRITICAL-CQ-BOOTSTRAP"
           <> help "If chain quality in bootstrap era is less than this value, critical misbehavior will be reported."
            )
-        <*> option auto
+        <*> lastDoubleOption
            ( long "noncritical-cq"
           <> metavar "NONCRITICAL-CQ"
           <> help "If chain quality after bootstrap era is less than this value, non critical misbehavior will be reported."
            )
-        <*> option auto
+        <*> lastDoubleOption
            ( long "critical-cq"
           <> metavar "CRITICAL-CQ"
           <> help "If chain quality after bootstrap era is less than this value, critical misbehavior will be reported."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "critical-fork-threshold"
           <> metavar "CRITICAL-FORK-THRESHOLD"
           <> help "Number of blocks such that if so many blocks are rolled back, it requires immediate reaction."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "fixed-time-cq"
           <> metavar "FIXED-TIME-CQ"
           <> help "Chain quality will be also calculated for this amount of seconds."
@@ -240,32 +244,26 @@ configCertificateCLIParser =
 -- Wallet
 --------------------------------------------------------------------------------
 
--- | Certificate CLI parser.
-configWalletCLIParser :: Parser PartialWallet
+-- | Wallet CLI parser.
+configWalletCLIParser :: Parser (Last PartialWallet)
 configWalletCLIParser =
-    PartialWallet
-        <$> lastOption configThrottleCLIParser
-
--- | Certificate CLI parser.
-configThrottleCLIParser :: Parser PartialThrottle
-configThrottleCLIParser =
-    PartialThrottle
-        <$> option auto
+    lastOption $ PartialWallet
+        <$> lastBoolOption
            ( long "th-enabled"
           <> metavar "TH-ENABLED"
           <> help "Throttle enabled/disabled."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "th-rate"
           <> metavar "TH-RATE"
           <> help "Throttle rate."
            )
-        <*> option auto
+        <*> lastStrOption
            ( long "th-period"
           <> metavar "TH-PERIOD"
           <> help "Throttle period."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "th-burst"
           <> metavar "TH-BURST"
           <> help "Throttle burst."

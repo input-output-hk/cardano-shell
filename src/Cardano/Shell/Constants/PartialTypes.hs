@@ -5,14 +5,11 @@
 module Cardano.Shell.Constants.PartialTypes
     ( PartialCardanoConfiguration (..)
     , PartialCore (..)
-    , PartialGenesis (..)
-    , PartialStaticKeyMaterial (..)
     , PartialNode (..)
     , PartialBlock (..)
     , PartialTLS (..)
     , PartialCertificate (..)
     , PartialWallet (..)
-    , PartialThrottle (..)
     -- * re-exports
     , RequireNetworkMagic (..)
     ) where
@@ -43,28 +40,21 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
 
 -- | Partial @Core@ configuration.
 data PartialCore = PartialCore
-    { pcoGenesis              :: !(Last PartialGenesis)
-    , pcoStaticKeyMaterial    :: !(Last PartialStaticKeyMaterial)
-    , pcoRequiresNetworkMagic :: !(Last RequireNetworkMagic)
-    , pcoDBSerializeVersion   :: !(Last Integer)
+    { pcoGenesisFile                :: !(Last FilePath)
+    -- ^ Genesis source file JSON.
+    , pcoGenesisHash                :: !(Last Text)
+    -- ^ Genesis previous block hash.
+    , pcoStaticKeySigningKeyFile    :: !(Last FilePath)
+    -- ^ Static key signing file.
+    , pcoStaticKeyDlgCertFile       :: !(Last FilePath)
+    -- ^ Static key delegation certificate.
+    , pcoRequiresNetworkMagic       :: !(Last RequireNetworkMagic)
+    -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
+    , pcoDBSerializeVersion         :: !(Last Integer)
+    -- ^ Versioning for values in node's DB.
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialCore
     deriving Monoid    via GenericMonoid PartialCore
-
--- | Partial @Genesis@.
-data PartialGenesis = PartialGenesis
-    { pgeSrc           :: !(Last FilePath)
-    , pgeGenesisHash   :: !(Last Text)
-    } deriving (Eq, Show, Generic)
-    deriving Semigroup via GenericSemigroup PartialGenesis
-    deriving Monoid    via GenericMonoid PartialGenesis
-
-data PartialStaticKeyMaterial = PartialStaticKeyMaterial
-    { pskmSigningKeyFile :: !(Last FilePath)
-    , pskmDlgCertFile    :: !(Last FilePath)
-    } deriving (Eq, Show, Generic)
-    deriving Semigroup via GenericSemigroup PartialStaticKeyMaterial
-    deriving Monoid    via GenericMonoid    PartialStaticKeyMaterial
 
 --- | Top-level Cardano SL node configuration
 data PartialNode = PartialNode
@@ -139,14 +129,6 @@ data PartialCertificate = PartialCertificate
 
 -- | Partial @Wallet@ configuration.
 data PartialWallet = PartialWallet
-    { pwaThrottle :: !(Last PartialThrottle)
-    -- ^ Wallet throttle configuration.
-    } deriving (Eq, Show, Generic)
-    deriving Semigroup via GenericSemigroup PartialWallet
-    deriving Monoid    via GenericMonoid PartialWallet
-
--- | Partial @Throttle@ configuration.
-data PartialThrottle = PartialThrottle
     { pthEnabled :: !(Last Bool)
     -- ^ Is throttle enabled?
     , pthRate    :: !(Last Int)
@@ -156,6 +138,6 @@ data PartialThrottle = PartialThrottle
     , pthBurst   :: !(Last Int)
     -- ^ Throttle burst.
     } deriving (Eq, Show, Generic)
-    deriving Semigroup via GenericSemigroup PartialThrottle
-    deriving Monoid    via GenericMonoid PartialThrottle
+    deriving Semigroup via GenericSemigroup PartialWallet
+    deriving Monoid    via GenericMonoid PartialWallet
 

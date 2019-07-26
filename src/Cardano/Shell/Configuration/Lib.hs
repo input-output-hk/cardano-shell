@@ -3,7 +3,6 @@
 module Cardano.Shell.Configuration.Lib
     ( finaliseCardanoConfiguration
     , finaliseCore
-    , finaliseGenesis
     , mkLauncher
     , mkTopology
     , mkOSConfig
@@ -32,18 +31,13 @@ import           Cardano.Shell.Configuration.Types (BlockchainConfig,
 import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..), PartialCardanoConfiguration (..),
                                                        PartialCertificate (..),
                                                        PartialCore (..),
-                                                       PartialGenesis (..),
                                                        PartialNode (..),
-                                                       PartialStaticKeyMaterial (..),
                                                        PartialTLS (..),
-                                                       PartialThrottle (..),
                                                        PartialWallet (..))
 import           Cardano.Shell.Constants.Types (Block (..),
                                                 CardanoConfiguration (..),
                                                 Certificate (..), Core (..),
-                                                Genesis (..), Node (..),
-                                                StaticKeyMaterial (..),
-                                                TLS (..), Throttle (..),
+                                                Node (..), TLS (..),
                                                 Wallet (..))
 
 -- | Converting a @Last@ to an @Either@
@@ -85,31 +79,17 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
 -- | Finalize the @PartialCore@, convert to @Core@.
 finaliseCore :: PartialCore -> Either Text Core
 finaliseCore PartialCore{..} = do
-    coGenesis                <- join $ finaliseGenesis <$>
-                                lastToEither "Unspecified coGenesis"                 pcoGenesis
-    coStaticKeyMaterial      <- join $ finaliseStaticKeyMaterial <$>
-                                lastToEither "Unspecified coStaticKeyMaterial"       pcoStaticKeyMaterial
-    coRequiresNetworkMagic   <- lastToEither "Unspecified coRequiresNetworkMagic"    pcoRequiresNetworkMagic
-    coDBSerializeVersion     <- lastToEither "Unspecified coDBSerializeVersion"      pcoDBSerializeVersion
+
+    coGenesisFile               <- lastToEither "Unspecified coGenesisFile"             pcoGenesisFile
+    coGenesisHash               <- lastToEither "Unspecified coGenesisHash"             pcoGenesisHash
+
+    coStaticKeySigningKeyFile   <- lastToEither "Unspecified coStaticKeySigningKeyFile" pcoStaticKeySigningKeyFile
+    coStaticKeyDlgCertFile      <- lastToEither "Unspecified coStaticKeyDlgCertFile"    pcoStaticKeyDlgCertFile
+
+    coRequiresNetworkMagic      <- lastToEither "Unspecified coRequiresNetworkMagic"    pcoRequiresNetworkMagic
+    coDBSerializeVersion        <- lastToEither "Unspecified coDBSerializeVersion"      pcoDBSerializeVersion
 
     pure Core{..}
-
--- | Finalize the @PartialGenesis@, convert to @Genesis@.
-finaliseGenesis :: PartialGenesis -> Either Text Genesis
-finaliseGenesis PartialGenesis{..} = do
-
-    geSrc                    <- lastToEither "Unspecified geSrc"                     pgeSrc
-    geGenesisHash            <- lastToEither "Unspecified geGenesisHash"             pgeGenesisHash
-
-    pure Genesis{..}
-
-finaliseStaticKeyMaterial :: PartialStaticKeyMaterial -> Either Text StaticKeyMaterial
-finaliseStaticKeyMaterial PartialStaticKeyMaterial{..} = do
-
-    skmSigningKeyFile        <- lastToEither "Unspecified skmSigningKeyFile"         pskmSigningKeyFile
-    skmDlgCertFile           <- lastToEither "Unspecified skmDlgCertFile"            pskmDlgCertFile
-
-    pure StaticKeyMaterial{..}
 
 -- | Finalize the @PartialNode@, convert to @Node@.
 finaliseNode :: PartialNode -> Either Text Node
@@ -169,24 +149,16 @@ finaliseTLS PartialTLS{..} = do
 
     pure TLS{..}
 
--- | Finalise the @PartialThrottle@, convert to @Throttle@.
-finaliseThrottle :: PartialThrottle -> Either Text Throttle
-finaliseThrottle PartialThrottle{..} = do
+-- | Finalize the @PartialWallet@, convert to @Wallet@.
+finaliseWallet :: PartialWallet -> Either Text Wallet
+finaliseWallet PartialWallet{..} = do
 
     thEnabled   <- lastToEither "Unspecified thEnabled" pthEnabled
     thRate      <- lastToEither "Unspecified thRate"    pthRate
     thPeriod    <- lastToEither "Unspecified thPeriod"  pthPeriod
     thBurst     <- lastToEither "Unspecified thBurst"   pthBurst
 
-    pure Throttle {..}
-
--- | Finalize the @PartialWallet@, convert to @Wallet@.
-finaliseWallet :: PartialWallet -> Either Text Wallet
-finaliseWallet PartialWallet{..} = do
-
-    waThrottle  <- join $ finaliseThrottle <$> lastToEither "Unspecified waThrottle" pwaThrottle
-
-    pure Wallet{..}
+    pure Wallet {..}
 
 
 -- | Generate 'TopologyConfig' with given 'Cluster'
