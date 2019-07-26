@@ -28,20 +28,18 @@ updaterSpec = describe "Update system" $ do
         assert $ eExitCode == (Left . UpdateFailed . getExitNum $ exitNum)
 
 testUpdaterData :: UpdaterData
-testUpdaterData = 
+testUpdaterData =
     UpdaterData
         "./test/test.sh"
         []
-        Nothing
-        Nothing
+        ""
 
 testUpdaterDataNoPath :: UpdaterData
-testUpdaterDataNoPath = 
+testUpdaterDataNoPath =
     UpdaterData
         "This path does not exist"
         []
-        Nothing
-        Nothing
+        ""
 
 testRunCmd :: ExitNum -> FilePath -> [String] -> FilePath -> IO ExitCode
 testRunCmd (ExitNum num) _ _ _ = return $ ExitFailure num

@@ -38,8 +38,6 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
 
 main :: IO ()
 main = do
-
-  -- _ <- runUpdater updaterData
         
     let launcherConfig :: LauncherConfig
         launcherConfig = LauncherConfig

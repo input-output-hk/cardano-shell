@@ -30,8 +30,7 @@ import           System.Win32.Process (getCurrentProcessId)
 data UpdaterData = UpdaterData
     { udPath        :: !FilePath
     , udArgs        :: ![Text]
-    , udWindowsPath :: Maybe FilePath
-    , udArchivePath :: Maybe FilePath
+    , udArchivePath :: !FilePath
     }
 
 -- Windows: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/win64.dhall#L32-L35
@@ -42,18 +41,15 @@ updaterData = case buildOS of
     Windows -> UpdaterData
                    "Installer.exe"
                    []
-                   (Just "Installer.bat")
-                   Nothing
+                   "Installer.bat"
     OSX     -> UpdaterData
                     "/usr/bin/open"
                     ["-FW"]
-                    Nothing
-                    (Just "\\${HOME}/Library/Application Support/Daedalus/installer.pkg")
+                    "\\${HOME}/Library/Application Support/Daedalus/installer.pkg"
     _       -> UpdaterData
                     "/bin/update-runner"
                     []
-                    Nothing
-                    (Just "\\${XDG_DATA_HOME}/Daedalus/installer.sh")
+                    "\\${XDG_DATA_HOME}/Daedalus/installer.sh"
 
 data UpdateError
     = UpdateFailed Int
@@ -79,7 +75,11 @@ runUpdater = runUpdater' runCmd
         withCreateProcess (proc path (args <> [archive]))
             $ \_in _out _err ph -> waitForProcess ph
 
-type RunCmdFunc = FilePath -> [String] -> FilePath -> IO ExitCode
+type RunCmdFunc
+    = FilePath
+    -> [String]
+    -> FilePath
+    -> IO ExitCode
 
 -- | @runUpdater@ but can inject any runCommand function.
 -- This is used for testing.
@@ -87,28 +87,22 @@ runUpdater' :: RunCmdFunc -> UpdaterData -> IO (Either UpdateError ExitCode)
 runUpdater' runCommand ud = do
     let path = udPath ud
     let args = map toS $ udArgs ud
-    let mWindowPath = udWindowsPath ud
-    let archive = maybe mempty (\arch -> toS arch) (udArchivePath ud)
+    let archive = (udArchivePath ud)
     updaterExists <- doesFileExist path
     if updaterExists
         then do
-            exitCode <- case mWindowPath of
-                Nothing -> runCommand path args archive
-                Just windowsPath -> do
-                    writeWindowsUpdaterRunner windowsPath
-                    runCommand windowsPath args archive
+            exitCode <- case buildOS of
+                Windows -> do
+                    writeWindowsUpdaterRunner archive
+                    runCommand archive args archive
+                _ -> runCommand path args archive
             case exitCode of
                 ExitSuccess -> do
-                    whenJust (udArchivePath ud) $ \updateArchivePath -> do
-                        removeFile updateArchivePath
+                    removeFile archive
                     return . Right $ ExitSuccess
                 ExitFailure code -> return . Left $ UpdateFailed code
         else
             return . Left $ UpdaterDoesNotExist
-  where
-    whenJust :: (Monad m) => Maybe a -> (a -> m ()) -> m ()
-    whenJust (Just a) f = f a
-    whenJust Nothing  _ = return ()
 
 -- | Create @.bat@ file on given @FilePath@
 --
