@@ -43,9 +43,6 @@ lastDoubleOption = lastAutoOption
 lastBoolOption :: Mod OptionFields Bool -> Parser (Last Bool)
 lastBoolOption = lastAutoOption
 
-boolOption :: Mod OptionFields Bool -> Parser Bool
-boolOption = option auto
-
 lastStrOption :: IsString a => Mod OptionFields a -> Parser (Last a)
 lastStrOption args = Last <$> optional (strOption args)
 
@@ -54,8 +51,8 @@ lastStrOption args = Last <$> optional (strOption args)
 --------------------------------------------------------------------------------
 
 -- | The parser for the logging specific arguments.
-configCoreCLIParser :: Parser (Last PartialCore)
-configCoreCLIParser = lastOption $ PartialCore
+configCoreCLIParser :: Parser PartialCore
+configCoreCLIParser = PartialCore
     <$> lastStrOption
            ( long "genesis-file"
           <> metavar "FILEPATH"
@@ -154,9 +151,9 @@ configNodeCLIParser =
 --------------------------------------------------------------------------------
 
 -- | Block CLI parser.
-configBlockCLIParser :: Parser (Last PartialBlock)
+configBlockCLIParser :: Parser PartialBlock
 configBlockCLIParser =
-    lastOption $ PartialBlock
+    PartialBlock
         <$> lastIntOption
            ( long "network-diameter"
           <> metavar "NETWORK-DIAMETER-TIME"
@@ -245,9 +242,9 @@ configCertificateCLIParser =
 --------------------------------------------------------------------------------
 
 -- | Wallet CLI parser.
-configWalletCLIParser :: Parser (Last PartialWallet)
+configWalletCLIParser :: Parser PartialWallet
 configWalletCLIParser =
-    lastOption $ PartialWallet
+    PartialWallet
         <$> lastBoolOption
            ( long "th-enabled"
           <> metavar "TH-ENABLED"

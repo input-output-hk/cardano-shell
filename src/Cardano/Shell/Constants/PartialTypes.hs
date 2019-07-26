@@ -26,16 +26,16 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
     , pccLogConfig           :: !(Last FilePath)
     , pccDBPath              :: !(Last FilePath)
     , pccApplicationLockFile :: !(Last FilePath)
-    , pccCore                :: !(Last PartialCore)
+    , pccCore                :: !PartialCore
     , pccNTP                 :: !(Last NTP)
     , pccUpdate              :: !(Last Update)
     , pccTXP                 :: !(Last TXP)
     , pccSSC                 :: !(Last SSC)
     , pccDLG                 :: !(Last DLG)
-    , pccBlock               :: !(Last PartialBlock)
+    , pccBlock               :: !PartialBlock
     , pccNode                :: !(Last PartialNode)
     , pccTLS                 :: !(Last PartialTLS)
-    , pccWallet              :: !(Last PartialWallet)
+    , pccWallet              :: !PartialWallet
     } deriving (Eq, Show, Generic)
 
 -- | Partial @Core@ configuration.

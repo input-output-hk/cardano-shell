@@ -28,9 +28,9 @@ import           Options.Applicative
 -- All here being - from all the features.
 data CLIArguments = CLIArguments
                         !LoggingCLIArguments
-                        !(Last PartialWallet)
-                        !(Last PartialBlock)
-                        !(Last PartialCore)
+                        !PartialWallet
+                        !PartialBlock
+                        !PartialCore
 
 main :: IO ()
 main = do
@@ -100,9 +100,9 @@ initializeAllFeatures partialConfig cardanoEnvironment = do
     let configBlock     = pccBlock partialConfig
     let configWallet    = pccWallet partialConfig
 
-    let pccCore'        = liftA2 (<>) configCore coreCLI
-    let pccBlock'       = liftA2 (<>) configBlock blockCLI
-    let pccWallet'      = liftA2 (<>) configWallet walletCLI
+    let pccCore'        = configCore    <> coreCLI
+    let pccBlock'       = configBlock   <> blockCLI
+    let pccWallet'      = configWallet  <> walletCLI
 
     putTextLn "************************************************"
     putTextLn "CORE"

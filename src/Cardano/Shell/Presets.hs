@@ -29,7 +29,7 @@ mainnetConfiguration =
     , pccDBPath              = pure "./db/"
     , pccApplicationLockFile = pure ""
     , pccCore =
-        pure PartialCore
+        PartialCore
           { pcoGenesisFile              = pure "mainnet-genesis.json"
           , pcoGenesisHash              = pure "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
           , pcoStaticKeySigningKeyFile  = pure "TEST"
@@ -73,9 +73,9 @@ mainnetConfiguration =
         DLG { dlgCacheParam          = 500
             , dlgMessageCacheTimeout = 30
             }
-    , pccBlock = pure
+    , pccBlock =
         PartialBlock
-          { pblNetworkDiameter        = mempty --pure 18
+          { pblNetworkDiameter        = pure 18
           , pblRecoveryHeadersMessage = pure 2200
           , pblStreamWindow           = pure 2048
           , pblNonCriticalCQBootstrap = pure 0.95
@@ -125,7 +125,7 @@ mainnetConfiguration =
                 }
           }
     , pccWallet =
-        pure PartialWallet
+        PartialWallet
             { pthEnabled = pure False
             , pthRate    = pure 0
             , pthPeriod  = pure ""
@@ -145,7 +145,7 @@ devConfiguration =
     , pccLogConfig           = pure "./log-config.yaml"
     , pccApplicationLockFile = pure ""
     , pccCore                =
-        pure PartialCore
+        PartialCore
           { pcoGenesisFile              = pure "testnet-genesis.json"
           , pcoGenesisHash              = pure "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
           , pcoStaticKeySigningKeyFile  = mempty
@@ -190,7 +190,7 @@ devConfiguration =
           { dlgCacheParam          = 500
           , dlgMessageCacheTimeout = 30
           }
-    , pccBlock               = pure
+    , pccBlock               =
         PartialBlock
           { pblNetworkDiameter        = pure 3
           , pblRecoveryHeadersMessage = pure 20
@@ -242,7 +242,7 @@ devConfiguration =
                 }
           }
     , pccWallet =
-        pure PartialWallet
+        PartialWallet
             { pthEnabled = pure False
             , pthRate    = pure 0
             , pthPeriod  = pure ""

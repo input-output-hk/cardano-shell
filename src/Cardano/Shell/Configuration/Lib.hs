@@ -58,21 +58,18 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
     ccDBPath                 <- lastToEither "Unspecified ccDBPath"       pccDBPath
     ccApplicationLockFile    <- lastToEither "Unspecified ccApplicationLockFile"
                                     pccApplicationLockFile
-    ccCore                   <- join $ finaliseCore <$>
-                                    lastToEither "Unspecified ccCore"     pccCore
+    ccCore                   <- finaliseCore pccCore
     ccNTP                    <- lastToEither "Unspecified ccNTP"          pccNTP
     ccUpdate                 <- lastToEither "Unspecified ccUpdate"       pccUpdate
     ccTXP                    <- lastToEither "Unspecified ccTXP"          pccTXP
     ccSSC                    <- lastToEither "Unspecified ccSSC"          pccSSC
     ccDLG                    <- lastToEither "Unspecified ccDLG"          pccDLG
-    ccBlock                  <- join $ finaliseBlock <$>
-                                    lastToEither "Unspecified ccBlock"    pccBlock
+    ccBlock                  <- finaliseBlock pccBlock
     ccNode                   <- join $ finaliseNode <$>
                                     lastToEither "Unspecified ccNode"     pccNode
     ccTLS                    <- join $ finaliseTLS <$>
                                     lastToEither "Unspecified ccTLS"      pccTLS
-    ccWallet                 <- join $ finaliseWallet <$>
-                                    lastToEither "Unspecified ccWallet"   pccWallet
+    ccWallet                 <- finaliseWallet pccWallet
 
     pure CardanoConfiguration{..}
 
