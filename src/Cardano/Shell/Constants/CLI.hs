@@ -9,6 +9,12 @@ module Cardano.Shell.Constants.CLI
     , configNodeCLIParser
     -- * Block
     , configBlockCLIParser
+    -- * TLS
+    , configTLSCLIParser
+    , configCertificateCLIParser
+    -- * Wallet
+    , configWalletCLIParser
+    , configThrottleCLIParser
     ) where
 
 import           Cardano.Prelude hiding (option)
@@ -93,8 +99,6 @@ configDBVersionCLIParser =
        <> metavar "DB-VERSION"
        <> help "The version of the DB."
         )
-
-
 
 --------------------------------------------------------------------------------
 -- Node
@@ -194,3 +198,76 @@ configBlockCLIParser =
           <> metavar "FIXED-TIME-CQ"
           <> help "Chain quality will be also calculated for this amount of seconds."
            )
+
+--------------------------------------------------------------------------------
+-- Certificates
+--------------------------------------------------------------------------------
+
+-- | TLS CLI Parser.
+configTLSCLIParser :: Parser PartialTLS
+configTLSCLIParser =
+    PartialTLS
+        <$> lastOption configCertificateCLIParser
+        <*> lastOption configCertificateCLIParser
+        <*> lastOption configCertificateCLIParser
+
+-- | Certificate CLI parser.
+configCertificateCLIParser :: Parser PartialCertificate
+configCertificateCLIParser =
+    PartialCertificate
+        <$> option auto
+           ( long "cert-organization-name"
+          <> metavar "CERT-ORGANIZATION-NAME"
+          <> help "Certificate organization."
+           )
+        <*> option auto
+           ( long "cert-common-name"
+          <> metavar "CERT-COMMON-NAME"
+          <> help "Certificate common name."
+           )
+        <*> option auto
+           ( long "cert-expiry-days"
+          <> metavar "CERT-EXPIRY-DAYS"
+          <> help "Certificate days of expiration."
+           )
+        <*> option auto
+           ( long "cert-alternative-dns"
+          <> metavar "CERT-ALTERNATIVE-DNS"
+          <> help "Certificate alternative DNS."
+           )
+
+--------------------------------------------------------------------------------
+-- Wallet
+--------------------------------------------------------------------------------
+
+-- | Certificate CLI parser.
+configWalletCLIParser :: Parser PartialWallet
+configWalletCLIParser =
+    PartialWallet
+        <$> lastOption configThrottleCLIParser
+
+-- | Certificate CLI parser.
+configThrottleCLIParser :: Parser PartialThrottle
+configThrottleCLIParser =
+    PartialThrottle
+        <$> option auto
+           ( long "th-enabled"
+          <> metavar "TH-ENABLED"
+          <> help "Throttle enabled/disabled."
+           )
+        <*> option auto
+           ( long "th-rate"
+          <> metavar "TH-RATE"
+          <> help "Throttle rate."
+           )
+        <*> option auto
+           ( long "th-period"
+          <> metavar "TH-PERIOD"
+          <> help "Throttle period."
+           )
+        <*> option auto
+           ( long "th-burst"
+          <> metavar "TH-BURST"
+          <> help "Throttle burst."
+           )
+

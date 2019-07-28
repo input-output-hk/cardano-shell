@@ -9,6 +9,10 @@ module Cardano.Shell.Constants.PartialTypes
     , PartialStaticKeyMaterial (..)
     , PartialNode (..)
     , PartialBlock (..)
+    , PartialTLS (..)
+    , PartialCertificate (..)
+    , PartialWallet (..)
+    , PartialThrottle (..)
     -- * re-exports
     , RequireNetworkMagic (..)
     ) where
@@ -33,8 +37,8 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
     , pccDLG                 :: !(Last DLG)
     , pccBlock               :: !(Last PartialBlock)
     , pccNode                :: !(Last PartialNode)
-    , pccTLS                 :: !(Last TLS)
-    , pccWallet              :: !(Last Wallet)
+    , pccTLS                 :: !(Last PartialTLS)
+    , pccWallet              :: !(Last PartialWallet)
     } deriving (Eq, Show, Generic)
 
 -- | Partial @Core@ configuration.
@@ -106,4 +110,52 @@ data PartialBlock = PartialBlock
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialBlock
     deriving Monoid    via GenericMonoid PartialBlock
+
+-- | Partial @TLS@ configuration.
+data PartialTLS = PartialTLS
+    { ptlsCA      :: !(Last PartialCertificate)
+    -- ^ Certificate Authoritiy certificate.
+    , ptlsServer  :: !(Last PartialCertificate)
+    -- ^ Server certificate.
+    , ptlsClients :: !(Last PartialCertificate)
+    -- ^ Client certificate.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialTLS
+    deriving Monoid    via GenericMonoid PartialTLS
+
+-- | Partial @Certificate@ configuration.
+data PartialCertificate = PartialCertificate
+    { pcertOrganization :: !(Last Text)
+    -- ^ Certificate organization.
+    , pcertCommonName   :: !(Last Text)
+    -- ^ Certificate common name.
+    , pcertExpiryDays   :: !(Last Int)
+    -- ^ Certificate days of expiration.
+    , pcertAltDNS       :: !(Last [Text])
+    -- ^ Certificate alternative DNS.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialCertificate
+    deriving Monoid    via GenericMonoid PartialCertificate
+
+-- | Partial @Wallet@ configuration.
+data PartialWallet = PartialWallet
+    { pwaThrottle :: !(Last PartialThrottle)
+    -- ^ Wallet throttle configuration.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialWallet
+    deriving Monoid    via GenericMonoid PartialWallet
+
+-- | Partial @Throttle@ configuration.
+data PartialThrottle = PartialThrottle
+    { pthEnabled :: !(Last Bool)
+    -- ^ Is throttle enabled?
+    , pthRate    :: !(Last Int)
+    -- ^ Throttle rate.
+    , pthPeriod  :: !(Last Text)
+    -- ^ Throttle period.
+    , pthBurst   :: !(Last Int)
+    -- ^ Throttle burst.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialThrottle
+    deriving Monoid    via GenericMonoid PartialThrottle
 

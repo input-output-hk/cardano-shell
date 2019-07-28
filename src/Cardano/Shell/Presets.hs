@@ -5,19 +5,20 @@ module Cardano.Shell.Presets
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..),
-                                                       PartialCardanoConfiguration (..),
-                                                       PartialStaticKeyMaterial (..),
+import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..), PartialCardanoConfiguration (..),
+                                                       PartialCertificate (..),
                                                        PartialCore (..),
                                                        PartialGenesis (..),
-                                                       PartialNode (..))
-import           Cardano.Shell.Constants.Types (Certificate (..), DLG (..),
+                                                       PartialNode (..),
+                                                       PartialStaticKeyMaterial (..),
+                                                       PartialTLS (..),
+                                                       PartialThrottle (..),
+                                                       PartialWallet (..))
+import           Cardano.Shell.Constants.Types (DLG (..),
                                                 LastKnownBlockVersion (..),
                                                 NTP (..),
                                                 RequireNetworkMagic (..),
-                                                SSC (..), TLS (..), TXP (..),
-                                                Throttle (..), Update (..),
-                                                Wallet (..))
+                                                SSC (..), TXP (..), Update (..))
 
 --------------------------------------------------------------------------------
 -- Cardano Mainnet Configuration
@@ -104,41 +105,42 @@ mainnetConfiguration =
           , pnoExplorerExtendedApi          = pure False
           }
     , pccTLS = pure
-        TLS
-          { tlsCA =
-              Certificate
-                { certOrganization = "Input Output HK"
-                , certCommonName   = "Cardano SL Self-Signed Root CA"
-                , certExpiryDays   = 3600
-                , certAltDNS       = []
+        PartialTLS
+          { ptlsCA =
+              pure PartialCertificate
+                { pcertOrganization = pure "Input Output HK"
+                , pcertCommonName   = pure "Cardano SL Self-Signed Root CA"
+                , pcertExpiryDays   = pure 3600
+                , pcertAltDNS       = pure []
                 }
-          , tlsServer =
-              Certificate
-                { certOrganization = "Input Output HK"
-                , certCommonName   = "Cardano SL Server Node"
-                , certExpiryDays   = 3600
-                , certAltDNS       =
+          , ptlsServer =
+              pure PartialCertificate
+                { pcertOrganization = pure "Input Output HK"
+                , pcertCommonName   = pure "Cardano SL Server Node"
+                , pcertExpiryDays   = pure 3600
+                , pcertAltDNS       = pure
                     [ "localhost"
                     , "localhost.localdomain"
                     , "127.0.0.1"
-                    , "::1" ]
+                    , "::1"
+                    ]
                 }
-          , tlsClients =
-              Certificate
-                { certOrganization = "Input Output HK"
-                , certCommonName   = "Daedalus Wallet"
-                , certExpiryDays   = 3600
-                , certAltDNS       = []
+          , ptlsClients =
+              pure PartialCertificate
+                { pcertOrganization = pure "Input Output HK"
+                , pcertCommonName   = pure "Daedalus Wallet"
+                , pcertExpiryDays   = pure 3600
+                , pcertAltDNS       = pure []
                 }
-                                            }
-    , pccWallet = pure
-        Wallet
-          { waThrottle =
-              SetThrottle
-                { thEnabled = False
-                , thRate    = 0
-                , thPeriod  = ""
-                , thBurst   = 0
+          }
+    , pccWallet =
+        pure PartialWallet
+          { pwaThrottle =
+              pure PartialThrottle
+                { pthEnabled = pure False
+                , pthRate    = pure 0
+                , pthPeriod  = pure ""
+                , pthBurst   = pure 0
                 }
           }
     }
@@ -228,42 +230,44 @@ devConfiguration =
           , pnoWalletTxCreationDisabled     = pure False
           , pnoExplorerExtendedApi          = pure False
           }
-    , pccTLS                 = pure
-        TLS
-          { tlsCA =
-              Certificate
-                { certOrganization = "Input Output HK"
-                , certCommonName   = "Cardano SL Self-Signed Root CA"
-                , certExpiryDays   = 3650
-                , certAltDNS       = []
+    , pccTLS =
+        pure PartialTLS
+          { ptlsCA =
+              pure PartialCertificate
+                { pcertOrganization = pure "Input Output HK"
+                , pcertCommonName   = pure "Cardano SL Self-Signed Root CA"
+                , pcertExpiryDays   = pure 3650
+                , pcertAltDNS       = pure []
                 }
-          , tlsServer =
-              Certificate
-                { certOrganization = "Input Output HK"
-                , certCommonName   = "Cardano SL Server Node"
-                , certExpiryDays   = 365
-                , certAltDNS       =
+          , ptlsServer =
+              pure PartialCertificate
+                { pcertOrganization = pure "Input Output HK"
+                , pcertCommonName   = pure "Cardano SL Server Node"
+                , pcertExpiryDays   = pure 365
+                , pcertAltDNS       = pure
                     [ "localhost"
                     , "localhost.localdomain"
                     , "127.0.0.1"
                     , "::1"
                     ]
                 }
-          , tlsClients =
-              Certificate
-                { certOrganization = "Input Output HK"
-                , certCommonName   = "Daedalus Wallet"
-                , certExpiryDays   = 365
-                , certAltDNS       = []
+          , ptlsClients =
+              pure PartialCertificate
+                { pcertOrganization = pure "Input Output HK"
+                , pcertCommonName   = pure "Daedalus Wallet"
+                , pcertExpiryDays   = pure 365
+                , pcertAltDNS       = pure []
                 }
           }
-    , pccWallet              = pure
-        Wallet
-          { waThrottle =  SetThrottle
-            { thEnabled = False
-            , thRate    = 0
-            , thPeriod  = ""
-            , thBurst   = 0
-            }
+    , pccWallet =
+        pure PartialWallet
+          { pwaThrottle =
+            pure PartialThrottle
+              { pthEnabled = pure False
+              , pthRate    = pure 0
+              , pthPeriod  = pure ""
+              , pthBurst   = pure 0
+              }
           }
     }
+
