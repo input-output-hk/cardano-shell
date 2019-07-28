@@ -8,14 +8,16 @@ import           Cardano.Prelude
 import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..), PartialCardanoConfiguration (..),
                                                        PartialCertificate (..),
                                                        PartialCore (..),
+                                                       PartialDLG (..),
+                                                       PartialLastKnownBlockVersion (..),
+                                                       PartialNTP (..),
                                                        PartialNode (..),
+                                                       PartialSSC (..),
                                                        PartialTLS (..),
-                                                       PartialWallet (..))
-import           Cardano.Shell.Constants.Types (DLG (..),
-                                                LastKnownBlockVersion (..),
-                                                NTP (..),
-                                                RequireNetworkMagic (..),
-                                                SSC (..), TXP (..), Update (..))
+                                                       PartialTXP (..),
+                                                       PartialUpdate (..),
+                                                       PartialWallet (..),
+                                                       RequireNetworkMagic (..))
 
 --------------------------------------------------------------------------------
 -- Cardano Mainnet Configuration
@@ -37,41 +39,42 @@ mainnetConfiguration =
           , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
           , pcoDBSerializeVersion       = pure 0
           }
-    , pccNTP = pure
-        NTP
-          { ntpResponseTimeout = 30000000
-          , ntpPollDelay       = 1800000000
-          , ntpServers         =
+    , pccNTP =
+        PartialNTP
+          { pntpResponseTimeout = pure 30000000
+          , pntpPollDelay       = pure 1800000000
+          , pntpServers         = pure
               [ "0.pool.ntp.org"
               , "2.pool.ntp.org"
               , "3.pool.ntp.org"
               ]
           }
-    , pccUpdate = pure
-        Update
-          { upApplicationName       = "cardano-sl"
-          , upApplicationVersion    = 1
-          , upLastKnownBlockVersion =
-              LastKnownBlockVersion
-                { lkbvMajor = 0
-                , lkbvMinor = 2
-                , lkbvAlt   = 0
-                }
-                                               }
-    , pccTXP = pure
-        TXP
-          { txpMemPoolLimitTx = 200
-          , txpAssetLockedSrcAddress = []
+    , pccUpdate =
+        PartialUpdate
+            { pupApplicationName       = pure "cardano-sl"
+            , pupApplicationVersion    = pure 1
+            , pupLastKnownBlockVersion =
+                PartialLastKnownBlockVersion
+                    { plkbvMajor = pure 0
+                    , plkbvMinor = pure 2
+                    , plkbvAlt   = pure 0
+                    }
+            }
+    , pccTXP =
+        PartialTXP
+          { ptxpMemPoolLimitTx          = pure 200
+          , ptxpAssetLockedSrcAddress   = pure []
           }
-    , pccSSC = pure
-        SSC
-          { sscMPCSendInterval               = 100
-          , sscMdNoCommitmentsEpochThreshold = 3
-          , sscNoReportNoSecretsForEpoch1    = True
+    , pccSSC =
+        PartialSSC
+          { psscMPCSendInterval                 = pure 100
+          , psscMdNoCommitmentsEpochThreshold   = pure 3
+          , psscNoReportNoSecretsForEpoch1      = pure True
           }
-    , pccDLG = pure
-        DLG { dlgCacheParam          = 500
-            , dlgMessageCacheTimeout = 30
+    , pccDLG =
+        PartialDLG
+            { pdlgCacheParam          = pure 500
+            , pdlgMessageCacheTimeout = pure 30
             }
     , pccBlock =
         PartialBlock
@@ -85,7 +88,7 @@ mainnetConfiguration =
           , pblCriticalForkThreshold  = pure 3
           , pblFixedTimeCQ            = pure 3600
           }
-    , pccNode = pure
+    , pccNode =
         PartialNode
           { pnoNetworkConnectionTimeout     = pure 15000
           , pnoConversationEstablishTimeout = pure 30000
@@ -95,17 +98,17 @@ mainnetConfiguration =
           , pnoWalletTxCreationDisabled     = pure False
           , pnoExplorerExtendedApi          = pure False
           }
-    , pccTLS = pure
+    , pccTLS =
         PartialTLS
           { ptlsCA =
-              pure PartialCertificate
+              PartialCertificate
                 { pcertOrganization = pure "Input Output HK"
                 , pcertCommonName   = pure "Cardano SL Self-Signed Root CA"
                 , pcertExpiryDays   = pure 3600
                 , pcertAltDNS       = pure []
                 }
           , ptlsServer =
-              pure PartialCertificate
+              PartialCertificate
                 { pcertOrganization = pure "Input Output HK"
                 , pcertCommonName   = pure "Cardano SL Server Node"
                 , pcertExpiryDays   = pure 3600
@@ -117,7 +120,7 @@ mainnetConfiguration =
                     ]
                 }
           , ptlsClients =
-              pure PartialCertificate
+              PartialCertificate
                 { pcertOrganization = pure "Input Output HK"
                 , pcertCommonName   = pure "Daedalus Wallet"
                 , pcertExpiryDays   = pure 3600
@@ -153,42 +156,42 @@ devConfiguration =
           , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
           , pcoDBSerializeVersion       = pure 0
           }
-    , pccNTP                 =
-        pure NTP
-          { ntpResponseTimeout = 30000000
-          , ntpPollDelay       = 1800000000
-          , ntpServers         =
-            [ "0.pool.ntp.org"
-            , "2.pool.ntp.org"
-            , "3.pool.ntp.org"
-            ]
+    , pccNTP =
+        PartialNTP
+            { pntpResponseTimeout = pure 30000000
+            , pntpPollDelay       = pure 1800000000
+            , pntpServers         = pure
+                [ "0.pool.ntp.org"
+                , "2.pool.ntp.org"
+                , "3.pool.ntp.org"
+                ]
+            }
+    , pccUpdate =
+        PartialUpdate
+            { pupApplicationName       = pure "cardano-sl"
+            , pupApplicationVersion    = pure 0
+            , pupLastKnownBlockVersion =
+                PartialLastKnownBlockVersion
+                    { plkbvMajor = pure 0
+                    , plkbvMinor = pure 0
+                    , plkbvAlt   = pure 0
+                    }
+            }
+    , pccTXP =
+        PartialTXP
+          { ptxpMemPoolLimitTx           = pure 200
+          , ptxpAssetLockedSrcAddress    = pure []
           }
-    , pccUpdate              = pure
-        Update
-          { upApplicationName       = "cardano-sl"
-          , upApplicationVersion    = 0
-          , upLastKnownBlockVersion =
-            LastKnownBlockVersion
-              { lkbvMajor = 0
-              , lkbvMinor = 0
-              , lkbvAlt   = 0
-              }
-                                               }
-    , pccTXP                 = pure
-        TXP
-          { txpMemPoolLimitTx = 200
-          , txpAssetLockedSrcAddress = []
-          }
-    , pccSSC                 = pure
-        SSC
-          { sscMPCSendInterval = 10
-          , sscMdNoCommitmentsEpochThreshold = 3
-          , sscNoReportNoSecretsForEpoch1    = False
-          }
-    , pccDLG                 = pure
-        DLG
-          { dlgCacheParam          = 500
-          , dlgMessageCacheTimeout = 30
+    , pccSSC =
+        PartialSSC
+            { psscMPCSendInterval               = pure 10
+            , psscMdNoCommitmentsEpochThreshold = pure 3
+            , psscNoReportNoSecretsForEpoch1    = pure False
+            }
+    , pccDLG =
+        PartialDLG
+          { pdlgCacheParam              = pure 500
+          , pdlgMessageCacheTimeout     = pure 30
           }
     , pccBlock               =
         PartialBlock
@@ -202,7 +205,7 @@ devConfiguration =
           , pblCriticalForkThreshold  = pure 2
           , pblFixedTimeCQ            = pure 10
           }
-    , pccNode                = pure
+    , pccNode =
         PartialNode
           { pnoNetworkConnectionTimeout     = pure 15000
           , pnoConversationEstablishTimeout = pure 30000
@@ -213,16 +216,16 @@ devConfiguration =
           , pnoExplorerExtendedApi          = pure False
           }
     , pccTLS =
-        pure PartialTLS
+        PartialTLS
           { ptlsCA =
-              pure PartialCertificate
+              PartialCertificate
                 { pcertOrganization = pure "Input Output HK"
                 , pcertCommonName   = pure "Cardano SL Self-Signed Root CA"
                 , pcertExpiryDays   = pure 3650
                 , pcertAltDNS       = pure []
                 }
           , ptlsServer =
-              pure PartialCertificate
+              PartialCertificate
                 { pcertOrganization = pure "Input Output HK"
                 , pcertCommonName   = pure "Cardano SL Server Node"
                 , pcertExpiryDays   = pure 365
@@ -234,7 +237,7 @@ devConfiguration =
                     ]
                 }
           , ptlsClients =
-              pure PartialCertificate
+              PartialCertificate
                 { pcertOrganization = pure "Input Output HK"
                 , pcertCommonName   = pure "Daedalus Wallet"
                 , pcertExpiryDays   = pure 365

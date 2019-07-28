@@ -6,6 +6,12 @@ module Cardano.Shell.Constants.PartialTypes
     ( PartialCardanoConfiguration (..)
     , PartialCore (..)
     , PartialNode (..)
+    , PartialNTP (..)
+    , PartialUpdate (..)
+    , PartialLastKnownBlockVersion (..)
+    , PartialSSC (..)
+    , PartialTXP (..)
+    , PartialDLG (..)
     , PartialBlock (..)
     , PartialTLS (..)
     , PartialCertificate (..)
@@ -20,23 +26,25 @@ import           Data.Monoid.Generic
 
 import           Cardano.Shell.Constants.Types
 
--- | The partial cardano configuration.
+-- | Partial @CardanoConfiguration@ configuration.
 data PartialCardanoConfiguration = PartialCardanoConfiguration
     { pccLogPath             :: !(Last FilePath)
     , pccLogConfig           :: !(Last FilePath)
     , pccDBPath              :: !(Last FilePath)
     , pccApplicationLockFile :: !(Last FilePath)
     , pccCore                :: !PartialCore
-    , pccNTP                 :: !(Last NTP)
-    , pccUpdate              :: !(Last Update)
-    , pccTXP                 :: !(Last TXP)
-    , pccSSC                 :: !(Last SSC)
-    , pccDLG                 :: !(Last DLG)
+    , pccNTP                 :: !PartialNTP
+    , pccUpdate              :: !PartialUpdate
+    , pccTXP                 :: !PartialTXP
+    , pccSSC                 :: !PartialSSC
+    , pccDLG                 :: !PartialDLG
     , pccBlock               :: !PartialBlock
-    , pccNode                :: !(Last PartialNode)
-    , pccTLS                 :: !(Last PartialTLS)
+    , pccNode                :: !PartialNode
+    , pccTLS                 :: !PartialTLS
     , pccWallet              :: !PartialWallet
     } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialCardanoConfiguration
+    deriving Monoid    via GenericMonoid PartialCardanoConfiguration
 
 -- | Partial @Core@ configuration.
 data PartialCore = PartialCore
@@ -77,6 +85,76 @@ data PartialNode = PartialNode
     deriving Semigroup via GenericSemigroup PartialNode
     deriving Monoid    via GenericMonoid PartialNode
 
+-- | Partial @NTP@ configuration.
+data PartialNTP = PartialNTP
+    { pntpResponseTimeout :: !(Last Int)
+    -- ^ NTP response timeout.
+    , pntpPollDelay       :: !(Last Int)
+    -- ^ NTP poll delay.
+    , pntpServers         :: !(Last [Text])
+    -- ^ A list of NTP servers.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialNTP
+    deriving Monoid    via GenericMonoid PartialNTP
+
+-- | Partial @TXP@ configuration.
+data PartialTXP = PartialTXP
+    { ptxpMemPoolLimitTx        :: !(Last Int)
+    -- ^ Limit on the number of transactions that can be stored in the mem pool.
+    , ptxpAssetLockedSrcAddress :: !(Last [Text])
+    -- ^ Set of source address which are asset-locked. Transactions which
+    -- use these addresses as transaction inputs will be silently dropped.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialTXP
+    deriving Monoid    via GenericMonoid PartialTXP
+
+-- | Partial @Update@ configuration.
+data PartialUpdate = PartialUpdate
+    { pupApplicationName       :: !(Last Text)
+    -- ^ Update application name.
+    , pupApplicationVersion    :: !(Last Int)
+    -- ^ Update application version.
+    , pupLastKnownBlockVersion :: !PartialLastKnownBlockVersion
+    -- ^ Update last known block version.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialUpdate
+    deriving Monoid    via GenericMonoid PartialUpdate
+
+-- | Partial @LastKnownBlockVersion@ configuration.
+data PartialLastKnownBlockVersion = PartialLastKnownBlockVersion
+    { plkbvMajor :: !(Last Int)
+    -- ^ Last known block version major.
+    , plkbvMinor :: !(Last Int)
+    -- ^ Last known block version minor.
+    , plkbvAlt   :: !(Last Int)
+    -- ^ Last known block version alternative.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialLastKnownBlockVersion
+    deriving Monoid    via GenericMonoid PartialLastKnownBlockVersion
+
+-- | Partial @SSC@ configuration.
+data PartialSSC = PartialSSC
+    { psscMPCSendInterval               :: !(Last Word)
+      -- ^ Length of interval for sending MPC message
+    , psscMdNoCommitmentsEpochThreshold :: !(Last Int)
+      -- ^ Threshold of epochs for malicious activity detection
+    , psscNoReportNoSecretsForEpoch1    :: !(Last Bool)
+      -- ^ Don't print “SSC couldn't compute seed” for the first epoch.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialSSC
+    deriving Monoid    via GenericMonoid PartialSSC
+
+-- | Partial @DLG@ configuration.
+data PartialDLG = PartialDLG
+    { pdlgCacheParam          :: !(Last Int)
+      -- ^ This value parameterizes size of cache used in Delegation.
+      -- Not bytes, but number of elements.
+    , pdlgMessageCacheTimeout :: !(Last Int)
+      -- ^ Interval we ignore cached messages for if it's sent again.
+    } deriving (Eq, Show, Generic)
+    deriving Semigroup via GenericSemigroup PartialDLG
+    deriving Monoid    via GenericMonoid PartialDLG
+
 -- | Partial @Block@ configuration.
 data PartialBlock = PartialBlock
     { pblNetworkDiameter        :: !(Last Int)
@@ -103,11 +181,11 @@ data PartialBlock = PartialBlock
 
 -- | Partial @TLS@ configuration.
 data PartialTLS = PartialTLS
-    { ptlsCA      :: !(Last PartialCertificate)
+    { ptlsCA      :: !PartialCertificate
     -- ^ Certificate Authoritiy certificate.
-    , ptlsServer  :: !(Last PartialCertificate)
+    , ptlsServer  :: !PartialCertificate
     -- ^ Server certificate.
-    , ptlsClients :: !(Last PartialCertificate)
+    , ptlsClients :: !PartialCertificate
     -- ^ Client certificate.
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialTLS

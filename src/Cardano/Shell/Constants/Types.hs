@@ -193,14 +193,20 @@ data NTP = NTP
 
 data Update = Update
     { upApplicationName       :: !Text
+    -- ^ Update application name.
     , upApplicationVersion    :: !Int
+    -- ^ Update application version.
     , upLastKnownBlockVersion :: !LastKnownBlockVersion
+    -- ^ Update last known block version.
     } deriving (Eq, Show)
 
 data LastKnownBlockVersion = LastKnownBlockVersion
     { lkbvMajor :: !Int
+    -- ^ Last known block version major.
     , lkbvMinor :: !Int
+    -- ^ Last known block version minor.
     , lkbvAlt   :: !Int
+    -- ^ Last known block version alternative.
     } deriving (Eq, Show)
 
 data SSC = SSC
