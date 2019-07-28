@@ -1,11 +1,21 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Cardano.Shell.Constants.CLI
-    (
+    ( configCardanoConfigurationCLIParser
     -- * Core CLI parsers
-      configCoreCLIParser
+    , configCoreCLIParser
     -- * Node
     , configNodeCLIParser
+    -- * NTP
+    , configNTPCLIParser
+    -- * TXP
+    , configTXPCLIParser
+    -- * Update
+    , configUpdateCLIParser
+    -- * SSC
+    , configSSCCLIParser
+    -- * DLG
+    , configDLGCLIParser
     -- * Block
     , configBlockCLIParser
     -- * TLS
@@ -29,9 +39,8 @@ import           Cardano.Shell.Constants.PartialTypes
 lastOption :: Parser a -> Parser (Last a)
 lastOption parser = Last <$> optional parser
 
---auto :: Read a => ReadM a
---option :: ReadM a -> Mod OptionFields a -> Parser a
-lastAutoOption :: forall a. Read a => Mod OptionFields a -> Parser (Last a)
+-- | General @Last@ auto option from @Read@ instance.
+lastAutoOption :: Read a => Mod OptionFields a -> Parser (Last a)
 lastAutoOption args = lastOption (option auto args)
 
 lastIntOption :: Mod OptionFields Int -> Parser (Last Int)
@@ -43,8 +52,52 @@ lastDoubleOption = lastAutoOption
 lastBoolOption :: Mod OptionFields Bool -> Parser (Last Bool)
 lastBoolOption = lastAutoOption
 
+lastWordOption :: Mod OptionFields Word -> Parser (Last Word)
+lastWordOption = lastAutoOption
+
+lastTextListOption :: Mod OptionFields [Text] -> Parser (Last [Text])
+lastTextListOption = lastAutoOption
+
 lastStrOption :: IsString a => Mod OptionFields a -> Parser (Last a)
 lastStrOption args = Last <$> optional (strOption args)
+
+--------------------------------------------------------------------------------
+-- Cardano Configuration
+--------------------------------------------------------------------------------
+
+configCardanoConfigurationCLIParser :: Parser PartialCardanoConfiguration
+configCardanoConfigurationCLIParser =
+    PartialCardanoConfiguration
+        <$> lastStrOption
+             ( long "log-path"
+            <> metavar "FILEPATH"
+            <> help "The filepath to the log file."
+             )
+        <*> lastStrOption
+            ( long "log-config"
+            <> metavar "FILEPATH"
+            <> help "The filepath to the log config file."
+            )
+        <*> lastStrOption
+            ( long "db-path"
+            <> metavar "FILEPATH"
+            <> help "The filepath to the DB."
+            )
+        <*> lastStrOption
+            ( long "application-lock-file"
+            <> metavar "FILEPATH"
+            <> help "The filepath to the application lock file."
+            )
+        <*> configCoreCLIParser
+        <*> configNTPCLIParser
+        <*> configUpdateCLIParser
+        <*> configTXPCLIParser
+        <*> configSSCCLIParser
+        <*> configDLGCLIParser
+        <*> configBlockCLIParser
+        <*> configNodeCLIParser
+        <*> configTLSCLIParser
+        <*> configWalletCLIParser
 
 --------------------------------------------------------------------------------
 -- Core
@@ -97,7 +150,7 @@ configCoreCLIParser = PartialCore
     configDBVersionCLIParser =
         option auto
             ( long "db-version"
-           <> metavar "DB-VERSION"
+           <> metavar "VERSION"
            <> help "The version of the DB."
             )
 
@@ -109,41 +162,168 @@ configCoreCLIParser = PartialCore
 configNodeCLIParser :: Parser PartialNode
 configNodeCLIParser =
     PartialNode
-        <$> option auto
+        <$> lastIntOption
            ( long "network-connection-timeout"
-          <> metavar "CONNETION-TIMEOUT"
+          <> metavar "TIMEOUT"
           <> help "Network connection timeout in milliseconds."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "conversation-acknowledgement-timeout"
-          <> metavar "ACKNOWLEDGEMENT-TIMEOUT"
+          <> metavar "TIMEOUT"
           <> help "Conversation acknowledgement timeout in milliseconds."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "block-queue-capacity"
-          <> metavar "BLOCK-CAPACITY"
+          <> metavar "CAPACITY"
           <> help "Block retrieval queue capacity."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "transaction-resubmission-delay"
-          <> metavar "TX-RESUBMISSION-DELAY"
+          <> metavar "DELAY"
           <> help "Minimal delay between pending transactions resubmission."
            )
-        <*> option auto
+        <*> lastBoolOption
            ( long "wallet-production-api"
-          <> metavar "WALLET-PROD-API-ENABLE"
+          <> metavar "BOOL"
           <> help "Whether hazard wallet endpoint should be disabled."
            )
-        <*> option auto
+        <*> lastBoolOption
            ( long "block-pending-transactions"
-          <> metavar "PENDING-TX-BLOCK-ENABLE"
+          <> metavar "BOOL"
           <> help "Disallow transaction creation or re-submission of pending transactions by the wallet."
            )
         -- TODO(KS): Pretty sure we don't need this one.
-        <*> option auto
+        <*> lastBoolOption
            ( long "explorer-extended-api"
-          <> metavar "EXPLORER-EXTENDED-API-ENABLE"
+          <> metavar "BOOL"
           <> help "Enable explorer extended API for fetching more."
+           )
+
+--------------------------------------------------------------------------------
+-- TXP
+--------------------------------------------------------------------------------
+
+-- | TXP CLI parser.
+configTXPCLIParser :: Parser PartialTXP
+configTXPCLIParser =
+    PartialTXP
+        <$> lastIntOption
+           ( long "txp-mempool-queue-size"
+          <> metavar "NUMBER"
+          <> help "Limit on the number of transactions that can be stored in the mem pool."
+           )
+        <*> lastTextListOption
+           ( long "txp-asset-locked-addresses"
+          <> metavar "ADRESS-LIST"
+          <> help "Set of source address which are asset-locked. Transactions which use these addresses as transaction inputs will be silently dropped."
+           )
+
+--------------------------------------------------------------------------------
+-- Update
+--------------------------------------------------------------------------------
+
+-- | Update CLI parser.
+configUpdateCLIParser :: Parser PartialUpdate
+configUpdateCLIParser =
+    PartialUpdate
+        <$> lastStrOption
+           ( long "update-application-name"
+          <> metavar "NAME"
+          <> help "The name of the application target update."
+           )
+        <*> lastIntOption
+           ( long "update-application-version"
+          <> metavar "VERSION"
+          <> help "The version of the application target update."
+           )
+        <*> configLastKnownBlockVersionCLIParser
+
+  where
+    -- | Last known block version CLI parser.
+    configLastKnownBlockVersionCLIParser :: Parser PartialLastKnownBlockVersion
+    configLastKnownBlockVersionCLIParser =
+        PartialLastKnownBlockVersion
+            <$> lastIntOption
+               ( long "last-block-version-major"
+              <> metavar "INT"
+              <> help "Last known block version major."
+               )
+            <*> lastIntOption
+               ( long "last-block-version-minor"
+              <> metavar "INT"
+              <> help "Last known block version minor."
+               )
+            <*> lastIntOption
+               ( long "last-block-version-alternative"
+              <> metavar "INT"
+              <> help "Last known block version alternative."
+               )
+
+--------------------------------------------------------------------------------
+-- SSC
+--------------------------------------------------------------------------------
+
+-- | SSC CLI parser.
+configSSCCLIParser :: Parser PartialSSC
+configSSCCLIParser =
+    PartialSSC
+        <$> lastWordOption
+           ( long "ssc-mpc-send-interval"
+          <> metavar "INTERVAL"
+          <> help "Length of interval for sending MPC message."
+           )
+        <*> lastIntOption
+           ( long "ssc-no-commitments-epoch-threshold"
+          <> metavar "THRESHOLD"
+          <> help "Threshold of epochs for malicious activity detection."
+           )
+        <*> lastBoolOption
+           ( long "ssc-no-report-no-secrets-for-fepoch"
+          <> metavar "SERVER-LIST"
+          <> help "Don't print “SSC couldn't compute seed” for the first epoch."
+           )
+
+--------------------------------------------------------------------------------
+-- NTP
+--------------------------------------------------------------------------------
+
+-- | NTP CLI parser.
+configNTPCLIParser :: Parser PartialNTP
+configNTPCLIParser =
+    PartialNTP
+        <$> lastIntOption
+           ( long "ntp-response-timeout"
+          <> metavar "TIMEOUT"
+          <> help "NTP response timeout."
+           )
+        <*> lastIntOption
+           ( long "ntp-poll-delay"
+          <> metavar "DELAY"
+          <> help "NTP poll delay."
+           )
+        <*> lastTextListOption
+           ( long "ntp-servers"
+          <> metavar "SERVER-LIST"
+          <> help "A list of NTP servers."
+           )
+
+--------------------------------------------------------------------------------
+-- DLG
+--------------------------------------------------------------------------------
+
+-- | DLG CLI parser.
+configDLGCLIParser :: Parser PartialDLG
+configDLGCLIParser =
+    PartialDLG
+        <$> lastIntOption
+           ( long "delegation-cache-size"
+          <> metavar "CACHE-SIZE"
+          <> help "This value parameterizes size of cache used in Delegation. Not bytes, but number of elements."
+           )
+        <*> lastIntOption
+           ( long "delegation-cache-timeout"
+          <> metavar "CACHE-AMOUNT"
+          <> help "Interval we ignore cached messages for if it's sent again."
            )
 
 --------------------------------------------------------------------------------
@@ -156,47 +336,47 @@ configBlockCLIParser =
     PartialBlock
         <$> lastIntOption
            ( long "network-diameter"
-          <> metavar "NETWORK-DIAMETER-TIME"
+          <> metavar "TIME"
           <> help "Estimated time needed to broadcast message from one node to all other nodes."
            )
         <*> lastIntOption
            ( long "recovery-headers-amount"
-          <> metavar "RECOVERY-HEADERS-AMOUNT"
+          <> metavar "AMOUNT"
           <> help "Maximum amount of headers node can put into headers message while in 'after offline' or 'recovery' mode."
            )
         <*> lastIntOption
            ( long "stream-window"
-          <> metavar "STREAM-WINDOW-CAPACITY"
+          <> metavar "CAPACITY"
           <> help "Number of blocks to have inflight."
            )
         <*> lastDoubleOption
            ( long "noncritical-cq-bootstrap"
-          <> metavar "NONCRITICAL-CQ-BOOTSTRAP"
+          <> metavar "QUALITY"
           <> help "If chain quality in bootstrap era is less than this value, non critical misbehavior will be reported."
            )
         <*> lastDoubleOption
            ( long "critical-cq-bootstrap"
-          <> metavar "CRITICAL-CQ-BOOTSTRAP"
+          <> metavar "QUALITY"
           <> help "If chain quality in bootstrap era is less than this value, critical misbehavior will be reported."
            )
         <*> lastDoubleOption
            ( long "noncritical-cq"
-          <> metavar "NONCRITICAL-CQ"
+          <> metavar "QUALITY"
           <> help "If chain quality after bootstrap era is less than this value, non critical misbehavior will be reported."
            )
         <*> lastDoubleOption
            ( long "critical-cq"
-          <> metavar "CRITICAL-CQ"
+          <> metavar "QUALITY"
           <> help "If chain quality after bootstrap era is less than this value, critical misbehavior will be reported."
            )
         <*> lastIntOption
            ( long "critical-fork-threshold"
-          <> metavar "CRITICAL-FORK-THRESHOLD"
+          <> metavar "BLOCKS"
           <> help "Number of blocks such that if so many blocks are rolled back, it requires immediate reaction."
            )
         <*> lastIntOption
            ( long "fixed-time-cq"
-          <> metavar "FIXED-TIME-CQ"
+          <> metavar "TIME"
           <> help "Chain quality will be also calculated for this amount of seconds."
            )
 
@@ -208,30 +388,30 @@ configBlockCLIParser =
 configTLSCLIParser :: Parser PartialTLS
 configTLSCLIParser =
     PartialTLS
-        <$> lastOption configCertificateCLIParser
-        <*> lastOption configCertificateCLIParser
-        <*> lastOption configCertificateCLIParser
+        <$> configCertificateCLIParser
+        <*> configCertificateCLIParser
+        <*> configCertificateCLIParser
 
 -- | Certificate CLI parser.
 configCertificateCLIParser :: Parser PartialCertificate
 configCertificateCLIParser =
     PartialCertificate
-        <$> option auto
+        <$> lastStrOption
            ( long "cert-organization-name"
           <> metavar "CERT-ORGANIZATION-NAME"
           <> help "Certificate organization."
            )
-        <*> option auto
+        <*> lastStrOption
            ( long "cert-common-name"
           <> metavar "CERT-COMMON-NAME"
           <> help "Certificate common name."
            )
-        <*> option auto
+        <*> lastIntOption
            ( long "cert-expiry-days"
           <> metavar "CERT-EXPIRY-DAYS"
           <> help "Certificate days of expiration."
            )
-        <*> option auto
+        <*> lastTextListOption
            ( long "cert-alternative-dns"
           <> metavar "CERT-ALTERNATIVE-DNS"
           <> help "Certificate alternative DNS."
