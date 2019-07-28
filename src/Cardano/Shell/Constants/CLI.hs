@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Cardano.Shell.Constants.CLI
     ( configCardanoConfigurationCLIParser
     -- * Core CLI parsers
