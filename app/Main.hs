@@ -11,9 +11,12 @@ import           Cardano.Shell.Features.Logging (LoggingCLIArguments,
 import           Cardano.Shell.Features.Networking (createNetworkingFeature)
 
 import           Cardano.Shell.Configuration.Lib (finaliseCardanoConfiguration)
-import           Cardano.Shell.Constants.CLI (configCoreCLIParser)
-import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfiguration (..),
-                                                       PartialCore (..))
+import           Cardano.Shell.Constants.CLI (configBlockCLIParser,
+                                              configCoreCLIParser,
+                                              configWalletCLIParser)
+import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..), PartialCardanoConfiguration (..),
+                                                       PartialCore (..),
+                                                       PartialWallet (..))
 import           Cardano.Shell.Lib
 import           Cardano.Shell.Presets (mainnetConfiguration)
 import           Cardano.Shell.Types
@@ -23,7 +26,11 @@ import           Options.Applicative
 
 -- | The product type of all command line arguments.
 -- All here being - from all the features.
-data CLIArguments = CLIArguments !LoggingCLIArguments !PartialCore
+data CLIArguments = CLIArguments
+                        !LoggingCLIArguments
+                        !PartialWallet
+                        !PartialBlock
+                        !PartialCore
 
 main :: IO ()
 main = do
@@ -87,10 +94,49 @@ initializeAllFeatures :: PartialCardanoConfiguration -> CardanoEnvironment -> IO
 initializeAllFeatures partialConfig cardanoEnvironment = do
 
     -- Here we parse the __CLI__ arguments for the actual application.
-    CLIArguments loggingCLIArguments coreCLI <- execParser parserWithInfo
+    CLIArguments loggingCLIArguments walletCLI blockCLI coreCLI  <- execParser parserWithInfo
+
+    let configCore      = pccCore partialConfig
+    let configBlock     = pccBlock partialConfig
+    let configWallet    = pccWallet partialConfig
+
+    let pccCore'        = configCore    <> coreCLI
+    let pccBlock'       = configBlock   <> blockCLI
+    let pccWallet'      = configWallet  <> walletCLI
+
+    putTextLn "************************************************"
+    putTextLn "CORE"
+    putTextLn "************************************************"
+    putTextLn $ show configCore
+    putTextLn "------------------------------------------------"
+    putTextLn $ show coreCLI
+    putTextLn "------------------------------------------------"
+    putTextLn $ show pccCore'
+
+    putTextLn "************************************************"
+    putTextLn "BLOCK"
+    putTextLn "************************************************"
+    putTextLn $ show configBlock
+    putTextLn "------------------------------------------------"
+    putTextLn $ show blockCLI
+    putTextLn "------------------------------------------------"
+    putTextLn $ show pccBlock'
+
+    putTextLn "************************************************"
+    putTextLn "WALLET"
+    putTextLn "************************************************"
+    putTextLn $ show configWallet
+    putTextLn "------------------------------------------------"
+    putTextLn $ show walletCLI
+    putTextLn "------------------------------------------------"
+    putTextLn $ show pccWallet'
 
     finalConfig <- either (throwIO . ConfigurationError) pure $
-          finaliseCardanoConfiguration $ partialConfig { pccCore = pccCore partialConfig <> pure coreCLI }
+          finaliseCardanoConfiguration $ partialConfig
+              { pccCore     = pccCore'
+              , pccBlock    = pccBlock'
+              , pccWallet   = pccWallet'
+              }
 
     -- Here we initialize all the features
     (loggingLayer, loggingFeature)  <- createLoggingFeature cardanoEnvironment finalConfig loggingCLIArguments
@@ -118,4 +164,7 @@ initializeAllFeatures partialConfig cardanoEnvironment = do
     commandLineParser :: Parser CLIArguments
     commandLineParser = CLIArguments
         <$> loggingParser
+        <*> configWalletCLIParser
+        <*> configBlockCLIParser
         <*> configCoreCLIParser
+

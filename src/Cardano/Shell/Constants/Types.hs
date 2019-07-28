@@ -6,8 +6,6 @@ module Cardano.Shell.Constants.Types
     , Core (..)
     -- * specific for @Core@
     , RequireNetworkMagic (..)
-    , Genesis (..)
-    , StaticKeyMaterial (..)
     , Spec (..)
     , Initializer (..)
     -- * rest
@@ -28,7 +26,6 @@ module Cardano.Shell.Constants.Types
     , Node (..)
     , TLS (..)
     , Wallet (..)
-    , Throttle (..)
     , Certificate (..)
     ) where
 
@@ -73,18 +70,6 @@ data RequireNetworkMagic
     deriving (Eq, Show, Generic)
 
 -- | Core configuration.
-data Core = Core
-    { coGenesis              :: !Genesis
-    -- ^ Genesis information
-    , coStaticKeyMaterial    :: !StaticKeyMaterial
-    -- ^ Static key material required to run the protocol
-    , coRequiresNetworkMagic :: !RequireNetworkMagic
-    -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
-    , coDBSerializeVersion   :: !Integer
-    -- ^ Versioning for values in node's DB.
-    } deriving (Eq, Show, Generic)
-
--- | The genesis section.
 -- For now, we only store the path to the genesis file(s) and their hash.
 -- The rest is in the hands of the modules/features that need to use it.
 -- The info flow is:
@@ -92,17 +77,19 @@ data Core = Core
 -- And separately:
 -- __genesis file ---> runtime config ---> running node__
 -- __static config ---> ...__
---
-data Genesis = Genesis
-    { geSrc             :: !FilePath
-    , geGenesisHash     :: !Text
-    } deriving (Eq, Show, Generic)
-
--- | In principle, this should be indexed by the protocol.
---   But we're assuming Byron/PBFT for now.
-data StaticKeyMaterial = StaticKeyMaterial
-    { skmSigningKeyFile :: !FilePath
-    , skmDlgCertFile    :: !FilePath
+data Core = Core
+    { coGenesisFile                 :: !FilePath
+    -- ^ Genesis source file JSON.
+    , coGenesisHash                 :: !Text
+    -- ^ Genesis previous block hash.
+    , coStaticKeySigningKeyFile     :: !FilePath
+    -- ^ Static key signing file.
+    , coStaticKeyDlgCertFile        :: !FilePath
+    -- ^ Static key delegation certificate.
+    , coRequiresNetworkMagic        :: !RequireNetworkMagic
+    -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
+    , coDBSerializeVersion          :: !Integer
+    -- ^ Versioning for values in node's DB.
     } deriving (Eq, Show, Generic)
 
 data Spec = Spec
@@ -294,13 +281,8 @@ data Certificate = Certificate
     , certAltDNS       :: ![Text]
     } deriving (Eq, Show)
 
--- | Contains wallet configuration variables.
+-- | Wallet rate-limiting/throttling parameters
 data Wallet = Wallet
-    { waThrottle :: !Throttle
-    } deriving (Eq, Show)
-
--- | Rate-limiting/throttling parameters
-data Throttle = Throttle
     { thEnabled :: !Bool
     , thRate    :: !Int
     , thPeriod  :: !Text
