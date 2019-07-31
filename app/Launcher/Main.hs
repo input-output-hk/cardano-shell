@@ -17,7 +17,7 @@ import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
 import           Control.Exception.Safe (throwM)
-
+import           Cardano.Shell.Update.Lib
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
@@ -51,7 +51,7 @@ newtype WalletPath = WalletPath
 -- Main
 --------------------------------------------------------------------------------
 
-main :: IO ()
+main :: IO ExitCode
 main = do
 
     let launcherConfig :: LauncherConfig
@@ -85,10 +85,21 @@ main = do
         launcherConfig
         (TLSPath "./configuration/") -- where to generate the certificates
 
-    -- With the exit code
-    _ <- runWallet externalDependencies walletPath walletArgs
+    runNode (runWallet externalDependencies walletPath walletArgs)
+  where
+    runNode :: IO ExitCode -> IO ExitCode
+    runNode runWalletFunc = do
+        eUpdateResult <- runUpdater testUpdaterData
+        case eUpdateResult of
+            Left _ -> return $ ExitFailure 1
+            Right _ -> do
+            -- With the exit code
+                exitCode <- runWalletFunc
 
-    pure ()
+                case exitCode of
+                    -- This will run the updater and relaunch the wallet
+                    ExitFailure 20 -> runNode runWalletFunc
+                    _              -> return $ exitCode
 
 -- | Launching the wallet.
 -- For now, this is really light since we don't know whether we will reuse the
@@ -249,4 +260,9 @@ generateTlsCertificates externalDependencies launcherConfig (TLSPath tlsPath) = 
             writeCredentials (certOutDir desc </> certFilename desc) (key, cert)
             writeCertificate (certOutDir desc </> caName) caCert
 
-
+testUpdaterData :: UpdaterData
+testUpdaterData =
+    UpdaterData
+        "./test/testUpdater.sh"
+        []
+        ""
