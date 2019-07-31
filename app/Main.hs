@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Main (main) where
 
 import           Cardano.Prelude
@@ -8,12 +10,19 @@ import           Cardano.Shell.Features.Logging (LoggingCLIArguments,
                                                  loggingParser)
 import           Cardano.Shell.Features.Networking (createNetworkingFeature)
 
-import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
+import           Cardano.Shell.Configuration.Lib (finaliseCardanoConfiguration)
+import           Cardano.Shell.Constants.CLI (configCardanoConfigurationCLIParser)
+import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfiguration (..))
 import           Cardano.Shell.Lib
 import           Cardano.Shell.Presets (mainnetConfiguration)
 import           Cardano.Shell.Types
 
 import           Options.Applicative
+
+
+-- | The product type of all command line arguments.
+-- All here being - from all the features.
+data CLIArguments = CLIArguments !LoggingCLIArguments !PartialCardanoConfiguration
 
 main :: IO ()
 main = do
@@ -34,7 +43,7 @@ main = do
             let appendName = llAppendName loggingLayer
 
             logNotice logTrace "Hello from logging layer ..."
-            logTrace' <- appendName "cardano-shell" logTrace
+            let logTrace' = appendName "cardano-shell" logTrace
             logNotice logTrace' "Hello #2 from logging layer ..."
 
             _ <- replicateM 5 (threadDelay 1000000 >> putTextLn "Running node/wallet/whatever!")
@@ -73,16 +82,32 @@ main = do
 -- anytime.
 -- Another interesting thing is that we stack the effects ONLY when we use a function from
 -- another layer, and we don't get all the effects, just the ones the function contains.
-initializeAllFeatures :: CardanoConfiguration -> CardanoEnvironment -> IO ([CardanoFeature], LoggingLayer)
-initializeAllFeatures cardanoConfiguration cardanoEnvironment = do
+initializeAllFeatures :: PartialCardanoConfiguration -> CardanoEnvironment -> IO ([CardanoFeature], LoggingLayer)
+initializeAllFeatures partialConfig cardanoEnvironment = do
 
     -- Here we parse the __CLI__ arguments for the actual application.
-    loggingCLIArguments             <- execParser parserWithInfo
+    CLIArguments loggingCLIArguments cardanoConfigurationCLI  <- execParser parserWithInfo
+
+    let cardanoConfiguration'   = partialConfig <> cardanoConfigurationCLI
+
+    putTextLn "************************************************"
+    putTextLn "Cardano configurationn"
+    putTextLn "************************************************"
+    putTextLn $ show partialConfig
+    putTextLn "------------------------------------------------"
+    putTextLn $ show cardanoConfigurationCLI
+    putTextLn "------------------------------------------------"
+    putTextLn $ show cardanoConfiguration'
+    putTextLn "------------------------------------------------"
+
+    -- Finalize the configuration and if something is missing, just throw error.
+    finalConfig <- either (throwIO . ConfigurationError) pure $
+          finaliseCardanoConfiguration cardanoConfiguration'
 
     -- Here we initialize all the features
-    (loggingLayer, loggingFeature)  <- createLoggingFeature cardanoEnvironment cardanoConfiguration loggingCLIArguments
+    (loggingLayer, loggingFeature)  <- createLoggingFeature cardanoEnvironment finalConfig loggingCLIArguments
 
-    (_           , networkFeature)  <- createNetworkingFeature loggingLayer cardanoEnvironment cardanoConfiguration
+    (_           , networkFeature)  <- createNetworkingFeature loggingLayer cardanoEnvironment finalConfig
 
     -- Here we return all the features.
     let allCardanoFeatures :: [CardanoFeature]
@@ -94,9 +119,16 @@ initializeAllFeatures cardanoConfiguration cardanoEnvironment = do
     pure (allCardanoFeatures, loggingLayer)
   where
     -- | Top level parser with info.
-    parserWithInfo :: ParserInfo LoggingCLIArguments
-    parserWithInfo = info (loggingParser <**> helper)
+    parserWithInfo :: ParserInfo CLIArguments
+    parserWithInfo = info (commandLineParser <**> helper)
         (  fullDesc
         <> progDesc "Logging Feature"
         <> header "cardano-shell: logging feature"
         )
+
+    -- | The product parser for all the CLI arguments.
+    commandLineParser :: Parser CLIArguments
+    commandLineParser = CLIArguments
+        <$> loggingParser
+        <*> configCardanoConfigurationCLIParser
+

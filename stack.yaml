@@ -1,4 +1,4 @@
-resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/fda38e60007a019c0c8569e8a0fc08f2102c92cc/snapshot.yaml
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/d673b92f2a2d9354d102514d0a0fa74f8248b14a/snapshot.yaml
 
 packages:
 - .
@@ -8,13 +8,13 @@ extra-deps:
   - pretty-show-1.9.5               # Used for quickcheck-state-machine.
 
   - git: https://github.com/input-output-hk/cardano-prelude
-    commit: fda38e60007a019c0c8569e8a0fc08f2102c92cc
+    commit: d673b92f2a2d9354d102514d0a0fa74f8248b14a
     subdirs:
       - .
       - test
 
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
-    commit: e2dc8b2160bb2ccd1ef9817a6498cda06ad36580
+    commit: b2022cf7f5925e486f9e0a31f6f6d02145d5ebda
     subdirs:
       - contra-tracer
       - iohk-monitoring
@@ -29,6 +29,7 @@ extra-deps:
   - time-units-1.0.0@sha256:27cf54091c4a0ca73d504fc11d5c31ab4041d17404fe3499945e2055697746c1
   - ekg-0.4.0.15@sha256:f52d7c00654d72d2ab988255f30adba95a52484ac310bab9c136c64732e69f4b
   - ekg-json-0.1.0.6@sha256:4ff2e9cac213a5868ae8b4a7c72a16a9a76fac14d944ae819b3d838a9725569b
+  - generic-monoid-0.1.0.0@sha256:00d1a7b7ff0890a3e3cba4032be24fe377c26e5e45d73afcacd42c98abb3b7e3
 
   - ekg-prometheus-adapter-0.1.0.4
   - prometheus-2.1.1

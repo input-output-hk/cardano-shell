@@ -24,6 +24,8 @@ import           Control.Exception.Safe (MonadCatch)
 import qualified Control.Monad.STM as STM
 import           Options.Applicative
 
+import           Cardano.BM.Data.Backend (Backend)
+import qualified Cardano.BM.Backend.Switchboard as Switchboard
 import           Cardano.BM.Configuration (Configuration)
 import qualified Cardano.BM.Configuration as Config
 import           Cardano.BM.Data.LogItem (LOContent (..), LOMeta (..),
@@ -71,12 +73,14 @@ data LoggingLayer = LoggingLayer
     , llLogNotice       :: forall m a.      (MonadIO m, Show a)  => Trace m a  -> a -> m ()
     , llLogWarning      :: forall m a.      (MonadIO m, Show a)  => Trace m a  -> a -> m ()
     , llLogError        :: forall m a.      (MonadIO m, Show a)  => Trace m a  -> a -> m ()
-    , llAppendName      :: forall m a.      (MonadIO m, Show a)  => LoggerName -> Trace m a -> m (Trace m a)
+    , llAppendName      :: forall m a.      (Show a)             => LoggerName -> Trace m a -> Trace m a
     , llBracketMonadIO  :: forall a t.      (Show a)             => Trace IO a -> Severity -> Text -> IO t -> IO t
     , llBracketMonadM   :: forall m a t.    (MonadCatch m, MonadIO m, Show a) => Trace m a -> Severity -> Text -> m t -> m t
     , llBracketMonadX   :: forall m a t.    (MonadIO m, Show a) => Trace m a -> Severity -> Text -> m t -> m t
     , llBracketStmIO    :: forall a t.      (Show a) => Trace IO a -> Severity -> Text -> STM.STM t -> IO t
     , llBracketStmLogIO :: forall a t.      (Show a) => Trace IO a -> Severity -> Text -> STM.STM (t,[(LOMeta, LOContent a)]) -> IO t
+    , llConfiguration   :: Configuration
+    , llAddBackend      :: Backend Text -> Text -> IO ()
     }
 
 --------------------------------
@@ -96,7 +100,6 @@ loggingParser = LoggingCLIArguments
     <$> strOption
         ( long "log-config"
        <> metavar "LOGCONFIG"
-       <> value ""
        <> help "Configuration file for logging"
         )
 
@@ -152,6 +155,8 @@ loggingCardanoFeatureInit loggingConfiguration = do
                     , llBracketMonadX   = Monadic.bracketObserveX logConfig
                     , llBracketStmIO    = Stm.bracketObserveIO logConfig
                     , llBracketStmLogIO = Stm.bracketObserveLogIO logConfig
+                    , llConfiguration   = logConfig
+                    , llAddBackend      = Switchboard.addExternalBackend switchBoard
                     }
 
     -- Cleanup function which shuts down the switchboard.

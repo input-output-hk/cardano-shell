@@ -12,7 +12,8 @@ import           Cardano.Shell.Features.Logging (LoggingLayer (..))
 import           Cardano.Shell.Types (CardanoEnvironment, CardanoFeature (..),
                                       CardanoFeatureInit (..))
 
-import           Cardano.Shell.Constants.Types (CardanoConfiguration)
+import           Cardano.Shell.Constants.Types (CardanoConfiguration (..),
+                                                Core (..), Wallet (..))
 --------------------------------------------------------------------------------
 -- Networking feature
 --------------------------------------------------------------------------------
@@ -75,6 +76,9 @@ createNetworkingFeature loggingLayer cardanoEnvironment cardanoConfiguration = d
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
     networkingConfiguration <-  pure "THIS IS AN EXAMPLE OF A CONFIGURATION!"
 
+    putTextLn $ "The DB version - " <> (show $ coDBSerializeVersion $ ccCore cardanoConfiguration)
+    putTextLn $ "The Wallet Throttle - " <> (show $ thRate $ ccWallet cardanoConfiguration)
+
     -- we construct the layer
     networkingLayer         <- (featureInit networkingCardanoFeatureInit) cardanoEnvironment loggingLayer cardanoConfiguration networkingConfiguration
 
@@ -97,21 +101,18 @@ networkingCardanoFeatureInit = CardanoFeatureInit
       where
         actualNetworkFeature :: CardanoEnvironment -> LoggingLayer -> CardanoConfiguration -> Text -> IO NetworkLayer
         actualNetworkFeature _ loggingLayer _ _ = do
-            --putTextLn "Starting up networking!"
             pure $ testNetworkLayer loggingLayer
 
     featureCleanup' :: NetworkLayer -> IO ()
-    featureCleanup' _ = pure () --putTextLn "Shutting down networking feature!" -- close all connections, for example
+    featureCleanup' _ = pure () -- close all connections, for example
 
 
 networkingCardanoFeature :: NetworkingCardanoFeature -> NetworkLayer -> CardanoFeature
 networkingCardanoFeature networkingCardanoFeature' networkingLayer = CardanoFeature
     { featureName       = featureType networkingCardanoFeature'
     , featureStart      = liftIO $ do
-        --putTextLn "Starting up networkingCardanoFeature!"
         void $ pure networkingLayer -- or whatever it means for YOU (a specific team)
     , featureShutdown   = liftIO $ do
-        --putTextLn "Shutting down networkingCardanoFeature!"
         (featureCleanup networkingCardanoFeature') networkingLayer
     }
 

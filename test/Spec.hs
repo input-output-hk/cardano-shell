@@ -21,6 +21,7 @@ import           DhallConfigSpec (dhallConfigSpec, mkConfigSpec)
 import           NodeIPCSMSpec (nodeIPCSMSpec)
 import           NodeIPCSpec (nodeIPCSpec)
 import qualified DaedalusIPCSpec as DaedalusIPC
+import           UpdaterSpec (updaterSpec)
 
 -- | Entry point for tests.
 main :: IO ()
@@ -31,6 +32,7 @@ main = hspec $ do
     describe "NodeIPC state machine" nodeIPCSMSpec
     describe "NodeIPC" nodeIPCSpec
     describe "DaedalusIPC" DaedalusIPC.spec
+    describe "Update system" updaterSpec
 
 -- | A valid concurrency specification.
 validConcurrencySpec :: Spec

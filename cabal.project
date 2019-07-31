@@ -4,13 +4,13 @@ packages:
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: e2dc8b2160bb2ccd1ef9817a6498cda06ad36580
+  tag: b2022cf7f5925e486f9e0a31f6f6d02145d5ebda
   subdir: contra-tracer
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: e2dc8b2160bb2ccd1ef9817a6498cda06ad36580
+  tag: b2022cf7f5925e486f9e0a31f6f6d02145d5ebda
   subdir: iohk-monitoring
 
 source-repository-package
@@ -21,7 +21,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-prelude
-  tag: fda38e60007a019c0c8569e8a0fc08f2102c92cc
+  tag: d673b92f2a2d9354d102514d0a0fa74f8248b14a
 
 source-repository-package
   type: git

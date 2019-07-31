@@ -3,8 +3,7 @@ module Cardano.Shell.Update.Types where
 import           Cardano.Prelude
 
 import qualified Data.Map as M
-
-import           Test.QuickCheck
+import           Test.QuickCheck (Gen, choose, frequency, listOf1)
 
 
 -- Types we need to check the behaviour.
