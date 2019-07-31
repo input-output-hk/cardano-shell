@@ -20,6 +20,7 @@ import           Cardano.Shell.Types (CardanoFeature (..))
 import           DhallConfigSpec (dhallConfigSpec, mkConfigSpec)
 import           NodeIPCSMSpec (nodeIPCSMSpec)
 import           NodeIPCSpec (nodeIPCSpec)
+import qualified DaedalusIPCSpec as DaedalusIPC
 import           UpdaterSpec (updaterSpec)
 
 -- | Entry point for tests.
@@ -30,6 +31,7 @@ main = hspec $ do
     describe "Cardano configurations" mkConfigSpec
     describe "NodeIPC state machine" nodeIPCSMSpec
     describe "NodeIPC" nodeIPCSpec
+    describe "DaedalusIPC" DaedalusIPC.spec
     describe "Update system" updaterSpec
 
 -- | A valid concurrency specification.
@@ -146,6 +148,3 @@ concurrencyDSLGenerator = frequency
     -- | A delay from one millisecond to ten milliseconds.
     generateMillisecondDelay :: Gen Int
     generateMillisecondDelay = choose (1, 10)
-
-
-
