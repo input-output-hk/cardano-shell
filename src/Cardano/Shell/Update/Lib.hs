@@ -7,7 +7,6 @@
 
 module Cardano.Shell.Update.Lib
     ( UpdaterData(..)
-    , UpdateError(..)
     , RunCmdFunc
     , updaterData
     , runUpdater
@@ -51,11 +50,6 @@ updaterData = case buildOS of
                     []
                     "\\${XDG_DATA_HOME}/Daedalus/installer.sh"
 
-data UpdateError
-    = UpdateFailed Int
-    | UpdaterDoesNotExist
-    deriving (Eq, Show)
-
 -- | Run the update system
 --
 -- For UNIX system:
@@ -67,7 +61,7 @@ data UpdateError
 -- Check that @udPath@ exists, but instead of running the command directly, you
 -- first have to generate a @.bat@ file which will act as a script.
 -- After it being generated, you run that script.
-runUpdater :: UpdaterData -> IO (Either UpdateError ExitCode)
+runUpdater :: UpdaterData -> IO ExitCode
 runUpdater = runUpdater' runCmd
   where
     runCmd :: FilePath -> [String] -> FilePath -> IO ExitCode
@@ -83,26 +77,21 @@ type RunCmdFunc
 
 -- | @runUpdater@ but can inject any runCommand function.
 -- This is used for testing.
-runUpdater' :: RunCmdFunc -> UpdaterData -> IO (Either UpdateError ExitCode)
+runUpdater' :: RunCmdFunc -> UpdaterData -> IO ExitCode
 runUpdater' runCommand ud = do
     let path = udPath ud
     let args = map toS $ udArgs ud
     let archive = (udArchivePath ud)
-    updaterExists <- doesFileExist path
-    if updaterExists
-        then do
-            exitCode <- case buildOS of
-                Windows -> do
-                    writeWindowsUpdaterRunner archive
-                    runCommand archive args archive
-                _ -> runCommand path args archive
-            case exitCode of
-                ExitSuccess -> do
-                    whenM (doesFileExist archive) $ removeFile archive
-                    return . Right $ ExitSuccess
-                ExitFailure code -> return . Left $ UpdateFailed code
-        else
-            return . Left $ UpdaterDoesNotExist
+    exitCode <- case buildOS of
+        Windows -> do
+            writeWindowsUpdaterRunner archive
+            runCommand archive args archive
+        _ -> runCommand path args archive
+    case exitCode of
+        ExitSuccess -> do
+            whenM (doesFileExist archive) $ removeFile archive
+            return $ ExitSuccess
+        _ -> return $ exitCode
 
 -- | Create @.bat@ file on given @FilePath@
 --

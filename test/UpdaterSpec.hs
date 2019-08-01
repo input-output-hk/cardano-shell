@@ -10,34 +10,23 @@ import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck (Arbitrary (..), elements)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           Cardano.Shell.Update.Lib (UpdateError (..), UpdaterData (..),
-                                           runUpdater, runUpdater')
+import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater,
+                                           runUpdater')
 
 updaterSpec :: Spec
 updaterSpec = describe "Update system" $ do
     it "should be successful" $ monadicIO $ do
-        eExitCode <- run $ runUpdater testUpdaterData
-        assert $ eExitCode == (Right ExitSuccess)
-
-    it "should return error when updater is not found" $ monadicIO $ do
-        eExitCode <- run $ runUpdater testUpdaterDataNoPath
-        assert $ eExitCode == (Left UpdaterDoesNotExist)
+        exitCode <- run $ runUpdater testUpdaterData
+        assert $ exitCode == ExitSuccess
 
     prop "should return expected error" $ \(exitNum :: ExitNum) -> monadicIO $ do
-        eExitCode <- run $ runUpdater' (testRunCmd exitNum) testUpdaterData
-        assert $ eExitCode == (Left . UpdateFailed . getExitNum $ exitNum)
+        exitCode <- run $ runUpdater' (testRunCmd exitNum) testUpdaterData
+        assert $ exitCode == (ExitFailure . getExitNum $ exitNum)
 
 testUpdaterData :: UpdaterData
 testUpdaterData =
     UpdaterData
         "./test/testUpdater.sh"
-        []
-        ""
-
-testUpdaterDataNoPath :: UpdaterData
-testUpdaterDataNoPath =
-    UpdaterData
-        "This path does not exist"
         []
         ""
 

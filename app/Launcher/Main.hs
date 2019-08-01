@@ -7,7 +7,7 @@ module Main where
 import           Cardano.Prelude
 import qualified Prelude
 
-import           System.Directory (createDirectoryIfMissing)
+import           System.Directory (createDirectoryIfMissing, doesFileExist)
 import           System.FilePath ((</>))
 
 import qualified System.Process as Process
@@ -85,21 +85,24 @@ main = do
         launcherConfig
         (TLSPath "./configuration/") -- where to generate the certificates
 
-    runNode (runWallet externalDependencies walletPath walletArgs)
+    update (runWallet externalDependencies walletPath walletArgs)
   where
-    runNode :: IO ExitCode -> IO ExitCode
-    runNode runWalletFunc = do
-        eUpdateResult <- runUpdater testUpdaterData
-        case eUpdateResult of
-            Left _ -> return $ ExitFailure 1
-            Right _ -> do
-            -- With the exit code
-                exitCode <- runWalletFunc
-
-                case exitCode of
-                    -- This will run the updater and relaunch the wallet
-                    ExitFailure 20 -> runNode runWalletFunc
-                    _              -> return $ exitCode
+    update :: IO ExitCode -> IO ExitCode
+    update runWalletFunc = do
+        updaterExists <- doesFileExist (udPath testUpdaterData)
+        if updaterExists
+            then do       
+                updaterExitCode <- runUpdater testUpdaterData
+                case updaterExitCode of
+                    ExitSuccess -> do
+                    -- With the exit code
+                        exitCode <- runWalletFunc
+                        case exitCode of
+                            -- This will run the updater and relaunch the wallet
+                            ExitFailure 20 -> update runWalletFunc
+                            _              -> return $ exitCode
+                    _ -> return updaterExitCode
+            else runWalletFunc
 
 -- | Launching the wallet.
 -- For now, this is really light since we don't know whether we will reuse the
