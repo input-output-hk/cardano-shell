@@ -46,6 +46,9 @@ lastAutoOption args = lastOption (option auto args)
 lastIntOption :: Mod OptionFields Int -> Parser (Last Int)
 lastIntOption = lastAutoOption
 
+lastIntegerOption :: Mod OptionFields Integer -> Parser (Last Integer)
+lastIntegerOption = lastAutoOption
+
 lastDoubleOption :: Mod OptionFields Double -> Parser (Last Double)
 lastDoubleOption = lastAutoOption
 
@@ -69,10 +72,10 @@ configCardanoConfigurationCLIParser :: Parser PartialCardanoConfiguration
 configCardanoConfigurationCLIParser =
     PartialCardanoConfiguration
         <$> lastStrOption
-             ( long "log-path"
-            <> metavar "FILEPATH"
-            <> help "The filepath to the log file."
-             )
+            ( long "log-path"
+           <> metavar "FILEPATH"
+           <> help "The filepath to the log file."
+            )
         <*> lastStrOption
             ( long "log-config"
             <> metavar "FILEPATH"
@@ -116,26 +119,34 @@ configCoreCLIParser = PartialCore
           <> metavar "GENESIS-HASH"
           <> help "The genesis hash value."
            )
-    <*> (Just <<$>> lastStrOption
+    <*> lastIntOption
+           ( long "node-id"
+          <> metavar "INT"
+          <> help "Core node ID, the unique number of the node."
+           )
+    <*> lastIntOption
+           ( long "num-cores"
+          <> metavar "INT"
+          <> help "The number of the core nodes."
+           )
+    <*> lastOption parseNodeProtocol
+    <*> lastStrOption
            ( long "signing-key"
           <> metavar "FILEPATH"
           <> help "Path to the signing key."
            )
-        )
-    <*> (Just <<$>> lastStrOption
+    <*> lastStrOption
            ( long "delegation-certificate"
           <> metavar "FILEPATH"
           <> help "Path to the delegation certificate."
            )
-        )
     <*> lastOption configNetworkMagicCLIParser
     <*> lastOption configDBVersionCLIParser
-    <*> (Just <<$>> lastDoubleOption
+    <*> lastDoubleOption
            ( long "pbft-signature-threshold"
           <> metavar "DOUBLE"
           <> help "The PBFT signature threshold."
            )
-        )
   where
     -- | Parser for the network magic options.
     configNetworkMagicCLIParser :: Parser RequireNetworkMagic
@@ -162,6 +173,27 @@ configCoreCLIParser = PartialCore
            <> help "The version of the DB."
             )
 
+    -- | The parser for the type of the node procotol.
+    parseNodeProtocol :: Parser NodeProtocol
+    parseNodeProtocol = asum
+        [ flag' BFTProtocol $ mconcat
+            [ long "bft"
+            , help "Use the BFT consensus algorithm"
+            ]
+        , flag' PraosProtocol $ mconcat
+            [ long "praos"
+            , help "Use the Praos consensus algorithm"
+            ]
+        , flag' MockPBFTProtocol $ mconcat
+            [ long "mock-pbft"
+            , help "Use the Permissive BFT consensus algorithm using a mock ledger"
+            ]
+        , flag' RealPBFTProtocol $ mconcat
+            [ long "real-pbft"
+            , help "Use the Permissive BFT consensus algorithm using the real ledger"
+            ]
+        ]
+
 --------------------------------------------------------------------------------
 -- Node
 --------------------------------------------------------------------------------
@@ -170,7 +202,17 @@ configCoreCLIParser = PartialCore
 configNodeCLIParser :: Parser PartialNode
 configNodeCLIParser =
     PartialNode
-        <$> lastIntOption
+        <$> lastIntegerOption
+           ( long "system-start"
+          <> metavar "INTEGER"
+          <> help "Node system start time."
+           )
+        <*> lastIntegerOption
+           ( long "slot-length"
+          <> metavar "INTEGER"
+          <> help "Slot length time."
+           )
+        <*> lastIntOption
            ( long "network-connection-timeout"
           <> metavar "TIMEOUT"
           <> help "Network connection timeout in milliseconds."

@@ -6,6 +6,7 @@ module Cardano.Shell.Constants.Types
     , Core (..)
     -- * specific for @Core@
     , RequireNetworkMagic (..)
+    , NodeProtocol (..)
     , Spec (..)
     , Initializer (..)
     -- * rest
@@ -69,6 +70,14 @@ data RequireNetworkMagic
     | NoRequireNetworkMagic
     deriving (Eq, Show, Generic)
 
+-- | The type of the protocol being run on the node.
+data NodeProtocol
+    = BFTProtocol
+    | PraosProtocol
+    | MockPBFTProtocol
+    | RealPBFTProtocol
+    deriving (Eq, Show, Generic)
+
 -- | Core configuration.
 -- For now, we only store the path to the genesis file(s) and their hash.
 -- The rest is in the hands of the modules/features that need to use it.
@@ -82,6 +91,12 @@ data Core = Core
     -- ^ Genesis source file JSON.
     , coGenesisHash                 :: !Text
     -- ^ Genesis previous block hash.
+    , coNodeId                      :: !Int
+    -- ^ Core node ID, the number of the node.
+    , coNumCoreNodes                :: !Int
+    -- ^ The number of the core nodes.
+    , coNodeProtocol                :: !NodeProtocol
+    -- ^ The type of protocol run on the node.
     , coStaticKeySigningKeyFile     :: !(Maybe FilePath)
     -- ^ Static key signing file.
     , coStaticKeyDlgCertFile        :: !(Maybe FilePath)
@@ -259,21 +274,25 @@ data Block = Block
 
 --- | Top-level Cardano SL node configuration
 data Node = Node
-    { noNetworkConnectionTimeout     :: !Int
-      -- ^ Network connection timeout in milliseconds.
-    , noConversationEstablishTimeout :: !Int
-      -- ^ Conversation acknowledgement timeout in milliseconds.
-    , noBlockRetrievalQueueSize      :: !Int
-      -- ^ Block retrieval queue capacity.
-    , noPendingTxResubmissionPeriod  :: !Int
-      -- ^ Minimal delay between pending transactions resubmission.
-    , noWalletProductionApi          :: !Bool
-      -- ^ Whether hazard wallet endpoint should be disabled.
-    , noWalletTxCreationDisabled     :: !Bool
-      -- ^ Disallow transaction creation or re-submission of
-      -- pending transactions by the wallet.
-    , noExplorerExtendedApi          :: !Bool
-      -- ^ Enable explorer extended API for fetching more.
+    { noSystemStartTime                 :: !Integer
+    -- ^ Node system start time.
+    , noSlotLength                      :: !Integer
+    -- ^ Slot length time.
+    , noNetworkConnectionTimeout        :: !Int
+    -- ^ Network connection timeout in milliseconds.
+    , noConversationEstablishTimeout    :: !Int
+    -- ^ Conversation acknowledgement timeout in milliseconds.
+    , noBlockRetrievalQueueSize         :: !Int
+    -- ^ Block retrieval queue capacity.
+    , noPendingTxResubmissionPeriod     :: !Int
+    -- ^ Minimal delay between pending transactions resubmission.
+    , noWalletProductionApi             :: !Bool
+    -- ^ Whether hazard wallet endpoint should be disabled.
+    , noWalletTxCreationDisabled        :: !Bool
+    -- ^ Disallow transaction creation or re-submission of
+    -- pending transactions by the wallet.
+    , noExplorerExtendedApi             :: !Bool
+    -- ^ Enable explorer extended API for fetching more.
     } deriving (Eq, Show)
 
 data TLS = TLS

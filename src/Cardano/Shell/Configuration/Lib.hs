@@ -89,16 +89,31 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
     finaliseCore :: PartialCore -> Either Text Core
     finaliseCore PartialCore{..} = do
 
-        coGenesisFile               <- lastToEither "Unspecified coGenesisFile"             pcoGenesisFile
-        coGenesisHash               <- lastToEither "Unspecified coGenesisHash"             pcoGenesisHash
+        coGenesisFile                   <- lastToEither "Unspecified coGenesisFile"
+                                            pcoGenesisFile
 
-        coStaticKeySigningKeyFile   <- lastToEither "Unspecified coStaticKeySigningKeyFile" pcoStaticKeySigningKeyFile
-        coStaticKeyDlgCertFile      <- lastToEither "Unspecified coStaticKeyDlgCertFile"    pcoStaticKeyDlgCertFile
+        coGenesisHash                   <- lastToEither "Unspecified coGenesisHash"
+                                            pcoGenesisHash
 
-        coRequiresNetworkMagic      <- lastToEither "Unspecified coRequiresNetworkMagic"    pcoRequiresNetworkMagic
-        coDBSerializeVersion        <- lastToEither "Unspecified coDBSerializeVersion"      pcoDBSerializeVersion
+        coNodeId                        <- lastToEither "Unspecified coNodeId"
+                                            pcoNodeId
 
-        coPBftSigThd                <- lastToEither "Unspecified coPBftSigThd"              pcoPBftSigThd
+        coNumCoreNodes                  <- lastToEither "Unspecified coNumCoreNodes"
+                                            pcoNumCoreNodes
+
+        coNodeProtocol                  <- lastToEither "Unspecified coNodeProtocol"
+                                            pcoNodeProtocol
+
+        let coStaticKeySigningKeyFile   = getLast pcoStaticKeySigningKeyFile
+        let coStaticKeyDlgCertFile      = getLast pcoStaticKeyDlgCertFile
+
+        coRequiresNetworkMagic          <- lastToEither "Unspecified coRequiresNetworkMagic"
+                                            pcoRequiresNetworkMagic
+
+        coDBSerializeVersion            <- lastToEither "Unspecified coDBSerializeVersion"
+                                            pcoDBSerializeVersion
+
+        let coPBftSigThd                = getLast pcoPBftSigThd
 
         pure Core{..}
 
@@ -107,8 +122,11 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
     finaliseTXP :: PartialTXP -> Either Text TXP
     finaliseTXP PartialTXP{..} = do
 
-        txpMemPoolLimitTx           <- lastToEither "Unspecified txpMemPoolLimitTx"         ptxpMemPoolLimitTx
-        txpAssetLockedSrcAddress    <- lastToEither "Unspecified txpAssetLockedSrcAddress"  ptxpAssetLockedSrcAddress
+        txpMemPoolLimitTx           <- lastToEither "Unspecified txpMemPoolLimitTx"
+                                        ptxpMemPoolLimitTx
+
+        txpAssetLockedSrcAddress    <- lastToEither "Unspecified txpAssetLockedSrcAddress"
+                                        ptxpAssetLockedSrcAddress
 
         pure TXP{..}
 
@@ -116,8 +134,8 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
     finaliseUpdate :: PartialUpdate -> Either Text Update
     finaliseUpdate PartialUpdate{..} = do
 
-        upApplicationName          <- lastToEither "Unspecified upApplicationName"         pupApplicationName
-        upApplicationVersion       <- lastToEither "Unspecified upApplicationVersion"      pupApplicationVersion
+        upApplicationName          <- lastToEither "Unspecified upApplicationName"      pupApplicationName
+        upApplicationVersion       <- lastToEither "Unspecified upApplicationVersion"   pupApplicationVersion
         upLastKnownBlockVersion    <- finaliseLastKnownBlockVersion pupLastKnownBlockVersion
 
         pure Update{..}
@@ -161,6 +179,12 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
     -- | Finalize the @PartialNode@, convert to @Node@.
     finaliseNode :: PartialNode -> Either Text Node
     finaliseNode PartialNode{..} = do
+
+        noSystemStartTime               <- lastToEither "Unspecified noSystemStartTime"
+                                            pnoSystemStartTime
+
+        noSlotLength                    <- lastToEither "Unspecified noSlotLength"
+                                            pnoSlotLength
 
         noNetworkConnectionTimeout      <- lastToEither "Unspecified noNetworkConnectionTimeout"
                                             pnoNetworkConnectionTimeout

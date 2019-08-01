@@ -18,6 +18,7 @@ module Cardano.Shell.Constants.PartialTypes
     , PartialWallet (..)
     -- * re-exports
     , RequireNetworkMagic (..)
+    , NodeProtocol (..)
     ) where
 
 import           Cardano.Prelude
@@ -50,32 +51,42 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
 data PartialCore = PartialCore
     { pcoGenesisFile                :: !(Last FilePath)
     , pcoGenesisHash                :: !(Last Text)
-    , pcoStaticKeySigningKeyFile    :: !(Last (Maybe FilePath))
-    , pcoStaticKeyDlgCertFile       :: !(Last (Maybe FilePath))
+    , pcoNodeId                     :: !(Last Int)
+    -- ^ Core node ID, the number of the node.
+    , pcoNumCoreNodes               :: !(Last Int)
+    -- ^ The number of the core nodes.
+    , pcoNodeProtocol               :: !(Last NodeProtocol)
+    -- ^ The type of protocol run on the node.
+    , pcoStaticKeySigningKeyFile    :: !(Last FilePath)
+    , pcoStaticKeyDlgCertFile       :: !(Last FilePath)
     , pcoRequiresNetworkMagic       :: !(Last RequireNetworkMagic)
     , pcoDBSerializeVersion         :: !(Last Integer)
-    , pcoPBftSigThd                 :: !(Last (Maybe Double))
+    , pcoPBftSigThd                 :: !(Last Double)
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialCore
     deriving Monoid    via GenericMonoid PartialCore
 
 --- | Top-level Cardano SL node configuration
 data PartialNode = PartialNode
-    { pnoNetworkConnectionTimeout     :: !(Last Int)
-      -- ^ Network connection timeout in milliseconds.
-    , pnoConversationEstablishTimeout :: !(Last Int)
-      -- ^ Conversation acknowledgement timeout in milliseconds.
-    , pnoBlockRetrievalQueueSize      :: !(Last Int)
-      -- ^ Block retrieval queue capacity.
-    , pnoPendingTxResubmissionPeriod  :: !(Last Int)
-      -- ^ Minimal delay between pending transactions resubmission.
-    , pnoWalletProductionApi          :: !(Last Bool)
-      -- ^ Whether hazard wallet endpoint should be disabled.
-    , pnoWalletTxCreationDisabled     :: !(Last Bool)
-      -- ^ Disallow transaction creation or re-submission of
-      -- pending transactions by the wallet.
-    , pnoExplorerExtendedApi          :: !(Last Bool)
-      -- ^ Enable explorer extended API for fetching more.
+    { pnoSystemStartTime                :: !(Last Integer)
+    -- ^ Node system start time.
+    , pnoSlotLength                     :: !(Last Integer)
+    -- ^ Slot length time.
+    , pnoNetworkConnectionTimeout       :: !(Last Int)
+    -- ^ Network connection timeout in milliseconds.
+    , pnoConversationEstablishTimeout   :: !(Last Int)
+    -- ^ Conversation acknowledgement timeout in milliseconds.
+    , pnoBlockRetrievalQueueSize        :: !(Last Int)
+    -- ^ Block retrieval queue capacity.
+    , pnoPendingTxResubmissionPeriod    :: !(Last Int)
+    -- ^ Minimal delay between pending transactions resubmission.
+    , pnoWalletProductionApi            :: !(Last Bool)
+    -- ^ Whether hazard wallet endpoint should be disabled.
+    , pnoWalletTxCreationDisabled       :: !(Last Bool)
+    -- ^ Disallow transaction creation or re-submission of
+    -- pending transactions by the wallet.
+    , pnoExplorerExtendedApi            :: !(Last Bool)
+    -- ^ Enable explorer extended API for fetching more.
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialNode
     deriving Monoid    via GenericMonoid PartialNode
