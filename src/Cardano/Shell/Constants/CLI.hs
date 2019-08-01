@@ -116,18 +116,26 @@ configCoreCLIParser = PartialCore
           <> metavar "GENESIS-HASH"
           <> help "The genesis hash value."
            )
-    <*> lastStrOption
+    <*> (Just <<$>> lastStrOption
            ( long "signing-key"
           <> metavar "FILEPATH"
           <> help "Path to the signing key."
            )
-    <*> lastStrOption
+        )
+    <*> (Just <<$>> lastStrOption
            ( long "delegation-certificate"
           <> metavar "FILEPATH"
           <> help "Path to the delegation certificate."
            )
+        )
     <*> lastOption configNetworkMagicCLIParser
     <*> lastOption configDBVersionCLIParser
+    <*> (Just <<$>> lastDoubleOption
+           ( long "pbft-signature-threshold"
+          <> metavar "DOUBLE"
+          <> help "The PBFT signature threshold."
+           )
+        )
   where
     -- | Parser for the network magic options.
     configNetworkMagicCLIParser :: Parser RequireNetworkMagic

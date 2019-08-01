@@ -49,17 +49,12 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
 -- | Partial @Core@ configuration.
 data PartialCore = PartialCore
     { pcoGenesisFile                :: !(Last FilePath)
-    -- ^ Genesis source file JSON.
     , pcoGenesisHash                :: !(Last Text)
-    -- ^ Genesis previous block hash.
-    , pcoStaticKeySigningKeyFile    :: !(Last FilePath)
-    -- ^ Static key signing file.
-    , pcoStaticKeyDlgCertFile       :: !(Last FilePath)
-    -- ^ Static key delegation certificate.
+    , pcoStaticKeySigningKeyFile    :: !(Last (Maybe FilePath))
+    , pcoStaticKeyDlgCertFile       :: !(Last (Maybe FilePath))
     , pcoRequiresNetworkMagic       :: !(Last RequireNetworkMagic)
-    -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
     , pcoDBSerializeVersion         :: !(Last Integer)
-    -- ^ Versioning for values in node's DB.
+    , pcoPBftSigThd                 :: !(Last (Maybe Double))
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialCore
     deriving Monoid    via GenericMonoid PartialCore

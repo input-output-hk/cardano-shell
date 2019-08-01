@@ -82,14 +82,16 @@ data Core = Core
     -- ^ Genesis source file JSON.
     , coGenesisHash                 :: !Text
     -- ^ Genesis previous block hash.
-    , coStaticKeySigningKeyFile     :: !FilePath
+    , coStaticKeySigningKeyFile     :: !(Maybe FilePath)
     -- ^ Static key signing file.
-    , coStaticKeyDlgCertFile        :: !FilePath
+    , coStaticKeyDlgCertFile        :: !(Maybe FilePath)
     -- ^ Static key delegation certificate.
     , coRequiresNetworkMagic        :: !RequireNetworkMagic
     -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
     , coDBSerializeVersion          :: !Integer
     -- ^ Versioning for values in node's DB.
+    , coPBftSigThd                  :: !(Maybe Double)
+    -- ^ PBFT signature threshold system parameters
     } deriving (Eq, Show, Generic)
 
 data Spec = Spec
