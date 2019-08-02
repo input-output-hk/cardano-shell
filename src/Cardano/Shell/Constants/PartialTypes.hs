@@ -9,7 +9,6 @@ module Cardano.Shell.Constants.PartialTypes
     , PartialNTP (..)
     , PartialUpdate (..)
     , PartialLastKnownBlockVersion (..)
-    , PartialSSC (..)
     , PartialTXP (..)
     , PartialDLG (..)
     , PartialBlock (..)
@@ -37,7 +36,6 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
     , pccNTP                 :: !PartialNTP
     , pccUpdate              :: !PartialUpdate
     , pccTXP                 :: !PartialTXP
-    , pccSSC                 :: !PartialSSC
     , pccDLG                 :: !PartialDLG
     , pccBlock               :: !PartialBlock
     , pccNode                :: !PartialNode
@@ -60,7 +58,6 @@ data PartialCore = PartialCore
     , pcoStaticKeySigningKeyFile    :: !(Last FilePath)
     , pcoStaticKeyDlgCertFile       :: !(Last FilePath)
     , pcoRequiresNetworkMagic       :: !(Last RequireNetworkMagic)
-    , pcoDBSerializeVersion         :: !(Last Integer)
     , pcoPBftSigThd                 :: !(Last Double)
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialCore
@@ -80,13 +77,6 @@ data PartialNode = PartialNode
     -- ^ Block retrieval queue capacity.
     , pnoPendingTxResubmissionPeriod    :: !(Last Int)
     -- ^ Minimal delay between pending transactions resubmission.
-    , pnoWalletProductionApi            :: !(Last Bool)
-    -- ^ Whether hazard wallet endpoint should be disabled.
-    , pnoWalletTxCreationDisabled       :: !(Last Bool)
-    -- ^ Disallow transaction creation or re-submission of
-    -- pending transactions by the wallet.
-    , pnoExplorerExtendedApi            :: !(Last Bool)
-    -- ^ Enable explorer extended API for fetching more.
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialNode
     deriving Monoid    via GenericMonoid PartialNode
@@ -107,9 +97,6 @@ data PartialNTP = PartialNTP
 data PartialTXP = PartialTXP
     { ptxpMemPoolLimitTx        :: !(Last Int)
     -- ^ Limit on the number of transactions that can be stored in the mem pool.
-    , ptxpAssetLockedSrcAddress :: !(Last [Text])
-    -- ^ Set of source address which are asset-locked. Transactions which
-    -- use these addresses as transaction inputs will be silently dropped.
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialTXP
     deriving Monoid    via GenericMonoid PartialTXP
@@ -137,18 +124,6 @@ data PartialLastKnownBlockVersion = PartialLastKnownBlockVersion
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialLastKnownBlockVersion
     deriving Monoid    via GenericMonoid PartialLastKnownBlockVersion
-
--- | Partial @SSC@ configuration.
-data PartialSSC = PartialSSC
-    { psscMPCSendInterval               :: !(Last Word)
-      -- ^ Length of interval for sending MPC message
-    , psscMdNoCommitmentsEpochThreshold :: !(Last Int)
-      -- ^ Threshold of epochs for malicious activity detection
-    , psscNoReportNoSecretsForEpoch1    :: !(Last Bool)
-      -- ^ Don't print “SSC couldn't compute seed” for the first epoch.
-    } deriving (Eq, Show, Generic)
-    deriving Semigroup via GenericSemigroup PartialSSC
-    deriving Monoid    via GenericMonoid PartialSSC
 
 -- | Partial @DLG@ configuration.
 data PartialDLG = PartialDLG

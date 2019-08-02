@@ -21,7 +21,6 @@ module Cardano.Shell.Constants.Types
     , NTP (..)
     , Update (..)
     , TXP (..)
-    , SSC (..)
     , DLG (..)
     , Block (..)
     , Node (..)
@@ -55,7 +54,6 @@ data CardanoConfiguration = CardanoConfiguration
     , ccNTP                 :: !NTP
     , ccUpdate              :: !Update
     , ccTXP                 :: !TXP
-    , ccSSC                 :: !SSC
     , ccDLG                 :: !DLG
     , ccBlock               :: !Block
     , ccNode                :: !Node
@@ -91,9 +89,9 @@ data Core = Core
     -- ^ Genesis source file JSON.
     , coGenesisHash                 :: !Text
     -- ^ Genesis previous block hash.
-    , coNodeId                      :: !Int
+    , coNodeId                      :: !(Maybe Int)
     -- ^ Core node ID, the number of the node.
-    , coNumCoreNodes                :: !Int
+    , coNumCoreNodes                :: !(Maybe Int)
     -- ^ The number of the core nodes.
     , coNodeProtocol                :: !NodeProtocol
     -- ^ The type of protocol run on the node.
@@ -103,8 +101,6 @@ data Core = Core
     -- ^ Static key delegation certificate.
     , coRequiresNetworkMagic        :: !RequireNetworkMagic
     -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
-    , coDBSerializeVersion          :: !Integer
-    -- ^ Versioning for values in node's DB.
     , coPBftSigThd                  :: !(Maybe Double)
     -- ^ PBFT signature threshold system parameters
     } deriving (Eq, Show, Generic)
@@ -226,21 +222,9 @@ data LastKnownBlockVersion = LastKnownBlockVersion
     -- ^ Last known block version alternative.
     } deriving (Eq, Show)
 
-data SSC = SSC
-    { sscMPCSendInterval               :: !Word
-      -- ^ Length of interval for sending MPC message
-    , sscMdNoCommitmentsEpochThreshold :: !Int
-      -- ^ Threshold of epochs for malicious activity detection
-    , sscNoReportNoSecretsForEpoch1    :: !Bool
-      -- ^ Don't print “SSC couldn't compute seed” for the first epoch.
-    } deriving (Eq, Show)
-
 data TXP = TXP
     { txpMemPoolLimitTx        :: !Int
       -- ^ Limit on the number of transactions that can be stored in the mem pool.
-    , txpAssetLockedSrcAddress :: ![Text]
-      -- ^ Set of source address which are asset-locked. Transactions which
-      -- use these addresses as transaction inputs will be silently dropped.
     } deriving (Eq, Show)
 
 data DLG = DLG
@@ -286,13 +270,6 @@ data Node = Node
     -- ^ Block retrieval queue capacity.
     , noPendingTxResubmissionPeriod     :: !Int
     -- ^ Minimal delay between pending transactions resubmission.
-    , noWalletProductionApi             :: !Bool
-    -- ^ Whether hazard wallet endpoint should be disabled.
-    , noWalletTxCreationDisabled        :: !Bool
-    -- ^ Disallow transaction creation or re-submission of
-    -- pending transactions by the wallet.
-    , noExplorerExtendedApi             :: !Bool
-    -- ^ Enable explorer extended API for fetching more.
     } deriving (Eq, Show)
 
 data TLS = TLS

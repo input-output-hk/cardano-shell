@@ -46,6 +46,7 @@
             (hsPkgs.base)
             (hsPkgs.cardano-shell)
             (hsPkgs.cardano-prelude)
+            (hsPkgs.pretty-show)
             (hsPkgs.optparse-applicative)
             (hsPkgs.safe-exceptions)
             (hsPkgs.stm)

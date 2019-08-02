@@ -34,7 +34,6 @@ import           Cardano.Shell.Constants.PartialTypes (PartialBlock (..), Partia
                                                        PartialLastKnownBlockVersion (..),
                                                        PartialNTP (..),
                                                        PartialNode (..),
-                                                       PartialSSC (..),
                                                        PartialTLS (..),
                                                        PartialTXP (..),
                                                        PartialUpdate (..),
@@ -44,8 +43,8 @@ import           Cardano.Shell.Constants.Types (Block (..),
                                                 Certificate (..), Core (..),
                                                 DLG (..),
                                                 LastKnownBlockVersion (..),
-                                                NTP (..), Node (..), SSC (..),
-                                                TLS (..), TXP (..), Update (..),
+                                                NTP (..), Node (..), TLS (..),
+                                                TXP (..), Update (..),
                                                 Wallet (..))
 
 -- | Converting a @Last@ to an @Either@
@@ -73,14 +72,10 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
     ccNTP                    <- finaliseNTP pccNTP
     ccUpdate                 <- finaliseUpdate pccUpdate
     ccTXP                    <- finaliseTXP pccTXP
-    ccSSC                    <- finaliseSSC pccSSC
     ccDLG                    <- finaliseDLG pccDLG
     ccBlock                  <- finaliseBlock pccBlock
-
     ccNode                   <- finaliseNode pccNode
-
     ccTLS                    <- finaliseTLS pccTLS
-
     ccWallet                 <- finaliseWallet pccWallet
 
     pure CardanoConfiguration{..}
@@ -95,11 +90,8 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
         coGenesisHash                   <- lastToEither "Unspecified coGenesisHash"
                                             pcoGenesisHash
 
-        coNodeId                        <- lastToEither "Unspecified coNodeId"
-                                            pcoNodeId
-
-        coNumCoreNodes                  <- lastToEither "Unspecified coNumCoreNodes"
-                                            pcoNumCoreNodes
+        let coNodeId                    = getLast pcoNodeId
+        let coNumCoreNodes              = getLast pcoNumCoreNodes
 
         coNodeProtocol                  <- lastToEither "Unspecified coNodeProtocol"
                                             pcoNodeProtocol
@@ -109,9 +101,6 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
 
         coRequiresNetworkMagic          <- lastToEither "Unspecified coRequiresNetworkMagic"
                                             pcoRequiresNetworkMagic
-
-        coDBSerializeVersion            <- lastToEither "Unspecified coDBSerializeVersion"
-                                            pcoDBSerializeVersion
 
         let coPBftSigThd                = getLast pcoPBftSigThd
 
@@ -124,9 +113,6 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
 
         txpMemPoolLimitTx           <- lastToEither "Unspecified txpMemPoolLimitTx"
                                         ptxpMemPoolLimitTx
-
-        txpAssetLockedSrcAddress    <- lastToEither "Unspecified txpAssetLockedSrcAddress"
-                                        ptxpAssetLockedSrcAddress
 
         pure TXP{..}
 
@@ -148,23 +134,6 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
             lkbvAlt    <- lastToEither "Unspecified lkbvAlt"       plkbvAlt
 
             pure LastKnownBlockVersion{..}
-
-
-    -- | Finalize the @PartialNTP@, convert to @NTP@.
-    finaliseSSC :: PartialSSC -> Either Text SSC
-    finaliseSSC PartialSSC{..} = do
-
-        sscMPCSendInterval                 <- lastToEither "Unspecified sscMPCSendInterval"
-                                                psscMPCSendInterval
-
-        sscMdNoCommitmentsEpochThreshold   <- lastToEither "Unspecified sscMdNoCommitmentsEpochThreshold"
-                                                psscMdNoCommitmentsEpochThreshold
-
-        sscNoReportNoSecretsForEpoch1      <- lastToEither "Unspecified sscNoReportNoSecretsForEpoch1"
-                                                psscNoReportNoSecretsForEpoch1
-
-        pure SSC{..}
-
 
     -- | Finalize the @PartialNTP@, convert to @NTP@.
     finaliseNTP :: PartialNTP -> Either Text NTP
@@ -197,15 +166,6 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
 
         noPendingTxResubmissionPeriod   <- lastToEither "Unspecified noPendingTxResubmissionPeriod"
                                             pnoPendingTxResubmissionPeriod
-
-        noWalletProductionApi           <- lastToEither "Unspecified noWalletProductionApi"
-                                            pnoWalletProductionApi
-
-        noWalletTxCreationDisabled      <- lastToEither "Unspecified noWalletTxCreationDisabled"
-                                            pnoWalletTxCreationDisabled
-
-        noExplorerExtendedApi           <- lastToEither "Unspecified noExplorerExtendedApi"
-                                            pnoExplorerExtendedApi
 
         pure Node{..}
 

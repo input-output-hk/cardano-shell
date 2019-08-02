@@ -14,7 +14,6 @@ import           Cardano.Shell.Constants.PartialTypes (NodeProtocol (..),
                                                        PartialLastKnownBlockVersion (..),
                                                        PartialNTP (..),
                                                        PartialNode (..),
-                                                       PartialSSC (..),
                                                        PartialTLS (..),
                                                        PartialTXP (..),
                                                        PartialUpdate (..),
@@ -42,7 +41,6 @@ mainnetConfiguration =
           , pcoStaticKeySigningKeyFile  = mempty
           , pcoStaticKeyDlgCertFile     = mempty
           , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
-          , pcoDBSerializeVersion       = pure 0
           , pcoPBftSigThd               = mempty
           }
     , pccNTP =
@@ -69,13 +67,6 @@ mainnetConfiguration =
     , pccTXP =
         PartialTXP
           { ptxpMemPoolLimitTx          = pure 200
-          , ptxpAssetLockedSrcAddress   = pure []
-          }
-    , pccSSC =
-        PartialSSC
-          { psscMPCSendInterval                 = pure 100
-          , psscMdNoCommitmentsEpochThreshold   = pure 3
-          , psscNoReportNoSecretsForEpoch1      = pure True
           }
     , pccDLG =
         PartialDLG
@@ -102,9 +93,6 @@ mainnetConfiguration =
             , pnoConversationEstablishTimeout   = pure 30000
             , pnoBlockRetrievalQueueSize        = pure 100
             , pnoPendingTxResubmissionPeriod    = pure 7
-            , pnoWalletProductionApi            = pure True
-            , pnoWalletTxCreationDisabled       = pure False
-            , pnoExplorerExtendedApi            = pure False
             }
     , pccTLS =
         PartialTLS
@@ -165,7 +153,6 @@ devConfiguration =
           , pcoStaticKeySigningKeyFile  = mempty
           , pcoStaticKeyDlgCertFile     = mempty
           , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
-          , pcoDBSerializeVersion       = pure 0
           , pcoPBftSigThd               = mempty
           }
     , pccNTP =
@@ -192,14 +179,7 @@ devConfiguration =
     , pccTXP =
         PartialTXP
           { ptxpMemPoolLimitTx           = pure 200
-          , ptxpAssetLockedSrcAddress    = pure []
           }
-    , pccSSC =
-        PartialSSC
-            { psscMPCSendInterval               = pure 10
-            , psscMdNoCommitmentsEpochThreshold = pure 3
-            , psscNoReportNoSecretsForEpoch1    = pure False
-            }
     , pccDLG =
         PartialDLG
           { pdlgCacheParam              = pure 500
@@ -225,9 +205,6 @@ devConfiguration =
             , pnoConversationEstablishTimeout   = pure 30000
             , pnoBlockRetrievalQueueSize        = pure 100
             , pnoPendingTxResubmissionPeriod    = pure 7
-            , pnoWalletProductionApi            = pure False
-            , pnoWalletTxCreationDisabled       = pure False
-            , pnoExplorerExtendedApi            = pure False
             }
     , pccTLS =
         PartialTLS

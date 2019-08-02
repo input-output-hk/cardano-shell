@@ -4,6 +4,10 @@ module Main (main) where
 
 import           Cardano.Prelude
 
+import           Text.Show.Pretty (ppShow)
+
+import           Options.Applicative
+
 import           Cardano.Shell.Features.Logging (LoggingCLIArguments,
                                                  LoggingLayer (..),
                                                  createLoggingFeature,
@@ -16,9 +20,6 @@ import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfigurati
 import           Cardano.Shell.Lib
 import           Cardano.Shell.Presets (mainnetConfiguration)
 import           Cardano.Shell.Types
-
-import           Options.Applicative
-
 
 -- | The product type of all command line arguments.
 -- All here being - from all the features.
@@ -91,13 +92,13 @@ initializeAllFeatures partialConfig cardanoEnvironment = do
     let cardanoConfiguration'   = partialConfig <> cardanoConfigurationCLI
 
     putTextLn "************************************************"
-    putTextLn "Cardano configurationn"
+    putTextLn "Cardano configuration"
     putTextLn "************************************************"
-    putTextLn $ show partialConfig
+    putTextLn . toS . ppShow $ partialConfig
     putTextLn "------------------------------------------------"
-    putTextLn $ show cardanoConfigurationCLI
+    putTextLn . toS . ppShow $ cardanoConfigurationCLI
     putTextLn "------------------------------------------------"
-    putTextLn $ show cardanoConfiguration'
+    putTextLn . toS . ppShow $ cardanoConfiguration'
     putTextLn "------------------------------------------------"
 
     -- Finalize the configuration and if something is missing, just throw error.
