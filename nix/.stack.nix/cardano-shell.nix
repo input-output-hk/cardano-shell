@@ -4,7 +4,7 @@
     package = {
       specVersion = "2.2";
       identifier = { name = "cardano-shell"; version = "0.1.0.0"; };
-      license = "MIT";
+      license = "Apache-2.0";
       copyright = "2018 IOHK";
       maintainer = "operations@iohk.io";
       author = "IOHK";

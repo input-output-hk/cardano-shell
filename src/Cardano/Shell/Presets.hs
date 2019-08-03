@@ -34,10 +34,11 @@ mainnetConfiguration =
         PartialCore
           { pcoGenesisFile              = pure "mainnet-genesis.json"
           , pcoGenesisHash              = pure "89d9b5a5b8ddc8d7e5a6795e9774d97faf1efea59b2caf7eaf9f8c5b32059df4"
-          , pcoStaticKeySigningKeyFile  = pure "TEST"
-          , pcoStaticKeyDlgCertFile     = pure "TEST"
+          , pcoStaticKeySigningKeyFile  = pure Nothing
+          , pcoStaticKeyDlgCertFile     = pure Nothing
           , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
           , pcoDBSerializeVersion       = pure 0
+          , pcoPBftSigThd               = pure Nothing
           }
     , pccNTP =
         PartialNTP
@@ -151,10 +152,11 @@ devConfiguration =
         PartialCore
           { pcoGenesisFile              = pure "testnet-genesis.json"
           , pcoGenesisHash              = pure "7f141ea26e189c9cb09e2473f6499561011d5d3c90dd642fde859ce02282a3ae"
-          , pcoStaticKeySigningKeyFile  = mempty
-          , pcoStaticKeyDlgCertFile     = mempty
+          , pcoStaticKeySigningKeyFile  = pure Nothing
+          , pcoStaticKeyDlgCertFile     = pure Nothing
           , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
           , pcoDBSerializeVersion       = pure 0
+          , pcoPBftSigThd               = pure Nothing
           }
     , pccNTP =
         PartialNTP

@@ -98,6 +98,8 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
         coRequiresNetworkMagic      <- lastToEither "Unspecified coRequiresNetworkMagic"    pcoRequiresNetworkMagic
         coDBSerializeVersion        <- lastToEither "Unspecified coDBSerializeVersion"      pcoDBSerializeVersion
 
+        coPBftSigThd                <- lastToEither "Unspecified coPBftSigThd"              pcoPBftSigThd
+
         pure Core{..}
 
 
@@ -240,7 +242,6 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
         thBurst     <- lastToEither "Unspecified thBurst"   pthBurst
 
         pure Wallet {..}
-
 
 -- | Generate 'TopologyConfig' with given 'Cluster'
 mkTopology :: Cluster -> IO TopologyConfig
