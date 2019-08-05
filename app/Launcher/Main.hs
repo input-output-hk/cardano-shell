@@ -17,7 +17,7 @@ import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
 import           Control.Exception.Safe (throwM)
-import           Cardano.Shell.Update.Lib
+import           Cardano.Shell.Update.Lib (UpdaterData(..), runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
