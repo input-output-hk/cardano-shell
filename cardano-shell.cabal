@@ -1,3 +1,4 @@
+cabal-version:  2.2
 name:           cardano-shell
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/cardano-shell#readme>
@@ -10,10 +11,10 @@ copyright:      2018 IOHK
 license:        Apache-2.0
 license-files:  LICENSE, NOTICE
 build-type:     Simple
-cabal-version:  >= 1.10
 extra-source-files:
     ChangeLog.md
     README.md
+    test/js/mock-daedalus.js
 
 source-repository head
   type: git
@@ -28,6 +29,8 @@ library
     , Cardano.Shell.Configuration.Lib
     -- NodeIPC
     , Cardano.Shell.NodeIPC
+    , Cardano.Shell.NodeIPC.General
+    , Cardano.Shell.DaedalusIPC
     -- Update system
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
@@ -66,6 +69,7 @@ library
     , QuickCheck
     , safe-exceptions
     , stm
+    , async
     , text
     , transformers
     , generic-monoid
@@ -139,6 +143,28 @@ executable node-ipc
                        -Wredundant-constraints
                        -Wpartial-fields
 
+executable daedalus-ipc
+  main-is: app/daedalus-ipc.hs
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , cardano-shell
+    , cardano-prelude
+    , optparse-applicative
+    , safe-exceptions
+    , iohk-monitoring
+  default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
+                       OverloadedStrings
+
+  ghc-options:         -Wall
+                       -Werror
+                       -Wcompat
+                       -Wincomplete-record-updates
+                       -Wincomplete-uni-patterns
+                       -Wredundant-constraints
+                       -Wpartial-fields
+
 executable cardano-launcher
   main-is: Main.hs
   other-modules:
@@ -183,6 +209,7 @@ test-suite cardano-shell-test
   other-modules:
       Paths_cardano_shell
       DhallConfigSpec
+      DaedalusIPCSpec
       UpdaterSpec
   if !os(windows)
     other-modules:
@@ -199,6 +226,7 @@ test-suite cardano-shell-test
     , cardano-prelude
     , dhall
     , safe-exceptions
+    , process
     -- quickcheck
     , QuickCheck
     -- SM
@@ -212,6 +240,8 @@ test-suite cardano-shell-test
     , concurrency
     , dejafu
     , hunit-dejafu
+  build-tool-depends:
+      cardano-shell:daedalus-ipc
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
