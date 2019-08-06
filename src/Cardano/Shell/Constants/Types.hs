@@ -264,12 +264,8 @@ data Node = Node
     -- ^ Slot length time.
     , noNetworkConnectionTimeout        :: !Int
     -- ^ Network connection timeout in milliseconds.
-    , noConversationEstablishTimeout    :: !Int
-    -- ^ Conversation acknowledgement timeout in milliseconds.
-    , noBlockRetrievalQueueSize         :: !Int
-    -- ^ Block retrieval queue capacity.
-    , noPendingTxResubmissionPeriod     :: !Int
-    -- ^ Minimal delay between pending transactions resubmission.
+    , noHandshakeTimeout                :: !Int
+    -- ^ Protocol acknowledgement timeout in milliseconds.
     } deriving (Eq, Show)
 
 data TLS = TLS

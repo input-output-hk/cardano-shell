@@ -158,14 +158,8 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
         noNetworkConnectionTimeout      <- lastToEither "Unspecified noNetworkConnectionTimeout"
                                             pnoNetworkConnectionTimeout
 
-        noConversationEstablishTimeout  <- lastToEither "Unspecified noConversationEstablishTimeout"
-                                            pnoConversationEstablishTimeout
-
-        noBlockRetrievalQueueSize       <- lastToEither "Unspecified noBlockRetrievalQueueSize"
-                                            pnoBlockRetrievalQueueSize
-
-        noPendingTxResubmissionPeriod   <- lastToEither "Unspecified noPendingTxResubmissionPeriod"
-                                            pnoPendingTxResubmissionPeriod
+        noHandshakeTimeout              <- lastToEither "Unspecified noHandshakeTimeout"
+                                            pnoHandshakeTimeout
 
         pure Node{..}
 

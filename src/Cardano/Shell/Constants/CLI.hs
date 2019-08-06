@@ -208,19 +208,9 @@ configNodeCLIParser =
           <> help "Network connection timeout in milliseconds."
            )
         <*> lastIntOption
-           ( long "conversation-acknowledgement-timeout"
+           ( long "handshake-timeout"
           <> metavar "TIMEOUT"
-          <> help "Conversation acknowledgement timeout in milliseconds."
-           )
-        <*> lastIntOption
-           ( long "block-queue-capacity"
-          <> metavar "CAPACITY"
-          <> help "Block retrieval queue capacity."
-           )
-        <*> lastIntOption
-           ( long "transaction-resubmission-delay"
-          <> metavar "DELAY"
-          <> help "Minimal delay between pending transactions resubmission."
+          <> help "Protocol acknowledgement timeout in milliseconds."
            )
 
 --------------------------------------------------------------------------------

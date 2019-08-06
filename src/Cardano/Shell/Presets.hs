@@ -90,9 +90,7 @@ mainnetConfiguration =
             { pnoSystemStartTime                = mempty
             , pnoSlotLength                     = mempty
             , pnoNetworkConnectionTimeout       = pure 15000
-            , pnoConversationEstablishTimeout   = pure 30000
-            , pnoBlockRetrievalQueueSize        = pure 100
-            , pnoPendingTxResubmissionPeriod    = pure 7
+            , pnoHandshakeTimeout               = pure 30000
             }
     , pccTLS =
         PartialTLS
@@ -202,9 +200,7 @@ devConfiguration =
             { pnoSystemStartTime                = mempty
             , pnoSlotLength                     = mempty
             , pnoNetworkConnectionTimeout       = pure 15000
-            , pnoConversationEstablishTimeout   = pure 30000
-            , pnoBlockRetrievalQueueSize        = pure 100
-            , pnoPendingTxResubmissionPeriod    = pure 7
+            , pnoHandshakeTimeout               = pure 30000
             }
     , pccTLS =
         PartialTLS

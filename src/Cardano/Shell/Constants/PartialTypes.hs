@@ -71,12 +71,8 @@ data PartialNode = PartialNode
     -- ^ Slot length time.
     , pnoNetworkConnectionTimeout       :: !(Last Int)
     -- ^ Network connection timeout in milliseconds.
-    , pnoConversationEstablishTimeout   :: !(Last Int)
-    -- ^ Conversation acknowledgement timeout in milliseconds.
-    , pnoBlockRetrievalQueueSize        :: !(Last Int)
-    -- ^ Block retrieval queue capacity.
-    , pnoPendingTxResubmissionPeriod    :: !(Last Int)
-    -- ^ Minimal delay between pending transactions resubmission.
+    , pnoHandshakeTimeout               :: !(Last Int)
+    -- ^ Protocol acknowledgement timeout in milliseconds.
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialNode
     deriving Monoid    via GenericMonoid PartialNode
