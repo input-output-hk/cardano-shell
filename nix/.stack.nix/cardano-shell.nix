@@ -2,7 +2,7 @@
   {
     flags = {};
     package = {
-      specVersion = "1.10";
+      specVersion = "2.2";
       identifier = { name = "cardano-shell"; version = "0.1.0.0"; };
       license = "Apache-2.0";
       copyright = "2018 IOHK";
@@ -35,6 +35,7 @@
           (hsPkgs.QuickCheck)
           (hsPkgs.safe-exceptions)
           (hsPkgs.stm)
+          (hsPkgs.async)
           (hsPkgs.text)
           (hsPkgs.transformers)
           (hsPkgs.generic-monoid)
@@ -60,6 +61,16 @@
             (hsPkgs.cardano-prelude)
             (hsPkgs.optparse-applicative)
             (hsPkgs.safe-exceptions)
+            ];
+          };
+        "daedalus-ipc" = {
+          depends = [
+            (hsPkgs.base)
+            (hsPkgs.cardano-shell)
+            (hsPkgs.cardano-prelude)
+            (hsPkgs.optparse-applicative)
+            (hsPkgs.safe-exceptions)
+            (hsPkgs.iohk-monitoring)
             ];
           };
         "cardano-launcher" = {
@@ -88,6 +99,7 @@
             (hsPkgs.cardano-prelude)
             (hsPkgs.dhall)
             (hsPkgs.safe-exceptions)
+            (hsPkgs.process)
             (hsPkgs.QuickCheck)
             (hsPkgs.quickcheck-state-machine)
             (hsPkgs.tree-diff)
@@ -97,6 +109,9 @@
             (hsPkgs.concurrency)
             (hsPkgs.dejafu)
             (hsPkgs.hunit-dejafu)
+            ];
+          build-tools = [
+            (hsPkgs.buildPackages.cardano-shell or (pkgs.buildPackages.cardano-shell))
             ];
           };
         };
