@@ -36,7 +36,7 @@ mainnetConfiguration =
           , pcoGenesisHash              = pure "5f20df933584822601f9e3f8c024eb5eb252fe8cefb24d1317dc3d432e940ebb"
           , pcoStaticKeySigningKeyFile  = pure Nothing
           , pcoStaticKeyDlgCertFile     = pure Nothing
-          , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
+          , pcoRequiresNetworkMagic     = pure NoRequireNetworkMagic
           , pcoDBSerializeVersion       = pure 0
           , pcoPBftSigThd               = pure Nothing
           }
