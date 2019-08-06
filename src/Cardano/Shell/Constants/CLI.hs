@@ -130,7 +130,7 @@ configCoreCLIParser = PartialCore
         )
     <*> lastOption configNetworkMagicCLIParser
     <*> lastOption configDBVersionCLIParser
-    <*> (Just <<$>> lastDoubleOption
+    <*> (lastDoubleOption
            ( long "pbft-signature-threshold"
           <> metavar "DOUBLE"
           <> help "The PBFT signature threshold."

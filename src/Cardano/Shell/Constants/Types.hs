@@ -90,7 +90,7 @@ data Core = Core
     -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
     , coDBSerializeVersion          :: !Integer
     -- ^ Versioning for values in node's DB.
-    , coPBftSigThd                  :: !(Maybe Double)
+    , coPBftSigThd                  :: !Double
     -- ^ PBFT signature threshold system parameters
     } deriving (Eq, Show, Generic)
 

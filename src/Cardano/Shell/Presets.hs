@@ -38,7 +38,7 @@ mainnetConfiguration =
           , pcoStaticKeyDlgCertFile     = pure Nothing
           , pcoRequiresNetworkMagic     = pure NoRequireNetworkMagic
           , pcoDBSerializeVersion       = pure 0
-          , pcoPBftSigThd               = pure Nothing
+          , pcoPBftSigThd               = pure 0.22
           }
     , pccNTP =
         PartialNTP
@@ -156,7 +156,7 @@ devConfiguration =
           , pcoStaticKeyDlgCertFile     = pure Nothing
           , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
           , pcoDBSerializeVersion       = pure 0
-          , pcoPBftSigThd               = pure Nothing
+          , pcoPBftSigThd               = pure 0.22
           }
     , pccNTP =
         PartialNTP

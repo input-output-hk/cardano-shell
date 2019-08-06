@@ -54,7 +54,7 @@ data PartialCore = PartialCore
     , pcoStaticKeyDlgCertFile       :: !(Last (Maybe FilePath))
     , pcoRequiresNetworkMagic       :: !(Last RequireNetworkMagic)
     , pcoDBSerializeVersion         :: !(Last Integer)
-    , pcoPBftSigThd                 :: !(Last (Maybe Double))
+    , pcoPBftSigThd                 :: !(Last Double)
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialCore
     deriving Monoid    via GenericMonoid PartialCore
