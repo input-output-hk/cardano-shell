@@ -12,8 +12,6 @@ module Cardano.Shell.Constants.CLI
     , configTXPCLIParser
     -- * Update
     , configUpdateCLIParser
-    -- * SSC
-    , configSSCCLIParser
     -- * DLG
     , configDLGCLIParser
     -- * Block
@@ -43,21 +41,27 @@ lastOption parser = Last <$> optional parser
 lastAutoOption :: Read a => Mod OptionFields a -> Parser (Last a)
 lastAutoOption args = lastOption (option auto args)
 
+-- | Specific @Last@ @Int@ option.
 lastIntOption :: Mod OptionFields Int -> Parser (Last Int)
 lastIntOption = lastAutoOption
 
+-- | Specific @Last@ @Integer@ option.
+lastIntegerOption :: Mod OptionFields Integer -> Parser (Last Integer)
+lastIntegerOption = lastAutoOption
+
+-- | Specific @Last@ @Double@ option.
 lastDoubleOption :: Mod OptionFields Double -> Parser (Last Double)
 lastDoubleOption = lastAutoOption
 
+-- | Specific @Last@ @Bool@ option.
 lastBoolOption :: Mod OptionFields Bool -> Parser (Last Bool)
 lastBoolOption = lastAutoOption
 
-lastWordOption :: Mod OptionFields Word -> Parser (Last Word)
-lastWordOption = lastAutoOption
-
+-- | Specific @Last@ @[Text]@ option.
 lastTextListOption :: Mod OptionFields [Text] -> Parser (Last [Text])
 lastTextListOption = lastAutoOption
 
+-- | Specific @Last@ @IsString a@ option.
 lastStrOption :: IsString a => Mod OptionFields a -> Parser (Last a)
 lastStrOption args = Last <$> optional (strOption args)
 
@@ -69,10 +73,10 @@ configCardanoConfigurationCLIParser :: Parser PartialCardanoConfiguration
 configCardanoConfigurationCLIParser =
     PartialCardanoConfiguration
         <$> lastStrOption
-             ( long "log-path"
-            <> metavar "FILEPATH"
-            <> help "The filepath to the log file."
-             )
+            ( long "log-path"
+           <> metavar "FILEPATH"
+           <> help "The filepath to the log file."
+            )
         <*> lastStrOption
             ( long "log-config"
             <> metavar "FILEPATH"
@@ -92,7 +96,6 @@ configCardanoConfigurationCLIParser =
         <*> configNTPCLIParser
         <*> configUpdateCLIParser
         <*> configTXPCLIParser
-        <*> configSSCCLIParser
         <*> configDLGCLIParser
         <*> configBlockCLIParser
         <*> configNodeCLIParser
@@ -116,26 +119,33 @@ configCoreCLIParser = PartialCore
           <> metavar "GENESIS-HASH"
           <> help "The genesis hash value."
            )
-    <*> (Just <<$>> lastStrOption
+    <*> lastIntOption
+           ( long "node-id"
+          <> metavar "INT"
+          <> help "Core node ID, the unique number of the node."
+           )
+    <*> lastIntOption
+           ( long "num-cores"
+          <> metavar "INT"
+          <> help "The number of the core nodes."
+           )
+    <*> lastOption parseNodeProtocol
+    <*> lastStrOption
            ( long "signing-key"
           <> metavar "FILEPATH"
           <> help "Path to the signing key."
            )
-        )
-    <*> (Just <<$>> lastStrOption
+    <*> lastStrOption
            ( long "delegation-certificate"
           <> metavar "FILEPATH"
           <> help "Path to the delegation certificate."
            )
-        )
     <*> lastOption configNetworkMagicCLIParser
-    <*> lastOption configDBVersionCLIParser
-    <*> (Just <<$>> lastDoubleOption
+    <*> lastDoubleOption
            ( long "pbft-signature-threshold"
           <> metavar "DOUBLE"
           <> help "The PBFT signature threshold."
            )
-        )
   where
     -- | Parser for the network magic options.
     configNetworkMagicCLIParser :: Parser RequireNetworkMagic
@@ -153,14 +163,26 @@ configCoreCLIParser = PartialCore
            <> help "Doesn not require network magic"
             )
 
-    -- | The parser for the DB version.
-    configDBVersionCLIParser :: Parser Integer
-    configDBVersionCLIParser =
-        option auto
-            ( long "db-version"
-           <> metavar "VERSION"
-           <> help "The version of the DB."
-            )
+    -- | The parser for the type of the node procotol.
+    parseNodeProtocol :: Parser NodeProtocol
+    parseNodeProtocol = asum
+        [ flag' BFTProtocol $ mconcat
+            [ long "bft"
+            , help "Use the BFT consensus algorithm"
+            ]
+        , flag' PraosProtocol $ mconcat
+            [ long "praos"
+            , help "Use the Praos consensus algorithm"
+            ]
+        , flag' MockPBFTProtocol $ mconcat
+            [ long "mock-pbft"
+            , help "Use the Permissive BFT consensus algorithm using a mock ledger"
+            ]
+        , flag' RealPBFTProtocol $ mconcat
+            [ long "real-pbft"
+            , help "Use the Permissive BFT consensus algorithm using the real ledger"
+            ]
+        ]
 
 --------------------------------------------------------------------------------
 -- Node
@@ -170,41 +192,25 @@ configCoreCLIParser = PartialCore
 configNodeCLIParser :: Parser PartialNode
 configNodeCLIParser =
     PartialNode
-        <$> lastIntOption
+        <$> lastIntegerOption
+           ( long "system-start"
+          <> metavar "INTEGER"
+          <> help "Node system start time."
+           )
+        <*> lastIntegerOption
+           ( long "slot-length"
+          <> metavar "INTEGER"
+          <> help "Slot length time."
+           )
+        <*> lastIntOption
            ( long "network-connection-timeout"
           <> metavar "TIMEOUT"
           <> help "Network connection timeout in milliseconds."
            )
         <*> lastIntOption
-           ( long "conversation-acknowledgement-timeout"
+           ( long "handshake-timeout"
           <> metavar "TIMEOUT"
-          <> help "Conversation acknowledgement timeout in milliseconds."
-           )
-        <*> lastIntOption
-           ( long "block-queue-capacity"
-          <> metavar "CAPACITY"
-          <> help "Block retrieval queue capacity."
-           )
-        <*> lastIntOption
-           ( long "transaction-resubmission-delay"
-          <> metavar "DELAY"
-          <> help "Minimal delay between pending transactions resubmission."
-           )
-        <*> lastBoolOption
-           ( long "wallet-production-api"
-          <> metavar "BOOL"
-          <> help "Whether hazard wallet endpoint should be disabled."
-           )
-        <*> lastBoolOption
-           ( long "block-pending-transactions"
-          <> metavar "BOOL"
-          <> help "Disallow transaction creation or re-submission of pending transactions by the wallet."
-           )
-        -- TODO(KS): Pretty sure we don't need this one.
-        <*> lastBoolOption
-           ( long "explorer-extended-api"
-          <> metavar "BOOL"
-          <> help "Enable explorer extended API for fetching more."
+          <> help "Protocol acknowledgement timeout in milliseconds."
            )
 
 --------------------------------------------------------------------------------
@@ -223,7 +229,8 @@ configTXPCLIParser =
         <*> lastTextListOption
            ( long "txp-asset-locked-addresses"
           <> metavar "ADRESS-LIST"
-          <> help "Set of source address which are asset-locked. Transactions which use these addresses as transaction inputs will be silently dropped."
+          <> help "Set of source address which are asset-locked. Transactions which use\
+              \these addresses as transaction inputs will be silently dropped."
            )
 
 --------------------------------------------------------------------------------
@@ -266,30 +273,6 @@ configUpdateCLIParser =
               <> metavar "INT"
               <> help "Last known block version alternative."
                )
-
---------------------------------------------------------------------------------
--- SSC
---------------------------------------------------------------------------------
-
--- | SSC CLI parser.
-configSSCCLIParser :: Parser PartialSSC
-configSSCCLIParser =
-    PartialSSC
-        <$> lastWordOption
-           ( long "ssc-mpc-send-interval"
-          <> metavar "INTERVAL"
-          <> help "Length of interval for sending MPC message."
-           )
-        <*> lastIntOption
-           ( long "ssc-no-commitments-epoch-threshold"
-          <> metavar "THRESHOLD"
-          <> help "Threshold of epochs for malicious activity detection."
-           )
-        <*> lastBoolOption
-           ( long "ssc-no-report-no-secrets-for-fepoch"
-          <> metavar "SERVER-LIST"
-          <> help "Don't print “SSC couldn't compute seed” for the first epoch."
-           )
 
 --------------------------------------------------------------------------------
 -- NTP

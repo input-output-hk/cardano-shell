@@ -101,6 +101,7 @@ executable cardano-shell-exe
     , cardano-shell
     , cardano-prelude
     -- util
+    , pretty-show >=1.9.5
     , optparse-applicative
     , safe-exceptions
     , stm

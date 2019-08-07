@@ -9,7 +9,6 @@ module Cardano.Shell.Constants.PartialTypes
     , PartialNTP (..)
     , PartialUpdate (..)
     , PartialLastKnownBlockVersion (..)
-    , PartialSSC (..)
     , PartialTXP (..)
     , PartialDLG (..)
     , PartialBlock (..)
@@ -18,6 +17,7 @@ module Cardano.Shell.Constants.PartialTypes
     , PartialWallet (..)
     -- * re-exports
     , RequireNetworkMagic (..)
+    , NodeProtocol (..)
     ) where
 
 import           Cardano.Prelude
@@ -36,7 +36,6 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
     , pccNTP                 :: !PartialNTP
     , pccUpdate              :: !PartialUpdate
     , pccTXP                 :: !PartialTXP
-    , pccSSC                 :: !PartialSSC
     , pccDLG                 :: !PartialDLG
     , pccBlock               :: !PartialBlock
     , pccNode                :: !PartialNode
@@ -50,32 +49,30 @@ data PartialCardanoConfiguration = PartialCardanoConfiguration
 data PartialCore = PartialCore
     { pcoGenesisFile                :: !(Last FilePath)
     , pcoGenesisHash                :: !(Last Text)
-    , pcoStaticKeySigningKeyFile    :: !(Last (Maybe FilePath))
-    , pcoStaticKeyDlgCertFile       :: !(Last (Maybe FilePath))
+    , pcoNodeId                     :: !(Last Int)
+    -- ^ Core node ID, the number of the node.
+    , pcoNumCoreNodes               :: !(Last Int)
+    -- ^ The number of the core nodes.
+    , pcoNodeProtocol               :: !(Last NodeProtocol)
+    -- ^ The type of protocol run on the node.
+    , pcoStaticKeySigningKeyFile    :: !(Last FilePath)
+    , pcoStaticKeyDlgCertFile       :: !(Last FilePath)
     , pcoRequiresNetworkMagic       :: !(Last RequireNetworkMagic)
-    , pcoDBSerializeVersion         :: !(Last Integer)
-    , pcoPBftSigThd                 :: !(Last (Maybe Double))
+    , pcoPBftSigThd                 :: !(Last Double)
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialCore
     deriving Monoid    via GenericMonoid PartialCore
 
 --- | Top-level Cardano SL node configuration
 data PartialNode = PartialNode
-    { pnoNetworkConnectionTimeout     :: !(Last Int)
-      -- ^ Network connection timeout in milliseconds.
-    , pnoConversationEstablishTimeout :: !(Last Int)
-      -- ^ Conversation acknowledgement timeout in milliseconds.
-    , pnoBlockRetrievalQueueSize      :: !(Last Int)
-      -- ^ Block retrieval queue capacity.
-    , pnoPendingTxResubmissionPeriod  :: !(Last Int)
-      -- ^ Minimal delay between pending transactions resubmission.
-    , pnoWalletProductionApi          :: !(Last Bool)
-      -- ^ Whether hazard wallet endpoint should be disabled.
-    , pnoWalletTxCreationDisabled     :: !(Last Bool)
-      -- ^ Disallow transaction creation or re-submission of
-      -- pending transactions by the wallet.
-    , pnoExplorerExtendedApi          :: !(Last Bool)
-      -- ^ Enable explorer extended API for fetching more.
+    { pnoSystemStartTime                :: !(Last Integer)
+    -- ^ Node system start time.
+    , pnoSlotLength                     :: !(Last Integer)
+    -- ^ Slot length time.
+    , pnoNetworkConnectionTimeout       :: !(Last Int)
+    -- ^ Network connection timeout in milliseconds.
+    , pnoHandshakeTimeout               :: !(Last Int)
+    -- ^ Protocol acknowledgement timeout in milliseconds.
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialNode
     deriving Monoid    via GenericMonoid PartialNode
@@ -126,18 +123,6 @@ data PartialLastKnownBlockVersion = PartialLastKnownBlockVersion
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialLastKnownBlockVersion
     deriving Monoid    via GenericMonoid PartialLastKnownBlockVersion
-
--- | Partial @SSC@ configuration.
-data PartialSSC = PartialSSC
-    { psscMPCSendInterval               :: !(Last Word)
-      -- ^ Length of interval for sending MPC message
-    , psscMdNoCommitmentsEpochThreshold :: !(Last Int)
-      -- ^ Threshold of epochs for malicious activity detection
-    , psscNoReportNoSecretsForEpoch1    :: !(Last Bool)
-      -- ^ Don't print “SSC couldn't compute seed” for the first epoch.
-    } deriving (Eq, Show, Generic)
-    deriving Semigroup via GenericSemigroup PartialSSC
-    deriving Monoid    via GenericMonoid PartialSSC
 
 -- | Partial @DLG@ configuration.
 data PartialDLG = PartialDLG

@@ -12,8 +12,7 @@ import           Cardano.Shell.Features.Logging (LoggingLayer (..))
 import           Cardano.Shell.Types (CardanoEnvironment, CardanoFeature (..),
                                       CardanoFeatureInit (..))
 
-import           Cardano.Shell.Constants.Types (CardanoConfiguration (..),
-                                                Core (..), Wallet (..))
+import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 --------------------------------------------------------------------------------
 -- Networking feature
 --------------------------------------------------------------------------------
@@ -75,9 +74,6 @@ createNetworkingFeature loggingLayer cardanoEnvironment cardanoConfiguration = d
     -- We don't know where the user wants to fetch the additional configuration from, it could be from
     -- the filesystem, so we give him the most flexible/powerful context, @IO@.
     networkingConfiguration <-  pure "THIS IS AN EXAMPLE OF A CONFIGURATION!"
-
-    putTextLn $ "The DB version - " <> (show $ coDBSerializeVersion $ ccCore cardanoConfiguration)
-    putTextLn $ "The Wallet Throttle - " <> (show $ thRate $ ccWallet cardanoConfiguration)
 
     -- we construct the layer
     networkingLayer         <- (featureInit networkingCardanoFeatureInit) cardanoEnvironment loggingLayer cardanoConfiguration networkingConfiguration
