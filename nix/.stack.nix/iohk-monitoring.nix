@@ -15,7 +15,7 @@
     package = {
       specVersion = "1.10";
       identifier = { name = "iohk-monitoring"; version = "0.1.10.0"; };
-      license = "MIT";
+      license = "Apache-2.0";
       copyright = "2018 IOHK";
       maintainer = "";
       author = "Alexander Diemand, Andreas Triantafyllos";
@@ -36,6 +36,7 @@
           (hsPkgs.async-timer)
           (hsPkgs.attoparsec)
           (hsPkgs.auto-update)
+          (hsPkgs.base64-bytestring)
           (hsPkgs.bytestring)
           (hsPkgs.clock)
           (hsPkgs.containers)
@@ -155,8 +156,8 @@
     } // {
     src = (pkgs.lib).mkDefault (pkgs.fetchgit {
       url = "https://github.com/input-output-hk/iohk-monitoring-framework";
-      rev = "b2022cf7f5925e486f9e0a31f6f6d02145d5ebda";
-      sha256 = "0h816f3nh7n6hk42pdy0l56a56vz8b998x0d0ysg3bkj0dc9sh0w";
+      rev = "0dae43937d2858b437bfc93f7952ba93b88607e6";
+      sha256 = "1251hgvdak2l5s377vxvcc5nx91w5j5aqks4rb8acjcsxq14nn59";
       });
     postUnpack = "sourceRoot+=/iohk-monitoring; echo source root reset to \$sourceRoot";
     }
