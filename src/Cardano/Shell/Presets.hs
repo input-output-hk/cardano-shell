@@ -40,7 +40,7 @@ mainnetConfiguration =
           , pcoNodeProtocol             = pure BFTProtocol
           , pcoStaticKeySigningKeyFile  = mempty
           , pcoStaticKeyDlgCertFile     = mempty
-          , pcoRequiresNetworkMagic     = pure RequireNetworkMagic
+          , pcoRequiresNetworkMagic     = pure NoRequireNetworkMagic
           , pcoPBftSigThd               = mempty
           }
     , pccNTP =
