@@ -66,8 +66,9 @@ mainnetConfiguration =
             }
     , pccTXP =
         PartialTXP
-          { ptxpMemPoolLimitTx          = pure 200
-          }
+            { ptxpMemPoolLimitTx          = pure 200
+            , ptxpAssetLockedSrcAddress   = pure []
+            }
     , pccDLG =
         PartialDLG
             { pdlgCacheParam          = pure 500
@@ -176,8 +177,9 @@ devConfiguration =
             }
     , pccTXP =
         PartialTXP
-          { ptxpMemPoolLimitTx           = pure 200
-          }
+            { ptxpMemPoolLimitTx        = pure 200
+            , ptxpAssetLockedSrcAddress = pure []
+            }
     , pccDLG =
         PartialDLG
           { pdlgCacheParam              = pure 500

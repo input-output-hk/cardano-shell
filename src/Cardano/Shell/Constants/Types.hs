@@ -224,7 +224,10 @@ data LastKnownBlockVersion = LastKnownBlockVersion
 
 data TXP = TXP
     { txpMemPoolLimitTx        :: !Int
-      -- ^ Limit on the number of transactions that can be stored in the mem pool.
+    -- ^ Limit on the number of transactions that can be stored in the mem pool.
+    , txpAssetLockedSrcAddress :: ![Text]
+    -- ^ Set of source address which are asset-locked. Transactions which
+    -- use these addresses as transaction inputs will be silently dropped.
     } deriving (Eq, Show)
 
 data DLG = DLG

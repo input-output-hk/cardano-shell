@@ -114,6 +114,9 @@ finaliseCardanoConfiguration PartialCardanoConfiguration{..} = do
         txpMemPoolLimitTx           <- lastToEither "Unspecified txpMemPoolLimitTx"
                                         ptxpMemPoolLimitTx
 
+        txpAssetLockedSrcAddress    <- lastToEither "Unspecified txpAssetLockedSrcAddress"
+                                        ptxpAssetLockedSrcAddress
+
         pure TXP{..}
 
     -- | Finalize the @PartialUpdate@, convert to @Update@.

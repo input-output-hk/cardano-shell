@@ -226,6 +226,12 @@ configTXPCLIParser =
           <> metavar "NUMBER"
           <> help "Limit on the number of transactions that can be stored in the mem pool."
            )
+        <*> lastTextListOption
+           ( long "txp-asset-locked-addresses"
+          <> metavar "ADRESS-LIST"
+          <> help "Set of source address which are asset-locked. Transactions which use\
+              \these addresses as transaction inputs will be silently dropped."
+           )
 
 --------------------------------------------------------------------------------
 -- Update

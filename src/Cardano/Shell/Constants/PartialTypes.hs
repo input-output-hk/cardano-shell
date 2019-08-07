@@ -93,6 +93,9 @@ data PartialNTP = PartialNTP
 data PartialTXP = PartialTXP
     { ptxpMemPoolLimitTx        :: !(Last Int)
     -- ^ Limit on the number of transactions that can be stored in the mem pool.
+    , ptxpAssetLockedSrcAddress :: !(Last [Text])
+    -- ^ Set of source address which are asset-locked. Transactions which
+    -- use these addresses as transaction inputs will be silently dropped.
     } deriving (Eq, Show, Generic)
     deriving Semigroup via GenericSemigroup PartialTXP
     deriving Monoid    via GenericMonoid PartialTXP
