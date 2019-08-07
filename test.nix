@@ -21,4 +21,8 @@ let
       touch $out
     '';
   };
-in builtins.listToAttrs (map mkTest [ "x86_64-linux" "x86_64-darwin" ])
+in builtins.listToAttrs (map mkTest [
+   "x86_64-linux"
+   # "x86_64-darwin" -- This has been (approximately since forever) causing intermittent failures, such as:
+   # https://iohk-nix-cache.s3-eu-central-1.amazonaws.com/log/8hl7r13yw4sbmyylcdpq2q3qj8d12jmk-test-ipc-x86_64-darwin.drv
+   ])
