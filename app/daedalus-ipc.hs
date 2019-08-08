@@ -4,16 +4,13 @@ module Main where
 
 import           Cardano.Prelude
 
-import           Cardano.BM.Configuration.Static (defaultConfigStdout)
-import           Cardano.BM.Setup (setupTrace_)
 import           Cardano.Shell.DaedalusIPC
 
+-- TODO(KS): If you want to provide the trace functions you need to pass them.
 main :: IO ()
 main = fmap readEither <$> getArgs >>= \case
   [Right port] -> do
-    c <- defaultConfigStdout
-    (tr, _sb) <- setupTrace_ c "daedalus-ipc"
-    daedalusIPC tr port
+    daedalusIPC port
   _ -> do
     putStrLn ("Usage: daedalus-ipc PORT" :: Text)
     exitFailure

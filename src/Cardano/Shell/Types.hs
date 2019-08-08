@@ -1,21 +1,17 @@
 {-# LANGUAGE Rank2Types #-}
 
 module Cardano.Shell.Types
-    ( CardanoEnvironment (..)
-    , CardanoFeature (..)
+    ( CardanoFeature (..)
     , CardanoFeatureInit (..)
     , NoDependency (..)
     , ApplicationEnvironment (..)
     , CardanoApplication (..)
-    , initializeCardanoEnvironment
     , applicationProductionMode
     ) where
 
 import           Cardano.Prelude
 
 import           Control.Concurrent.Classy (MonadConc)
-
-import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 
 -- | The top level module we use to run the key functions.
 newtype CardanoApplication = CardanoApplication { runCardanoApplication :: IO () }
@@ -31,19 +27,6 @@ applicationProductionMode :: ApplicationEnvironment -> Bool
 applicationProductionMode Production = True
 applicationProductionMode _          = False
 
--- | The common runtime environment for all features in the server.
--- All features have access to this environment.
-data CardanoEnvironment = CardanoEnvironment
-    { ceLogEnv   :: Text
-    }
-
--- | Initialise 'ServerEnv'
-initializeCardanoEnvironment :: IO CardanoEnvironment
-initializeCardanoEnvironment = do
-    return CardanoEnvironment
-        { ceLogEnv      = "To implement"
-        }
-
 -- | The option to not have any additional dependency for the @CardanoFeature@.
 data NoDependency = NoDependency
     deriving (Eq, Show)
@@ -54,10 +37,10 @@ data NoConfiguration = NoConfiguration
 
 -- | Cardano feature initialization.
 -- We are saying "you have the responsibility to make sure you use the right context!".
-data CardanoFeatureInit dependency configuration layer = CardanoFeatureInit
+data CardanoFeatureInit env dependency cardanoConfiguration featureConfiguration layer = CardanoFeatureInit
     { featureType                   :: !Text
     -- ^ The type of the feature that we use.
-    , featureInit                   :: CardanoEnvironment -> dependency -> CardanoConfiguration -> configuration -> IO layer
+    , featureInit                   :: env -> dependency -> cardanoConfiguration -> featureConfiguration -> IO layer
     -- ^ Again, we are not sure how is the user going to run the actual feature,
     -- so we provide him with the most flexible/powerful context we have, @IO@.
     -- Notice the arrangement of the parameters - specific, general, specific, general, result.

@@ -24,9 +24,6 @@ library
   exposed-modules:
       Cardano.Shell.Lib
     , Cardano.Shell.Types
-    -- Configuration
-    , Cardano.Shell.Configuration.Types
-    , Cardano.Shell.Configuration.Lib
     -- NodeIPC
     , Cardano.Shell.NodeIPC
     , Cardano.Shell.NodeIPC.General
@@ -35,20 +32,12 @@ library
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
     , Cardano.Shell.Update.Lib
-    -- Constants
-    , Cardano.Shell.Constants.PartialTypes
-    , Cardano.Shell.Constants.Types
-    , Cardano.Shell.Constants.CLI
-    , Cardano.Shell.Presets
-    -- Features
-    , Cardano.Shell.Features.Logging
   other-modules:
       Cardano.Shell.NodeIPC.Lib
     , Cardano.Shell.NodeIPC.Message
     , Cardano.Shell.NodeIPC.ServerExample
   hs-source-dirs:
-      app
-    , src
+      src
     , specs
   build-depends:
       aeson
@@ -59,20 +48,14 @@ library
     , cardano-prelude
     , concurrency
     , containers
-    , contravariant
-    , dhall
     , directory
     , formatting
-    , iohk-monitoring
-    , optparse-applicative
     , process
     , QuickCheck
     , safe-exceptions
-    , stm
     , async
     , text
     , transformers
-    , generic-monoid
   if os(windows)
     build-depends:     Win32
 
@@ -81,38 +64,6 @@ library
                        OverloadedStrings
 
   ghc-options:         -Wall
-                       -Wcompat
-                       -Wincomplete-record-updates
-                       -Wincomplete-uni-patterns
-                       -Wredundant-constraints
-                       -Wpartial-fields
-
-executable cardano-shell-exe
-  main-is: Main.hs
-  other-modules:
-      Paths_cardano_shell
-    , Cardano.Shell.Features.Logging
-    , Cardano.Shell.Features.Networking
-  hs-source-dirs:
-      app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base >=4.7 && <5
-    , cardano-shell
-    , cardano-prelude
-    -- util
-    , pretty-show >=1.9.5
-    , optparse-applicative
-    , safe-exceptions
-    , stm
-    -- features
-    , iohk-monitoring
-  default-language:    Haskell2010
-  default-extensions:  NoImplicitPrelude
-                       OverloadedStrings
-
-  ghc-options:         -Wall
-                       -Werror
                        -Wcompat
                        -Wincomplete-record-updates
                        -Wincomplete-uni-patterns
@@ -130,8 +81,6 @@ executable node-ipc
       base >=4.7 && <5
     , cardano-shell
     , cardano-prelude
-    , optparse-applicative
-    , safe-exceptions
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
@@ -151,9 +100,6 @@ executable daedalus-ipc
       base >=4.7 && <5
     , cardano-shell
     , cardano-prelude
-    , optparse-applicative
-    , safe-exceptions
-    , iohk-monitoring
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
@@ -175,11 +121,8 @@ executable cardano-launcher
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , cardano-shell
     , cardano-prelude
     , cardano-sl-x509
-    -- conccurency
-    , async
     -- process managment
     , process
     , turtle
@@ -190,7 +133,6 @@ executable cardano-launcher
     , formatting
     -- exception handling
     , safe-exceptions
-    , optparse-applicative
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
@@ -209,7 +151,6 @@ test-suite cardano-shell-test
   main-is: Spec.hs
   other-modules:
       Paths_cardano_shell
-      DhallConfigSpec
       DaedalusIPCSpec
       UpdaterSpec
   if !os(windows)
@@ -225,8 +166,6 @@ test-suite cardano-shell-test
     , base >=4.7 && <5
     , cardano-shell
     , cardano-prelude
-    , dhall
-    , safe-exceptions
     , process
     -- quickcheck
     , QuickCheck
@@ -234,13 +173,8 @@ test-suite cardano-shell-test
     , quickcheck-state-machine >= 0.6
     -- required because of QSM
     , tree-diff
-    , pretty-show >=1.9.5
     -- tests
     , hspec
-    , hspec-contrib
-    , concurrency
-    , dejafu
-    , hunit-dejafu
   build-tool-depends:
       cardano-shell:daedalus-ipc
   default-language:    Haskell2010
