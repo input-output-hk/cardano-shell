@@ -8,6 +8,10 @@ commonLib.nix-tools.release-nix {
   # are interested in building on CI via nix-tools.
   packages = [ "cardano-shell" ];
 
+  # non nix-tools jobs from default.nix that we want to build for
+  # all supported systems.
+  builds-on-supported-systems = [ "shell" ];
+
   # The set of jobs we consider crutial for each CI run.
   # if a single one of these fails, the build will be marked
   # as failed.
@@ -52,7 +56,7 @@ commonLib.nix-tools.release-nix {
     jobs.nix-tools.libs.x86_64-pc-mingw32-cardano-shell.x86_64-linux
     # tests
     jobs.tests.ipc.x86_64-linux
-    jobs.tests.ipc.x86_64-darwin
+    # jobs.tests.ipc.x86_64-darwin # See comment in test.nix
   ];
   extraBuilds = {
     tests.ipc = import ./test.nix;

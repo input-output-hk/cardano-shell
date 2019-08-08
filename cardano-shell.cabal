@@ -1,3 +1,4 @@
+cabal-version:  2.2
 name:           cardano-shell
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/cardano-shell#readme>
@@ -7,13 +8,13 @@ bug-reports:    https://github.com/input-output-hk/cardano-shell/issues
 author:         IOHK
 maintainer:     operations@iohk.io
 copyright:      2018 IOHK
-license:        MIT
-license-file:   LICENSE
+license:        Apache-2.0
+license-files:  LICENSE, NOTICE
 build-type:     Simple
-cabal-version:  >= 1.10
 extra-source-files:
     ChangeLog.md
     README.md
+    test/js/mock-daedalus.js
 
 source-repository head
   type: git
@@ -28,11 +29,16 @@ library
     , Cardano.Shell.Configuration.Lib
     -- NodeIPC
     , Cardano.Shell.NodeIPC
+    , Cardano.Shell.NodeIPC.General
+    , Cardano.Shell.DaedalusIPC
     -- Update system
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
+    , Cardano.Shell.Update.Lib
     -- Constants
+    , Cardano.Shell.Constants.PartialTypes
     , Cardano.Shell.Constants.Types
+    , Cardano.Shell.Constants.CLI
     , Cardano.Shell.Presets
     -- Features
     , Cardano.Shell.Features.Logging
@@ -40,7 +46,6 @@ library
       Cardano.Shell.NodeIPC.Lib
     , Cardano.Shell.NodeIPC.Message
     , Cardano.Shell.NodeIPC.ServerExample
-
   hs-source-dirs:
       app
     , src
@@ -64,8 +69,12 @@ library
     , QuickCheck
     , safe-exceptions
     , stm
+    , async
     , text
     , transformers
+    , generic-monoid
+  if os(windows)
+    build-depends:     Win32
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
@@ -92,6 +101,7 @@ executable cardano-shell-exe
     , cardano-shell
     , cardano-prelude
     -- util
+    , pretty-show >=1.9.5
     , optparse-applicative
     , safe-exceptions
     , stm
@@ -122,6 +132,28 @@ executable node-ipc
     , cardano-prelude
     , optparse-applicative
     , safe-exceptions
+  default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
+                       OverloadedStrings
+
+  ghc-options:         -Wall
+                       -Werror
+                       -Wcompat
+                       -Wincomplete-record-updates
+                       -Wincomplete-uni-patterns
+                       -Wredundant-constraints
+                       -Wpartial-fields
+
+executable daedalus-ipc
+  main-is: app/daedalus-ipc.hs
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , cardano-shell
+    , cardano-prelude
+    , optparse-applicative
+    , safe-exceptions
+    , iohk-monitoring
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
@@ -178,6 +210,8 @@ test-suite cardano-shell-test
   other-modules:
       Paths_cardano_shell
       DhallConfigSpec
+      DaedalusIPCSpec
+      UpdaterSpec
   if !os(windows)
     other-modules:
       NodeIPCSpec
@@ -193,6 +227,7 @@ test-suite cardano-shell-test
     , cardano-prelude
     , dhall
     , safe-exceptions
+    , process
     -- quickcheck
     , QuickCheck
     -- SM
@@ -206,6 +241,8 @@ test-suite cardano-shell-test
     , concurrency
     , dejafu
     , hunit-dejafu
+  build-tool-depends:
+      cardano-shell:daedalus-ipc
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings

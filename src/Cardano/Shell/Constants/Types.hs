@@ -1,9 +1,15 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Cardano.Shell.Constants.Types
     ( CardanoConfiguration (..)
     , Core (..)
-    , Genesis (..)
+    -- * specific for @Core@
+    , RequireNetworkMagic (..)
+    , NodeProtocol (..)
     , Spec (..)
     , Initializer (..)
+    -- * rest
     , TestBalance (..)
     , FakeAvvmBalance (..)
     , BlockVersionData (..)
@@ -15,17 +21,17 @@ module Cardano.Shell.Constants.Types
     , NTP (..)
     , Update (..)
     , TXP (..)
-    , SSC (..)
     , DLG (..)
     , Block (..)
     , Node (..)
     , TLS (..)
     , Wallet (..)
-    , Throttle (..)
     , Certificate (..)
     ) where
 
 import           Cardano.Prelude
+
+
 
 --------------------------------------------------------------------------------
 -- Cardano Configuration Data Structures
@@ -48,7 +54,6 @@ data CardanoConfiguration = CardanoConfiguration
     , ccNTP                 :: !NTP
     , ccUpdate              :: !Update
     , ccTXP                 :: !TXP
-    , ccSSC                 :: !SSC
     , ccDLG                 :: !DLG
     , ccBlock               :: !Block
     , ccNode                :: !Node
@@ -56,16 +61,22 @@ data CardanoConfiguration = CardanoConfiguration
     , ccWallet              :: !Wallet
     } deriving (Eq, Show)
 
-data Core = Core
-    { coGenesis              :: !Genesis
-    , coRequiresNetworkMagic :: !Text
-      -- ^ Bool-isomorphic flag indicating whether we're on testnet.
-      -- or mainnet/staging.
-    , coDBSerializeVersion   :: !Integer
-      -- ^ Versioning for values in node's DB.
-    } deriving (Eq, Show)
+-- | Do we require network magic or not?
+-- Network magic allows the differentiation from mainnet and testnet.
+data RequireNetworkMagic
+    = RequireNetworkMagic
+    | NoRequireNetworkMagic
+    deriving (Eq, Show, Generic)
 
--- | The genesis section.
+-- | The type of the protocol being run on the node.
+data NodeProtocol
+    = BFTProtocol
+    | PraosProtocol
+    | MockPBFTProtocol
+    | RealPBFTProtocol
+    deriving (Eq, Show, Generic)
+
+-- | Core configuration.
 -- For now, we only store the path to the genesis file(s) and their hash.
 -- The rest is in the hands of the modules/features that need to use it.
 -- The info flow is:
@@ -73,12 +84,26 @@ data Core = Core
 -- And separately:
 -- __genesis file ---> runtime config ---> running node__
 -- __static config ---> ...__
---
-data Genesis = Genesis
-    { geSrc             :: !FilePath
-    , geGenesisHash     :: !Text
-    , gePrevBlockHash   :: !Text
-    } deriving (Eq, Show)
+data Core = Core
+    { coGenesisFile                 :: !FilePath
+    -- ^ Genesis source file JSON.
+    , coGenesisHash                 :: !Text
+    -- ^ Genesis previous block hash.
+    , coNodeId                      :: !(Maybe Int)
+    -- ^ Core node ID, the number of the node.
+    , coNumCoreNodes                :: !(Maybe Int)
+    -- ^ The number of the core nodes.
+    , coNodeProtocol                :: !NodeProtocol
+    -- ^ The type of protocol run on the node.
+    , coStaticKeySigningKeyFile     :: !(Maybe FilePath)
+    -- ^ Static key signing file.
+    , coStaticKeyDlgCertFile        :: !(Maybe FilePath)
+    -- ^ Static key delegation certificate.
+    , coRequiresNetworkMagic        :: !RequireNetworkMagic
+    -- ^ Do we require the network byte indicator for mainnet, testnet or staging?
+    , coPBftSigThd                  :: !(Maybe Double)
+    -- ^ PBFT signature threshold system parameters
+    } deriving (Eq, Show, Generic)
 
 data Spec = Spec
     { spInitializer       :: !Initializer
@@ -181,31 +206,28 @@ data NTP = NTP
 
 data Update = Update
     { upApplicationName       :: !Text
+    -- ^ Update application name.
     , upApplicationVersion    :: !Int
+    -- ^ Update application version.
     , upLastKnownBlockVersion :: !LastKnownBlockVersion
+    -- ^ Update last known block version.
     } deriving (Eq, Show)
 
 data LastKnownBlockVersion = LastKnownBlockVersion
     { lkbvMajor :: !Int
+    -- ^ Last known block version major.
     , lkbvMinor :: !Int
+    -- ^ Last known block version minor.
     , lkbvAlt   :: !Int
-    } deriving (Eq, Show)
-
-data SSC = SSC
-    { sscMPCSendInterval               :: !Word
-      -- ^ Length of interval for sending MPC message
-    , sscMdNoCommitmentsEpochThreshold :: !Int
-      -- ^ Threshold of epochs for malicious activity detection
-    , sscNoReportNoSecretsForEpoch1    :: !Bool
-      -- ^ Don't print “SSC couldn't compute seed” for the first epoch.
+    -- ^ Last known block version alternative.
     } deriving (Eq, Show)
 
 data TXP = TXP
     { txpMemPoolLimitTx        :: !Int
-      -- ^ Limit on the number of transactions that can be stored in the mem pool.
+    -- ^ Limit on the number of transactions that can be stored in the mem pool.
     , txpAssetLockedSrcAddress :: ![Text]
-      -- ^ Set of source address which are asset-locked. Transactions which
-      -- use these addresses as transaction inputs will be silently dropped.
+    -- ^ Set of source address which are asset-locked. Transactions which
+    -- use these addresses as transaction inputs will be silently dropped.
     } deriving (Eq, Show)
 
 data DLG = DLG
@@ -239,21 +261,14 @@ data Block = Block
 
 --- | Top-level Cardano SL node configuration
 data Node = Node
-    { noNetworkConnectionTimeout     :: !Int
-      -- ^ Network connection timeout in milliseconds.
-    , noConversationEstablishTimeout :: !Int
-      -- ^ Conversation acknowledgement timeout in milliseconds.
-    , noBlockRetrievalQueueSize      :: !Int
-      -- ^ Block retrieval queue capacity.
-    , noPendingTxResubmissionPeriod  :: !Int
-      -- ^ Minimal delay between pending transactions resubmission.
-    , noWalletProductionApi          :: !Bool
-      -- ^ Whether hazard wallet endpoint should be disabled.
-    , noWalletTxCreationDisabled     :: !Bool
-      -- ^ Disallow transaction creation or re-submission of
-      -- pending transactions by the wallet.
-    , noExplorerExtendedApi          :: !Bool
-      -- ^ Enable explorer extended API for fetching more.
+    { noSystemStartTime                 :: !Integer
+    -- ^ Node system start time.
+    , noSlotLength                      :: !Integer
+    -- ^ Slot length time.
+    , noNetworkConnectionTimeout        :: !Int
+    -- ^ Network connection timeout in milliseconds.
+    , noHandshakeTimeout                :: !Int
+    -- ^ Protocol acknowledgement timeout in milliseconds.
     } deriving (Eq, Show)
 
 data TLS = TLS
@@ -269,13 +284,8 @@ data Certificate = Certificate
     , certAltDNS       :: ![Text]
     } deriving (Eq, Show)
 
--- | Contains wallet configuration variables.
+-- | Wallet rate-limiting/throttling parameters
 data Wallet = Wallet
-    { waThrottle :: !Throttle
-    } deriving (Eq, Show)
-
--- | Rate-limiting/throttling parameters
-data Throttle = SetThrottle
     { thEnabled :: !Bool
     , thRate    :: !Int
     , thPeriod  :: !Text

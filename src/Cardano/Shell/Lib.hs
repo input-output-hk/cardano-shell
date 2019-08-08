@@ -20,8 +20,8 @@ import           Prelude (Show (..))
 
 import           Control.Exception.Safe (throwM)
 
-import qualified Control.Concurrent.Classy.Async as CA
 import           Control.Concurrent.Classy.Async (async, cancel)
+import qualified Control.Concurrent.Classy.Async as CA
 
 import           GHC.IO.Handle.Lock (LockMode (..), hTryLock)
 
@@ -35,6 +35,7 @@ import           Cardano.Shell.Types (ApplicationEnvironment (..),
                                       CardanoEnvironment, CardanoFeature (..),
                                       initializeCardanoEnvironment)
 
+import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfiguration (..))
 import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
 
 import           Cardano.Shell.Presets (mainnetConfiguration)
@@ -48,6 +49,7 @@ data GeneralException
     | FileNotFoundException FilePath
     | ApplicationAlreadyRunningException
     | LockFileDoesNotExist FilePath
+    | ConfigurationError Text
     deriving (Eq)
 
 instance Exception GeneralException
@@ -57,6 +59,7 @@ instance Buildable GeneralException where
     build (FileNotFoundException filePath)      = bprint ("File not found on path '"%stext%"'.") (strConv Lenient filePath)
     build ApplicationAlreadyRunningException    = bprint "Application is already running. Please shut down the application first."
     build (LockFileDoesNotExist filePath)       = bprint ("Lock file not found on path '"%stext%"'.") (strConv Lenient filePath)
+    build (ConfigurationError etext)            = bprint ("Configuration error: "%stext%".") etext
 
 -- | Instance so we can see helpful error messages when something goes wrong.
 instance Show GeneralException where
@@ -147,7 +150,7 @@ runCardanoApplicationWithFeatures _ cardanoFeatures cardanoApplication = do
         pure ()
 
 
-type AllFeaturesInitFunction = CardanoConfiguration -> CardanoEnvironment -> IO [CardanoFeature]
+type AllFeaturesInitFunction = PartialCardanoConfiguration -> CardanoEnvironment -> IO [CardanoFeature]
 
 
 -- | The wrapper for the application providing modules.

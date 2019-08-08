@@ -4,6 +4,7 @@
 dist/*
 dist-newstyle/*
 .ghc.environment.*
+stack.yaml.lock
 
 # From daedalus-bridge
 node_modules/*
@@ -12,6 +13,7 @@ configuration/server/
 
 # Config files
 .ghci
+cabal.project.local
 
 # Our custom build script (util-scripts/build.sh)
 b
