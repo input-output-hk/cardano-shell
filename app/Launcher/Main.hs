@@ -7,7 +7,7 @@ module Main where
 import           Cardano.Prelude
 import qualified Prelude
 
-import           System.Directory (createDirectoryIfMissing, doesFileExist)
+import           System.Directory (createDirectoryIfMissing)
 import           System.FilePath ((</>))
 
 import qualified System.Process as Process
@@ -64,10 +64,14 @@ main = do
 
     -- Really no clue what to put there and how will the wallet work.
     let walletPath :: WalletPath
-        walletPath = WalletPath "stack"
+        walletPath = WalletPath "/home/hiroto/.local/bin/daedalus"
+    -- Daedalus with just front-end: ./daedalus-frontend
+    -- Fully functional daedalus: /home/hiroto/.local/bin/daedalus
+    -- Mock file that asks for update: ./test/testDaedalusFrontend.sh
+    -- Mock file that ask for graceful terminatation: ./test/testDaedalusExits.sh
 
     let walletArgs :: WalletArguments
-        walletArgs = WalletArguments ["exec", "cardano-shell-exe"]
+        walletArgs = WalletArguments ["./launcher-config.yaml"]
 
     -- | Yes, this is something we probably need to replace with actual loggging.
     let externalDependencies :: ExternalDependencies
@@ -75,6 +79,13 @@ main = do
             { logInfo       = putTextLn
             , logError      = putTextLn
             , logNotice     = putTextLn
+            }
+
+    let updaterData :: UpdaterData
+        updaterData = UpdaterData
+            { udPath = "./test/testUpdater.sh"
+            , udArgs = []
+            , udArchivePath = ""
             }
 
     -- | If we need to, we first check if there are certificates so we don't have
@@ -85,24 +96,9 @@ main = do
         launcherConfig
         (TLSPath "./configuration/") -- where to generate the certificates
 
-    update (runWallet externalDependencies walletPath walletArgs)
-  where
-    update :: IO ExitCode -> IO ExitCode
-    update runWalletFunc = do
-        updaterExists <- doesFileExist (udPath testUpdaterData)
-        if updaterExists
-            then do       
-                updaterExitCode <- runUpdater testUpdaterData
-                case updaterExitCode of
-                    ExitSuccess -> do
-                    -- With the exit code
-                        exitCode <- runWalletFunc
-                        case exitCode of
-                            -- This will run the updater and relaunch the wallet
-                            ExitFailure 20 -> update runWalletFunc
-                            _              -> return $ exitCode
-                    _ -> return updaterExitCode
-            else runWalletFunc
+    _ <- runUpdater updaterData -- On windows, process dies here
+    -- You still want to run the wallet even if the update fails
+    runWallet externalDependencies walletPath walletArgs updaterData
 
 -- | Launching the wallet.
 -- For now, this is really light since we don't know whether we will reuse the
@@ -112,26 +108,31 @@ runWallet
     :: ExternalDependencies
     -> WalletPath
     -> WalletArguments
+    -> UpdaterData
     -> IO ExitCode
-runWallet ed@ExternalDependencies{..} walletPath walletArguments = do
+runWallet ed@ExternalDependencies{..} walletPath walletArguments updaterData = do
+    let restart = runWallet ed walletPath walletArguments updaterData
     logNotice "Starting the wallet"
 
     -- create the wallet process
     walletExitStatus <- system (createProc Process.Inherit walletPath walletArguments) mempty
 
     case walletExitStatus of
+        ExitFailure 20 -> do
+            _ <- runUpdater updaterData
+            restart
         ExitFailure 21 -> do
             logNotice "The wallet has exited with code 21"
             --logInfo "Switching Configuration to safe mode"
             --saveSafeMode lo True
-            runWallet ed walletPath walletArguments
+            restart
 
         ExitFailure 22 -> do
             logNotice "The wallet has exited with code 22"
             --logInfo "Switching Configuration to normal mode"
             --saveSafeMode lo False
-            runWallet ed walletPath walletArguments
-
+            restart
+-- (TODO:) Implement GPU safe mode (Restart daedalus with new arguments)
         -- Otherwise, return the exit status.
         _ -> pure walletExitStatus
   where
@@ -262,10 +263,3 @@ generateTlsCertificates externalDependencies launcherConfig (TLSPath tlsPath) = 
                 cert
             writeCredentials (certOutDir desc </> certFilename desc) (key, cert)
             writeCertificate (certOutDir desc </> caName) caCert
-
-testUpdaterData :: UpdaterData
-testUpdaterData =
-    UpdaterData
-        "./test/testUpdater.sh"
-        []
-        ""

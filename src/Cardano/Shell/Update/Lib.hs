@@ -30,6 +30,7 @@ data UpdaterData = UpdaterData
     { udPath        :: !FilePath
     , udArgs        :: ![Text]
     , udArchivePath :: !FilePath
+-- checksum value for updater
     }
 
 -- Windows: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/win64.dhall#L32-L35
@@ -46,7 +47,7 @@ updaterData = case buildOS of
                     ["-FW"]
                     "\\${HOME}/Library/Application Support/Daedalus/installer.pkg"
     _       -> UpdaterData
-                    "/bin/update-runner"
+                    "/bin/update-runner" -- Does this path exist?
                     []
                     "\\${XDG_DATA_HOME}/Daedalus/installer.sh"
 
@@ -82,16 +83,20 @@ runUpdater' runCommand ud = do
     let path = udPath ud
     let args = map toS $ udArgs ud
     let archive = (udArchivePath ud)
-    exitCode <- case buildOS of
-        Windows -> do
-            writeWindowsUpdaterRunner archive
-            runCommand archive args archive
-        _ -> runCommand path args archive
-    case exitCode of
-        ExitSuccess -> do
-            whenM (doesFileExist archive) $ removeFile archive
-            return $ ExitSuccess
-        _ -> return $ exitCode
+    updaterExist <- doesFileExist path
+    if updaterExist 
+        then do
+            exitCode <- case buildOS of
+                Windows -> do
+                    writeWindowsUpdaterRunner archive
+                    runCommand archive args archive -- Process dies here
+                _ -> runCommand path args archive
+            case exitCode of -- Will it come here?
+                ExitSuccess -> do
+                    whenM (doesFileExist archive) $ removeFile archive
+                    return $ ExitSuccess
+                _ -> return $ exitCode
+        else return $ ExitFailure 1
 
 -- | Create @.bat@ file on given @FilePath@
 --
@@ -104,7 +109,7 @@ runUpdater' runCommand ud = do
 -- Only Windows has this problem.
 writeWindowsUpdaterRunner :: FilePath -> IO ()
 writeWindowsUpdaterRunner runnerPath = do
-    exePath <- getExecutablePath
+    exePath <- getExecutablePath -- (TODO): Check that it returns absolute path!
     launcherArgs <- getArgs
 #ifdef mingw32_HOST_OS
     selfPid <- getCurrentProcessId
@@ -112,6 +117,10 @@ writeWindowsUpdaterRunner runnerPath = do
     let (selfPid :: Integer) = 0 -- This will never be run on non-Windows
 #endif
     writeFile (toS runnerPath) $ T.unlines
+    -- What info can this file supply if it fails?
+    -- How can you make this scream if it fails
+    -- Checksum of the updater exe?
+    -- Only then run it
         [ "TaskKill /PID "<> show selfPid <>" /F"
         -- Run updater
         , "%*"
@@ -126,3 +135,5 @@ writeWindowsUpdaterRunner runnerPath = do
   where
     quote :: Text -> Text
     quote str = "\"" <> str <> "\""
+    -- str = a"b
+    -- possible inject attack
