@@ -1,6 +1,5 @@
-{-# LANGUAGE LambdaCase      #-}
-{-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
@@ -107,9 +106,9 @@ runWallet
     -> WalletArguments
     -> UpdaterData
     -> IO ExitCode
-runWallet ed@ExternalDependencies{..} walletPath walletArguments updaterData = do
+runWallet ed walletPath walletArguments updaterData = do
     let restart = runWallet ed walletPath walletArguments updaterData
-    logNotice "Starting the wallet"
+    (logNotice ed) "Starting the wallet"
 
     -- create the wallet process
     walletExitStatus <- system (createProc Process.Inherit walletPath walletArguments) mempty
@@ -119,13 +118,13 @@ runWallet ed@ExternalDependencies{..} walletPath walletArguments updaterData = d
             void $ runUpdater updaterData
             restart
         ExitFailure 21 -> do
-            logNotice "The wallet has exited with code 21"
+            (logNotice ed) "The wallet has exited with code 21"
             --logInfo "Switching Configuration to safe mode"
             --saveSafeMode lo True
             restart
 
         ExitFailure 22 -> do
-            logNotice "The wallet has exited with code 22"
+            (logNotice ed) "The wallet has exited with code 22"
             --logInfo "Switching Configuration to normal mode"
             --saveSafeMode lo False
             restart
