@@ -64,11 +64,7 @@ main = do
 
     -- Really no clue what to put there and how will the wallet work.
     let walletPath :: WalletPath
-        walletPath = WalletPath "/home/hiroto/.local/bin/daedalus"
-    -- Daedalus with just front-end: ./daedalus-frontend
-    -- Fully functional daedalus: /home/hiroto/.local/bin/daedalus
-    -- Mock file that asks for update: ./test/testDaedalusFrontend.sh
-    -- Mock file that ask for graceful terminatation: ./test/testDaedalusExits.sh
+        walletPath = WalletPath "./test/testDaedalusFrontend.sh"
 
     let walletArgs :: WalletArguments
         walletArgs = WalletArguments ["./launcher-config.yaml"]
@@ -81,10 +77,11 @@ main = do
             , logNotice     = putTextLn
             }
 
+    -- | This is a mock for updater, need to replace with actual data
     let updaterData :: UpdaterData
         updaterData = UpdaterData
             { udPath = "./test/testUpdater.sh"
-            , udArgs = []
+            , udArgs = ["main"]
             , udArchivePath = ""
             }
 
@@ -96,7 +93,7 @@ main = do
         launcherConfig
         (TLSPath "./configuration/") -- where to generate the certificates
 
-    _ <- runUpdater updaterData -- On windows, process dies here
+    void $ runUpdater updaterData -- On windows, process dies here
     -- You still want to run the wallet even if the update fails
     runWallet externalDependencies walletPath walletArgs updaterData
 
@@ -119,7 +116,7 @@ runWallet ed@ExternalDependencies{..} walletPath walletArguments updaterData = d
 
     case walletExitStatus of
         ExitFailure 20 -> do
-            _ <- runUpdater updaterData
+            void $ runUpdater updaterData
             restart
         ExitFailure 21 -> do
             logNotice "The wallet has exited with code 21"
@@ -132,7 +129,6 @@ runWallet ed@ExternalDependencies{..} walletPath walletArguments updaterData = d
             --logInfo "Switching Configuration to normal mode"
             --saveSafeMode lo False
             restart
--- (TODO:) Implement GPU safe mode (Restart daedalus with new arguments)
         -- Otherwise, return the exit status.
         _ -> pure walletExitStatus
   where

@@ -30,7 +30,7 @@ data UpdaterData = UpdaterData
     { udPath        :: !FilePath
     , udArgs        :: ![Text]
     , udArchivePath :: !FilePath
--- checksum value for updater
+-- We might add checksum value for updater to ensure that we're launching the right updater
     }
 
 -- Windows: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/win64.dhall#L32-L35
@@ -91,7 +91,7 @@ runUpdater' runCommand ud = do
                     writeWindowsUpdaterRunner archive
                     runCommand archive args archive -- Process dies here
                 _ -> runCommand path args archive
-            case exitCode of -- Will it come here?
+            case exitCode of --- On windows, the function will never reach here
                 ExitSuccess -> do
                     whenM (doesFileExist archive) $ removeFile archive
                     return $ ExitSuccess
