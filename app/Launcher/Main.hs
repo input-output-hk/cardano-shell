@@ -8,7 +8,7 @@ import qualified Prelude
 
 import           System.Directory (createDirectoryIfMissing)
 import           System.FilePath ((</>))
-
+import System.Exit(exitWith)
 import qualified System.Process as Process
 import           Turtle (system)
 
@@ -50,7 +50,7 @@ newtype WalletPath = WalletPath
 -- Main
 --------------------------------------------------------------------------------
 
-main :: IO ExitCode
+main :: IO ()
 main = do
 
     let launcherConfig :: LauncherConfig
@@ -94,7 +94,8 @@ main = do
 
     void $ runUpdater updaterData -- On windows, process dies here
     -- You still want to run the wallet even if the update fails
-    runWallet externalDependencies walletPath walletArgs updaterData
+    exitCode <- runWallet externalDependencies walletPath walletArgs updaterData
+    exitWith exitCode
 
 -- | Launching the wallet.
 -- For now, this is really light since we don't know whether we will reuse the
