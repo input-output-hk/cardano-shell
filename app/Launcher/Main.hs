@@ -18,11 +18,6 @@ import           Formatting.Buildable (Buildable (..))
 
 import           Control.Exception.Safe (throwM)
 
--- import           Cardano.Shell.Update.Lib (runUpdater, updaterData)
-import           Cardano.Shell.Configuration.Types (LauncherConfig (..),
-                                                    WalletArguments (..),
-                                                    WalletPath (..))
-
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
@@ -33,12 +28,32 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
                                   writeCredentials)
 
 --------------------------------------------------------------------------------
+-- Types
+--------------------------------------------------------------------------------
+
+-- | Launcher configuration
+data LauncherConfig = LauncherConfig
+    { lcfgFilePath          :: !Text -- We really need @FilePath@ here.
+    , lcfgKey               :: !Text
+    , lcfgSystemStart       :: !(Maybe Integer)
+    , lcfgSeed              :: !(Maybe Integer)
+    } deriving (Eq, Show)
+
+newtype WalletArguments = WalletArguments
+    { getWalletArguments    :: [Text]
+    } deriving (Eq, Show)
+
+newtype WalletPath = WalletPath
+    { getWalletPath         :: Text
+    } deriving (Eq, Show)
+
+--------------------------------------------------------------------------------
 -- Main
 --------------------------------------------------------------------------------
 
 main :: IO ()
 main = do
-        
+
     let launcherConfig :: LauncherConfig
         launcherConfig = LauncherConfig
             { lcfgFilePath    = "./configuration/cert-configuration.yaml"

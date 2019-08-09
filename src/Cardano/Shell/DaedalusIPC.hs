@@ -19,7 +19,6 @@ module Cardano.Shell.DaedalusIPC
 
 import           Cardano.Prelude
 
-import           Cardano.BM.Trace (Trace, logError, logInfo, logNotice)
 import           Cardano.Shell.NodeIPC.General (NodeChannelError (..),
                                                 NodeChannelFinished (..),
                                                 runNodeChannel,
@@ -56,24 +55,25 @@ instance ToJSON MsgOut where
 -- If the IPC channel was successfully set up, this function won't return until
 -- the parent process exits. Otherwise, it will return immediately. Before
 -- returning, it will log an message about why it has exited.
+--
+-- TODO(KS): If you want to use TRACE here, you need to provide the trace functions
+-- as params OR provide a record of trace functions.
 daedalusIPC
-    :: Trace IO Text
-    -- ^ Logging object
-    -> Int
+    :: Int
     -- ^ Port number to send to Daedalus
     -> IO ()
-daedalusIPC tr port = setupNodeChannel >>= \case
+daedalusIPC port = setupNodeChannel >>= \case
     Right chan -> do
-        logInfo tr "Daedalus IPC server starting"
+        putTextLn "Daedalus IPC server starting"
         runNodeChannel (pure . msg) action chan >>= \case
             Left (NodeChannelFinished err) ->
-                logNotice tr $ "Daedalus IPC finished for this reason: " <> show err
-            Right () -> logError tr "Unreachable code"
+                putTextLn $ "Daedalus IPC finished for this reason: " <> show err
+            Right () -> putTextLn "Unreachable code"
     Left NodeChannelDisabled -> do
-        logInfo tr "Daedalus IPC is not enabled."
+        putTextLn "Daedalus IPC is not enabled."
         sleep
     Left (NodeChannelBadFD err) ->
-        logError tr $ "Problem starting Daedalus IPC: " <> show err
+        putTextLn $ "Problem starting Daedalus IPC: " <> show err
   where
     -- How to respond to an incoming message, or when there is an incoming
     -- message that couldn't be parsed.

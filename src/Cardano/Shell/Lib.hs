@@ -2,14 +2,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Cardano.Shell.Lib
-    ( ApplicationEnvironment (..)
-    , GeneralException (..)
+    ( GeneralException (..)
     , CardanoApplication (..)
     , runCardanoApplicationWithFeatures
-    , runApplication
     -- * configuration for running
-    , AllFeaturesInitFunction
-    , initializeCardanoEnvironment
     , checkIfApplicationIsRunning
     -- * additional re-exports
     , doesFileExist
@@ -30,15 +26,8 @@ import           Formatting.Buildable (Buildable (..))
 
 import           System.Directory (doesFileExist)
 
-import           Cardano.Shell.Types (ApplicationEnvironment (..),
-                                      CardanoApplication (..),
-                                      CardanoEnvironment, CardanoFeature (..),
-                                      initializeCardanoEnvironment)
-
-import           Cardano.Shell.Constants.PartialTypes (PartialCardanoConfiguration (..))
-import           Cardano.Shell.Constants.Types (CardanoConfiguration (..))
-
-import           Cardano.Shell.Presets (mainnetConfiguration)
+import           Cardano.Shell.Types (CardanoApplication (..),
+                                      CardanoFeature (..))
 
 --------------------------------------------------------------------------------
 -- General exceptions
@@ -92,11 +81,8 @@ instance Show GeneralException where
 -- it can find the app state dir by config, or from the server environment. It can release
 -- the lock file on shutdown (ok, that's actually automatic, but it fits
 -- into the framework as a nice example).
-checkIfApplicationIsRunning :: CardanoConfiguration -> IO ()
-checkIfApplicationIsRunning cardanoConfiguration = do
-
-    -- Load the path for the lock file from the configuration.
-    let lockFilePath    =  ccApplicationLockFile cardanoConfiguration
+checkIfApplicationIsRunning :: FilePath -> IO ()
+checkIfApplicationIsRunning lockFilePath = do
 
     -- If the lock file doesn't exist, throw an exception.
     -- We want to differentiate between different exceptional situations.
@@ -119,13 +105,10 @@ checkIfApplicationIsRunning cardanoConfiguration = do
 -- shut down as well.
 runCardanoApplicationWithFeatures
     :: forall m. MonadIO m
-    => ApplicationEnvironment
-    -> [CardanoFeature]
+    => [CardanoFeature]
     -> CardanoApplication
     -> m ()
-runCardanoApplicationWithFeatures _ cardanoFeatures cardanoApplication = do
-    -- We still aren't sure if we are going to use the @ApplicationEnvironment@
-    -- or not.
+runCardanoApplicationWithFeatures cardanoFeatures cardanoApplication = do
 
     -- We start all the new features.
     asyncCardanoFeatures <- mapM (liftIO . async . featureStart) cardanoFeatures
@@ -148,25 +131,4 @@ runCardanoApplicationWithFeatures _ cardanoFeatures cardanoApplication = do
 
         -- Closing
         pure ()
-
-
-type AllFeaturesInitFunction = PartialCardanoConfiguration -> CardanoEnvironment -> IO [CardanoFeature]
-
-
--- | The wrapper for the application providing modules.
-runApplication :: forall m. MonadIO m => AllFeaturesInitFunction -> IO () -> m ()
-runApplication initializeAllFeatures application = do
-
-    -- General
-    cardanoConfiguration            <-  liftIO $ pure mainnetConfiguration
-    cardanoEnvironment              <-  liftIO initializeCardanoEnvironment
-
-    let cardanoApplication :: CardanoApplication
-        cardanoApplication = CardanoApplication application
-
-    -- Here we initialize all the features.
-    cardanoFeatures <- liftIO $ initializeAllFeatures cardanoConfiguration cardanoEnvironment
-
-    -- Here we run them.
-    runCardanoApplicationWithFeatures Development cardanoFeatures cardanoApplication
 
