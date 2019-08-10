@@ -36,13 +36,6 @@
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {
-        "cardano-shell-exe" = {
-          depends = [
-            (hsPkgs.base)
-            (hsPkgs.cardano-shell)
-            (hsPkgs.cardano-prelude)
-            ];
-          };
         "node-ipc" = {
           depends = [
             (hsPkgs.base)
