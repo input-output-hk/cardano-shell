@@ -122,6 +122,7 @@ executable cardano-launcher
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
+    , cardano-shell
     , cardano-sl-x509
     -- process managment
     , process
