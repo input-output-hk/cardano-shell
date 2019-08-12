@@ -7,7 +7,6 @@
 
 module Cardano.Shell.Update.Lib
     ( UpdaterData(..)
-    , UpdateError(..)
     , RunCmdFunc
     , updaterData
     , runUpdater
@@ -31,6 +30,7 @@ data UpdaterData = UpdaterData
     { udPath        :: !FilePath
     , udArgs        :: ![Text]
     , udArchivePath :: !FilePath
+-- We might add checksum value for updater to ensure that we're launching the right updater
     }
 
 -- Windows: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/win64.dhall#L32-L35
@@ -47,14 +47,9 @@ updaterData = case buildOS of
                     ["-FW"]
                     "\\${HOME}/Library/Application Support/Daedalus/installer.pkg"
     _       -> UpdaterData
-                    "/bin/update-runner"
+                    "/bin/update-runner" -- Does this path exist?
                     []
                     "\\${XDG_DATA_HOME}/Daedalus/installer.sh"
-
-data UpdateError
-    = UpdateFailed Int
-    | UpdaterDoesNotExist
-    deriving (Eq, Show)
 
 -- | Run the update system
 --
@@ -67,7 +62,7 @@ data UpdateError
 -- Check that @udPath@ exists, but instead of running the command directly, you
 -- first have to generate a @.bat@ file which will act as a script.
 -- After it being generated, you run that script.
-runUpdater :: UpdaterData -> IO (Either UpdateError ExitCode)
+runUpdater :: UpdaterData -> IO ExitCode
 runUpdater = runUpdater' runCmd
   where
     runCmd :: FilePath -> [String] -> FilePath -> IO ExitCode
@@ -83,26 +78,25 @@ type RunCmdFunc
 
 -- | @runUpdater@ but can inject any runCommand function.
 -- This is used for testing.
-runUpdater' :: RunCmdFunc -> UpdaterData -> IO (Either UpdateError ExitCode)
+runUpdater' :: RunCmdFunc -> UpdaterData -> IO ExitCode
 runUpdater' runCommand ud = do
     let path = udPath ud
     let args = map toS $ udArgs ud
     let archive = (udArchivePath ud)
-    updaterExists <- doesFileExist path
-    if updaterExists
+    updaterExist <- doesFileExist path
+    if updaterExist 
         then do
             exitCode <- case buildOS of
                 Windows -> do
                     writeWindowsUpdaterRunner archive
-                    runCommand archive args archive
+                    runCommand archive args archive -- Process dies here
                 _ -> runCommand path args archive
-            case exitCode of
+            case exitCode of --- On windows, the function will never reach here
                 ExitSuccess -> do
                     whenM (doesFileExist archive) $ removeFile archive
-                    return . Right $ ExitSuccess
-                ExitFailure code -> return . Left $ UpdateFailed code
-        else
-            return . Left $ UpdaterDoesNotExist
+                    return $ ExitSuccess
+                _ -> return $ exitCode
+        else return $ ExitFailure 1
 
 -- | Create @.bat@ file on given @FilePath@
 --
@@ -115,7 +109,7 @@ runUpdater' runCommand ud = do
 -- Only Windows has this problem.
 writeWindowsUpdaterRunner :: FilePath -> IO ()
 writeWindowsUpdaterRunner runnerPath = do
-    exePath <- getExecutablePath
+    exePath <- getExecutablePath -- (TODO): Check that it returns absolute path!
     launcherArgs <- getArgs
 #ifdef mingw32_HOST_OS
     selfPid <- getCurrentProcessId
@@ -123,6 +117,10 @@ writeWindowsUpdaterRunner runnerPath = do
     let (selfPid :: Integer) = 0 -- This will never be run on non-Windows
 #endif
     writeFile (toS runnerPath) $ T.unlines
+    -- What info can this file supply if it fails?
+    -- How can you make this scream if it fails
+    -- Checksum of the updater exe?
+    -- Only then run it
         [ "TaskKill /PID "<> show selfPid <>" /F"
         -- Run updater
         , "%*"
@@ -137,3 +135,5 @@ writeWindowsUpdaterRunner runnerPath = do
   where
     quote :: Text -> Text
     quote str = "\"" <> str <> "\""
+    -- str = a"b
+    -- possible inject attack

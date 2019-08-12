@@ -54,6 +54,7 @@
           depends = [
             (hsPkgs.base)
             (hsPkgs.cardano-prelude)
+            (hsPkgs.cardano-shell)
             (hsPkgs.cardano-sl-x509)
             (hsPkgs.process)
             (hsPkgs.turtle)

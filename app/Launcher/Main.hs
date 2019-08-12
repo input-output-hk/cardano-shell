@@ -1,6 +1,5 @@
-{-# LANGUAGE LambdaCase      #-}
-{-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
@@ -9,7 +8,7 @@ import qualified Prelude
 
 import           System.Directory (createDirectoryIfMissing)
 import           System.FilePath ((</>))
-
+import System.Exit(exitWith)
 import qualified System.Process as Process
 import           Turtle (system)
 
@@ -17,7 +16,7 @@ import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
 import           Control.Exception.Safe (throwM)
-
+import           Cardano.Shell.Update.Lib (UpdaterData(..), runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
@@ -64,10 +63,10 @@ main = do
 
     -- Really no clue what to put there and how will the wallet work.
     let walletPath :: WalletPath
-        walletPath = WalletPath "stack"
+        walletPath = WalletPath "./test/testDaedalusFrontend.sh"
 
     let walletArgs :: WalletArguments
-        walletArgs = WalletArguments ["exec", "cardano-shell-exe"]
+        walletArgs = WalletArguments ["./launcher-config.yaml"]
 
     -- | Yes, this is something we probably need to replace with actual loggging.
     let externalDependencies :: ExternalDependencies
@@ -75,6 +74,14 @@ main = do
             { logInfo       = putTextLn
             , logError      = putTextLn
             , logNotice     = putTextLn
+            }
+
+    -- | This is a mock for updater, need to replace with actual data
+    let updaterData :: UpdaterData
+        updaterData = UpdaterData
+            { udPath = "./test/testUpdater.sh"
+            , udArgs = ["main"]
+            , udArchivePath = ""
             }
 
     -- | If we need to, we first check if there are certificates so we don't have
@@ -85,10 +92,10 @@ main = do
         launcherConfig
         (TLSPath "./configuration/") -- where to generate the certificates
 
-    -- With the exit code
-    _ <- runWallet externalDependencies walletPath walletArgs
-
-    pure ()
+    void $ runUpdater updaterData -- On windows, process dies here
+    -- You still want to run the wallet even if the update fails
+    exitCode <- runWallet externalDependencies walletPath walletArgs updaterData
+    exitWith exitCode
 
 -- | Launching the wallet.
 -- For now, this is really light since we don't know whether we will reuse the
@@ -98,26 +105,30 @@ runWallet
     :: ExternalDependencies
     -> WalletPath
     -> WalletArguments
+    -> UpdaterData
     -> IO ExitCode
-runWallet ed@ExternalDependencies{..} walletPath walletArguments = do
-    logNotice "Starting the wallet"
+runWallet ed walletPath walletArguments updaterData = do
+    let restart = runWallet ed walletPath walletArguments updaterData
+    (logNotice ed) "Starting the wallet"
 
     -- create the wallet process
     walletExitStatus <- system (createProc Process.Inherit walletPath walletArguments) mempty
 
     case walletExitStatus of
+        ExitFailure 20 -> do
+            void $ runUpdater updaterData
+            restart
         ExitFailure 21 -> do
-            logNotice "The wallet has exited with code 21"
+            (logNotice ed) "The wallet has exited with code 21"
             --logInfo "Switching Configuration to safe mode"
             --saveSafeMode lo True
-            runWallet ed walletPath walletArguments
+            restart
 
         ExitFailure 22 -> do
-            logNotice "The wallet has exited with code 22"
+            (logNotice ed) "The wallet has exited with code 22"
             --logInfo "Switching Configuration to normal mode"
             --saveSafeMode lo False
-            runWallet ed walletPath walletArguments
-
+            restart
         -- Otherwise, return the exit status.
         _ -> pure walletExitStatus
   where
@@ -248,5 +259,3 @@ generateTlsCertificates externalDependencies launcherConfig (TLSPath tlsPath) = 
                 cert
             writeCredentials (certOutDir desc </> certFilename desc) (key, cert)
             writeCertificate (certOutDir desc </> caName) caCert
-
-
