@@ -32,6 +32,7 @@ library
     , CardanoShellSpec
     , Cardano.Shell.Update.Types
     , Cardano.Shell.Update.Lib
+    , Cardano.Shell.Launcher
   other-modules:
       Cardano.Shell.NodeIPC.Lib
     , Cardano.Shell.NodeIPC.Message
@@ -56,6 +57,7 @@ library
     , async
     , text
     , transformers
+    , turtle
   if os(windows)
     build-depends:     Win32
 

@@ -7,21 +7,22 @@ import           Cardano.Prelude
 import qualified Prelude
 
 import           System.Directory (createDirectoryIfMissing)
+import           System.Exit (exitWith)
 import           System.FilePath ((</>))
-import System.Exit(exitWith)
-import qualified System.Process as Process
-import           Turtle (system)
 
 import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
-import           Control.Exception.Safe (throwM)
-import           Cardano.Shell.Update.Lib (UpdaterData(..), runUpdater)
+import           Cardano.Shell.Launcher (ExternalDependencies (..),
+                                         WalletArguments (..), WalletPath (..),
+                                         runWallet)
+import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
                                              decodeConfigFile,
                                              fromConfiguration, genCertificate)
+import           Control.Exception.Safe (throwM)
 import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
                                   validateCertificate, writeCertificate,
                                   writeCredentials)
@@ -32,18 +33,10 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
 
 -- | Launcher configuration
 data LauncherConfig = LauncherConfig
-    { lcfgFilePath          :: !Text -- We really need @FilePath@ here.
-    , lcfgKey               :: !Text
-    , lcfgSystemStart       :: !(Maybe Integer)
-    , lcfgSeed              :: !(Maybe Integer)
-    } deriving (Eq, Show)
-
-newtype WalletArguments = WalletArguments
-    { getWalletArguments    :: [Text]
-    } deriving (Eq, Show)
-
-newtype WalletPath = WalletPath
-    { getWalletPath         :: Text
+    { lcfgFilePath    :: !Text -- We really need @FilePath@ here.
+    , lcfgKey         :: !Text
+    , lcfgSystemStart :: !(Maybe Integer)
+    , lcfgSeed        :: !(Maybe Integer)
     } deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
@@ -97,63 +90,9 @@ main = do
     exitCode <- runWallet externalDependencies walletPath walletArgs updaterData
     exitWith exitCode
 
--- | Launching the wallet.
--- For now, this is really light since we don't know whether we will reuse the
--- older configuration and if so, which parts of it.
--- We passed in the bare minimum and if we require anything else, we will add it.
-runWallet
-    :: ExternalDependencies
-    -> WalletPath
-    -> WalletArguments
-    -> UpdaterData
-    -> IO ExitCode
-runWallet ed walletPath walletArguments updaterData = do
-    let restart = runWallet ed walletPath walletArguments updaterData
-    (logNotice ed) "Starting the wallet"
-
-    -- create the wallet process
-    walletExitStatus <- system (createProc Process.Inherit walletPath walletArguments) mempty
-
-    case walletExitStatus of
-        ExitFailure 20 -> do
-            void $ runUpdater updaterData
-            restart
-        ExitFailure 21 -> do
-            (logNotice ed) "The wallet has exited with code 21"
-            --logInfo "Switching Configuration to safe mode"
-            --saveSafeMode lo True
-            restart
-
-        ExitFailure 22 -> do
-            (logNotice ed) "The wallet has exited with code 22"
-            --logInfo "Switching Configuration to normal mode"
-            --saveSafeMode lo False
-            restart
-        -- Otherwise, return the exit status.
-        _ -> pure walletExitStatus
-  where
-    -- | The creation of the process.
-    createProc
-        :: Process.StdStream
-        -> WalletPath
-        -> WalletArguments
-        -> Process.CreateProcess
-    createProc stdStream (WalletPath commandPath) (WalletArguments commandArguments) =
-        (Process.proc (strConv Lenient commandPath) (map (strConv Lenient) commandArguments))
-            { Process.std_in    = Process.CreatePipe
-            , Process.std_out   = stdStream
-            , Process.std_err   = stdStream
-            }
-
 --------------------------------------------------------------------------------
 -- Types
 --------------------------------------------------------------------------------
-
-data ExternalDependencies = ExternalDependencies
-    { logInfo   :: Text -> IO ()
-    , logError  :: Text -> IO ()
-    , logNotice :: Text -> IO ()
-    }
 
 newtype X509ToolPath = X509ToolPath { getX509ToolPath :: FilePath }
     deriving (Eq, Show)
