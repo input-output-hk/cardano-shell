@@ -55,7 +55,7 @@ main = do
 
     -- Really no clue what to put there and how will the wallet work.
     let walletPath :: WalletPath
-        walletPath = WalletPath "./test/testDaedalusFrontend.sh"
+        walletPath = WalletPath "./test/Launcher/testDaedalusFrontend.sh"
 
     let walletArgs :: WalletArguments
         walletArgs = WalletArguments ["./launcher-config.yaml"]
@@ -63,8 +63,9 @@ main = do
     -- | This is a mock for updater, need to replace with actual data
     let updaterData :: UpdaterData
         updaterData = UpdaterData
-            { udPath = "./test/testUpdater.sh"
+            { udPath = "./test/Launcher/testUpdater.sh"
             , udArgs = ["main"]
+            , udWindowsRunner = Nothing
             , udArchivePath = ""
             }
 

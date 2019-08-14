@@ -54,6 +54,9 @@ library
     , async
     , text
     , transformers
+    , turtle
+    , yaml
+    , time-units
   if os(windows)
     build-depends:     Win32
 

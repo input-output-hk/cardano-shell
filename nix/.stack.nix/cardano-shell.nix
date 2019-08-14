@@ -33,6 +33,9 @@
           (hsPkgs.async)
           (hsPkgs.text)
           (hsPkgs.transformers)
+          (hsPkgs.turtle)
+          (hsPkgs.yaml)
+          (hsPkgs.time-units)
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {

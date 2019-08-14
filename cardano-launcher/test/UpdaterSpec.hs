@@ -26,8 +26,9 @@ updaterSpec = describe "Update system" $ do
 testUpdaterData :: UpdaterData
 testUpdaterData =
     UpdaterData
-        "./test/testUpdater.sh"
+        "./test/Launcher/testUpdater.sh"
         []
+        Nothing
         ""
 
 testRunCmd :: ExitNum -> FilePath -> [String] -> FilePath -> IO ExitCode
