@@ -2,8 +2,9 @@
 cardano-launcher
 -}
 
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE LambdaCase    #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 
 module Cardano.Shell.Launcher
     ( WalletMode (..)
@@ -29,6 +30,7 @@ import           Cardano.Prelude
 
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
+import           Data.Time.Units (Microsecond, fromMicroseconds)
 import           Data.Yaml (ParseException, decodeFileEither)
 import           Prelude (String)
 import qualified System.Process as Process
@@ -266,12 +268,12 @@ instance FromJSON LauncherOptions where
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
 -- in the map.
 data ConfigurationOptions = ConfigurationOptions
-    { cfoFilePath :: !FilePath
-    , cfoKey      :: !Text
-    -- , cfoSystemStart :: !(Maybe Timestamp)
+    { cfoFilePath    :: !FilePath
+    , cfoKey         :: !Text
+    , cfoSystemStart :: !(Maybe Timestamp)
     -- ^ An optional system start time override. Required when using a
     -- testnet genesis configuration.
-    , cfoSeed     :: !(Maybe Integer)
+    , cfoSeed        :: !(Maybe Integer)
     -- ^ Seed for secrets generation can be provided via CLI, in
     -- this case it overrides one from configuration file.
     } deriving (Show)
@@ -282,17 +284,17 @@ data ConfigurationOptions = ConfigurationOptions
 -- timestamps is microsecond. Hence underlying type is Microsecond.
 -- Amount of microseconds since Jan 1, 1970 UTC.
 
--- newtype Timestamp = Timestamp
---     { getTimestamp :: Microsecond
---     } deriving (Num, Eq, Ord, Enum, Real, Integral, Typeable, Generic)
+newtype Timestamp = Timestamp
+    { getTimestamp :: Microsecond
+    } deriving (Show, Num, Eq, Ord, Enum, Real, Integral, Typeable, Generic)
 
 instance FromJSON ConfigurationOptions where
     parseJSON = withObject "ConfigurationOptions" $ \o -> do
         path <- o .: "filePath"
         key <- o .: "key"
-        -- systemStart <- (fromMicroseconds . (*) 1000000) <<$>> o .:? "systemStart"
+        systemStart <- (Timestamp . fromMicroseconds . (*) 1000000) <<$>> o .:? "systemStart"
         seed <- o .:? "seed"
-        pure $ ConfigurationOptions path key seed
+        pure $ ConfigurationOptions path key systemStart seed
 
 -- | Parses config file and return @LauncherOptions@ if successful
 getLauncherOption :: FilePath -> IO (Either ParseException LauncherOptions)
