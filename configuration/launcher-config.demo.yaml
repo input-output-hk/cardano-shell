@@ -1,0 +1,47 @@
+# This is configuration that is used to manually test the launcher
+walletLogging: false
+nodeArgs:
+- --tlsca
+- ${XDG_DATA_HOME}/Daedalus/mainnet/tls/server/ca.crt
+- --tlscert
+- ${XDG_DATA_HOME}/Daedalus/mainnet/tls/server/server.crt
+- --tlskey
+- ${XDG_DATA_HOME}/Daedalus/mainnet/tls/server/server.key
+- --no-client-auth
+- --log-console-off
+- --update-server
+- https://update-cardano-mainnet.iohk.io
+- --keyfile
+- ${XDG_DATA_HOME}/Daedalus/mainnet/Secrets/secret.key
+- --topology
+- ${DAEDALUS_CONFIG}/wallet-topology.yaml
+- --wallet-db-path
+- ${XDG_DATA_HOME}/Daedalus/mainnet/Wallet
+- --update-latest-path
+- ${XDG_DATA_HOME}/Daedalus/mainnet/installer.sh
+- --wallet-address
+- 127.0.0.1:0
+- --update-with-package
+statePath: ${XDG_DATA_HOME}/Daedalus/mainnet
+walletPath: ./test/Launcher/testDaedalusFrontend.sh
+nodePath: cardano-node
+launcherLogsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs/
+walletArgs: []
+nodeDbPath: ${XDG_DATA_HOME}/Daedalus/mainnet/DB/
+updaterPath: ./test/Launcher/testUpdater.sh
+workingDir: ${XDG_DATA_HOME}/Daedalus/mainnet
+frontendOnlyMode: true
+nodeLogPath: null
+updaterArgs: ["main"]
+logsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs
+configuration:
+  seed: null
+  filePath: ./configuration/cert-configuration.yaml
+  key: dev
+  systemStart: null
+updateArchive: ""
+nodeLogConfig: ${DAEDALUS_CONFIG}/log-config-prod.yaml
+nodeTimeoutSec: 60
+updateWindowsRunner: null
+tlsPath: "./configuration"
+x509ToolPath: cardano-x509-certificates

@@ -19,7 +19,8 @@ module Cardano.Shell.Launcher
     , handleDaedalusExitCode
     , UpdateRunner (..)
     , WalletRunner (..)
-    , runWallet
+    , ConfigurationOptions(..)
+    , LauncherOptions(..)
     , getUpdaterData
     , getWargs
     , getWPath
@@ -299,6 +300,7 @@ instance FromJSON ConfigurationOptions where
 -- | Parses config file and return @LauncherOptions@ if successful
 getLauncherOption :: FilePath -> IO (Either ParseException LauncherOptions)
 getLauncherOption = decodeFileEither
+
 --------------------------------------------------------------------------------
 -- These functions will take LauncherOptions as an argument and put together
 -- that data so that it can be used

@@ -25,7 +25,8 @@ library
   hs-source-dirs:
       src
   build-depends:
-      base >=4.11 && <5
+      aeson
+    , base >=4.11 && <5
     , Cabal
     , cardano-prelude
     , containers
@@ -34,6 +35,8 @@ library
     , QuickCheck
     , text
     , turtle
+    , yaml
+    , time-units
   if os(windows)
     build-depends:     Win32
 
