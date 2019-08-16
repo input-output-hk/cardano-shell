@@ -35,15 +35,6 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
 -- Main
 --------------------------------------------------------------------------------
 
--- | Yes, this is something we probably need to replace with actual loggging.
--- If we want. Otherwise, we can print out to console out just for launcher configs.
-externalDependencies :: ExternalDependencies
-externalDependencies = ExternalDependencies
-    { logInfo            = putTextLn
-    , logError           = putTextLn
-    , logNotice          = putTextLn
-    }
-
 -- | Main function.
 main :: IO ()
 main = do
@@ -67,13 +58,25 @@ main = do
     let updaterData :: UpdaterData
         updaterData = getUpdaterData launcherOptions
 
+    -- where to generate the certificates
+    let tlsPath :: TLSPath
+        tlsPath = TLSPath $ loTlsPath launcherOptions
+    
+    -- | Yes, this is something we probably need to replace with actual loggging.
+    let externalDependencies :: ExternalDependencies
+        externalDependencies = ExternalDependencies
+            { logInfo       = putTextLn
+            , logError      = putTextLn
+            , logNotice     = putTextLn
+            }
+
     -- | If we need to, we first check if there are certificates so we don't have
     -- to generate them. Since the function is called `generate...`, that's what
     -- it does, it generates the certificates.
     generateTlsCertificates
         externalDependencies
         launcherConfig
-        (TLSPath (loTlsPath launcherOptions)) -- where to generate the certificates
+        tlsPath
 
     void $ runUpdater updaterData -- On windows, process dies here
     -- You still want to run the wallet even if the update fails

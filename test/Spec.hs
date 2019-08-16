@@ -4,6 +4,8 @@ import           Cardano.Prelude
 
 import           Test.Hspec (describe, hspec)
 
+import qualified DaedalusIPCSpec as DaedalusIPC
+import           LauncherSpec (launcherSpec)
 import           NodeIPCSMSpec (nodeIPCSMSpec)
 import           NodeIPCSpec (nodeIPCSpec)
 import qualified DaedalusIPCSpec as DaedalusIPC

@@ -121,6 +121,7 @@ test-suite cardano-shell-test
     other-modules:
       NodeIPCSpec
       NodeIPCSMSpec
+      UpdaterSpec
 
   hs-source-dirs:
       test
@@ -131,6 +132,7 @@ test-suite cardano-shell-test
     , cardano-shell
     , cardano-prelude
     , process
+    , yaml
     -- quickcheck
     , QuickCheck
     -- SM
