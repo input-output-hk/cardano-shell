@@ -1,0 +1,53 @@
+walletLogging: true
+nodeArgs:
+- --tlsca
+- ${HOME}/Library/Application Support/Daedalus Testnet/tls/server/ca.crt
+- --tlscert
+- ${HOME}/Library/Application Support/Daedalus Testnet/tls/server/server.crt
+- --tlskey
+- ${HOME}/Library/Application Support/Daedalus Testnet/tls/server/server.key
+- --no-client-auth
+- --log-console-off
+- --update-server
+- http://updates-cardano-testnet.s3.amazonaws.com
+- --keyfile
+- ${HOME}/Library/Application Support/Daedalus Testnet/Secrets-1.0/secret.key
+- --topology
+- ${DAEDALUS_INSTALL_DIRECTORY}/wallet-topology.yaml
+- --wallet-db-path
+- ${HOME}/Library/Application Support/Daedalus Testnet/Wallet-1.0
+- --update-latest-path
+- ${HOME}/Library/Application Support/Daedalus Testnet/installer.pkg
+- --wallet-address
+- 127.0.0.1:0
+- --update-with-package
+- --metrics
+- --ekg-server
+- localhost:8081
+- +RTS
+- -T
+- -RTS
+statePath: ${HOME}/Library/Application Support/Daedalus Testnet
+walletPath: ${DAEDALUS_INSTALL_DIRECTORY}/Frontend
+nodePath: ${DAEDALUS_INSTALL_DIRECTORY}/cardano-node
+launcherLogsPrefix: ${HOME}/Library/Application Support/Daedalus Testnet/Logs/pub/
+walletArgs: []
+nodeDbPath: ${HOME}/Library/Application Support/Daedalus Testnet/DB-1.0
+updaterPath: /usr/bin/open
+workingDir: ${HOME}/Library/Application Support/Daedalus Testnet
+frontendOnlyMode: true
+nodeLogPath: null
+updaterArgs:
+- -FW
+logsPrefix: ${HOME}/Library/Application Support/Daedalus Testnet/Logs
+configuration:
+  seed: null
+  filePath: ${DAEDALUS_INSTALL_DIRECTORY}/configuration.yaml
+  key: testnet_wallet_macos64
+  systemStart: null
+updateArchive: ${HOME}/Library/Application Support/Daedalus Testnet/installer.pkg
+nodeLogConfig: ${DAEDALUS_INSTALL_DIRECTORY}/log-config-prod.yaml
+nodeTimeoutSec: 60
+updateWindowsRunner: null
+tlsPath: ${HOME}/Library/Application Support/Daedalus Testnet/tls
+x509ToolPath: ${DAEDALUS_INSTALL_DIRECTORY}/cardano-x509-certificates

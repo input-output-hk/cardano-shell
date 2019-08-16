@@ -34,8 +34,6 @@
           (hsPkgs.text)
           (hsPkgs.transformers)
           (hsPkgs.turtle)
-          (hsPkgs.yaml)
-          (hsPkgs.time-units)
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {
@@ -62,6 +60,7 @@
             (hsPkgs.cardano-shell)
             (hsPkgs.cardano-prelude)
             (hsPkgs.process)
+            (hsPkgs.yaml)
             (hsPkgs.QuickCheck)
             (hsPkgs.quickcheck-state-machine)
             (hsPkgs.tree-diff)

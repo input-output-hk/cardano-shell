@@ -121,8 +121,6 @@ test-suite cardano-shell-test
     other-modules:
       NodeIPCSpec
       NodeIPCSMSpec
-      UpdaterSpec
-
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N

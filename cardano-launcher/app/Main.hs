@@ -42,7 +42,7 @@ main = do
     launcherOptions <- either
         (\err -> throwM $ LauncherOptionsError (show err))
         return
-        =<< getLauncherOption "./configuration/launcher-config.demo.yaml"
+        =<< getLauncherOption "./configuration/launcher/launcher-config.demo.yaml"
 
     -- Really no clue what to put there and how will the wallet work.
     -- These will be refactored in the future

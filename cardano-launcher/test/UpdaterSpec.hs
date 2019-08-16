@@ -26,7 +26,7 @@ updaterSpec = describe "Update system" $ do
 testUpdaterData :: UpdaterData
 testUpdaterData =
     UpdaterData
-        "./test/Launcher/testUpdater.sh"
+        "./test/testUpdater.sh"
         []
         Nothing
         ""

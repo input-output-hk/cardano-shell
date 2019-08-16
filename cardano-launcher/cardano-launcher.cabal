@@ -98,6 +98,7 @@ test-suite cardano-launcher-test
     , QuickCheck
     -- tests
     , hspec
+    , yaml
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
