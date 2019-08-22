@@ -12,6 +12,7 @@
         "canonical-json" = (((hackage.canonical-json)."0.6.0.0").revisions).default;
         } // {
         cardano-shell = ./cardano-shell.nix;
+        cardano-launcher = ./cardano-launcher.nix;
         cardano-prelude = ./cardano-prelude.nix;
         cardano-prelude-test = ./cardano-prelude-test.nix;
         cardano-sl-x509 = ./cardano-sl-x509.nix;

@@ -121,7 +121,39 @@
 > import qualified Data.Map as Map
 > import qualified Data.Set as Set
 >
-> import Cardano.Shell.Update.Types
+>
+> data Blockchain = Blockchain { getBlockchainContents :: !(Map Epoch [Slot]) }
+>     deriving (Eq, Show)
+>
+> data Epoch = Epoch Int
+>     deriving (Eq, Ord, Show)
+>
+> data Slot = Slot (Maybe Block)
+>     deriving (Eq, Show)
+>
+> data Block = Block BlockHash (Maybe InstallerVersion)
+>     deriving (Eq, Show)
+>
+> data BlockHash = BlockHash !Text
+>     deriving (Eq, Show)
+>
+> data InstallerVersion = InstallerVersion InstallerHash
+>     deriving (Eq, Ord, Show)
+>
+> data InstallerHash = InstallerHash !Text
+>     deriving (Eq, Ord, Show)
+>
+> newtype LatestInstallerVersion = LatestInstallerVersion
+>     { getInstallerVersion :: InstallerVersion
+>     } deriving (Eq, Show)
+>
+> slotContainsInstaller :: Slot -> Maybe InstallerVersion
+> slotContainsInstaller (Slot Nothing)    = Nothing
+> slotContainsInstaller (Slot block)      = blockContainsInstaller =<< block
+>   where
+>     blockContainsInstaller :: Block -> Maybe InstallerVersion
+>     blockContainsInstaller (Block _ Nothing)          = Nothing
+>     blockContainsInstaller (Block _ installerVersion) = installerVersion
 >
 > type List a = [a]
 > type Pair a b = (a, b)

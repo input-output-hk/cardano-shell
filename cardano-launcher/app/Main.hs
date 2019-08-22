@@ -14,6 +14,7 @@ import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
 import           Cardano.Shell.Launcher (ExternalDependencies (..),
+                                         LauncherConfig (..),
                                          WalletArguments (..), WalletPath (..),
                                          runWallet)
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
@@ -28,21 +29,19 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
                                   writeCredentials)
 
 --------------------------------------------------------------------------------
--- Types
---------------------------------------------------------------------------------
-
--- | Launcher configuration
-data LauncherConfig = LauncherConfig
-    { lcfgFilePath    :: !Text -- We really need @FilePath@ here.
-    , lcfgKey         :: !Text
-    , lcfgSystemStart :: !(Maybe Integer)
-    , lcfgSeed        :: !(Maybe Integer)
-    } deriving (Eq, Show)
-
---------------------------------------------------------------------------------
 -- Main
 --------------------------------------------------------------------------------
 
+-- | Yes, this is something we probably need to replace with actual loggging.
+-- If we want. Otherwise, we can print out to console out just for launcher configs.
+externalDependencies :: ExternalDependencies
+externalDependencies = ExternalDependencies
+    { logInfo            = putTextLn
+    , logError           = putTextLn
+    , logNotice          = putTextLn
+    }
+
+-- | Main function.
 main :: IO ()
 main = do
 
@@ -60,14 +59,6 @@ main = do
 
     let walletArgs :: WalletArguments
         walletArgs = WalletArguments ["./launcher-config.yaml"]
-
-    -- | Yes, this is something we probably need to replace with actual loggging.
-    let externalDependencies :: ExternalDependencies
-        externalDependencies = ExternalDependencies
-            { logInfo       = putTextLn
-            , logError      = putTextLn
-            , logNotice     = putTextLn
-            }
 
     -- | This is a mock for updater, need to replace with actual data
     let updaterData :: UpdaterData
@@ -130,12 +121,12 @@ textToFilePath = strConv Strict
 -- | Generation of the TLS certificates.
 -- This just covers the generation of the TLS certificates and nothing else.
 generateTlsCertificates :: ExternalDependencies -> LauncherConfig -> TLSPath -> IO ()
-generateTlsCertificates externalDependencies launcherConfig (TLSPath tlsPath) = do
+generateTlsCertificates externalDependencies' launcherConfig (TLSPath tlsPath) = do
 
     let tlsServer = tlsPath </> "server"
     let tlsClient = tlsPath </> "client"
 
-    logInfo externalDependencies $ "Generating the certificates!"
+    logInfo externalDependencies' $ "Generating the certificates!"
 
     -- Create the directories.
     createDirectoryIfMissing True tlsServer
