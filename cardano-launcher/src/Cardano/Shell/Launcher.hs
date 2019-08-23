@@ -1,9 +1,29 @@
-module Cardano.Shell.Launcher where
+module Cardano.Shell.Launcher
+    ( LauncherConfig (..)
+    , WalletArguments (..)
+    , WalletPath (..)
+    , ExternalDependencies (..)
+    -- * Functions
+    , runWallet
+    ) where
 
 import           Cardano.Prelude
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import qualified System.Process as Process
 import           Turtle (system)
+
+
+--------------------------------------------------------------------------------
+-- Types
+--------------------------------------------------------------------------------
+
+-- | Launcher configuration
+data LauncherConfig = LauncherConfig
+    { lcfgFilePath    :: !Text -- We really need @FilePath@ here.
+    , lcfgKey         :: !Text
+    , lcfgSystemStart :: !(Maybe Integer)
+    , lcfgSeed        :: !(Maybe Integer)
+    } deriving (Eq, Show)
 
 newtype WalletArguments = WalletArguments
     { getWalletArguments    :: [Text]
@@ -18,6 +38,10 @@ data ExternalDependencies = ExternalDependencies
     , logError  :: Text -> IO ()
     , logNotice :: Text -> IO ()
     }
+
+--------------------------------------------------------------------------------
+-- Functions
+--------------------------------------------------------------------------------
 
 -- | Launching the wallet.
 -- For now, this is really light since we don't know whether we will reuse the

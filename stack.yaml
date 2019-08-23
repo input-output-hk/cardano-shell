@@ -2,6 +2,7 @@ resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/8273
 
 packages:
 - .
+- ./cardano-launcher
 
 extra-deps:
   - quickcheck-state-machine-0.6.0  # Used a specific dependency, new release.
