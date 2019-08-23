@@ -1,5 +1,6 @@
 packages:
   ./
+  ./cardano-launcher
 
 source-repository-package
   type: git
