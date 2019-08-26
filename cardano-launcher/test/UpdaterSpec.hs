@@ -26,7 +26,7 @@ updaterSpec = describe "Update system" $ do
 testUpdaterData :: UpdaterData
 testUpdaterData =
     UpdaterData
-        "./test/testUpdater.sh"
+        "./cardano-launcher/test/testUpdater.sh"
         []
         Nothing
         ""

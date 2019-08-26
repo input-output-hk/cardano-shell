@@ -87,7 +87,7 @@ launcherDatas =
 testLauncherParsable :: FilePath -> Spec
 testLauncherParsable configFilePath = it
     ("Should be able to parse configuration file: " <> configFilePath) $ monadicIO $ do
-        eParsedConfigFile <- run $ decodeFileEither $ "../configuration/launcher/" <> configFilePath
+        eParsedConfigFile <- run $ decodeFileEither $ "./configuration/launcher/" <> configFilePath
         assert $ isRight (eParsedConfigFile :: Either ParseException LauncherOptions)
 
 -- | Launcher spec

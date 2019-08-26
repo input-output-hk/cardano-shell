@@ -47,15 +47,14 @@ data UpdaterData = UpdaterData
 runUpdater :: UpdaterData -> IO ExitCode
 runUpdater = runUpdater' runCmd
   where
-    runCmd :: FilePath -> [String] -> FilePath -> IO ExitCode
-    runCmd path args archive =
-        withCreateProcess (proc path (args <> [archive]))
+    runCmd :: FilePath -> [String] -> IO ExitCode
+    runCmd path args =
+        withCreateProcess (proc path args)
             $ \_in _out _err ph -> waitForProcess ph
 
 type RunCmdFunc
     = FilePath
     -> [String]
-    -> FilePath
     -> IO ExitCode
 
 -- | @runUpdater@ but can inject any runCommand function.
@@ -65,16 +64,18 @@ runUpdater' runCommand ud = do
     let path = udPath ud
     let args = map toS $ udArgs ud
     let archive = (udArchivePath ud)
-
+    let runnerPath = fromMaybe mempty (udWindowsRunner ud)
     updaterExist <- doesFileExist path
-
-    if updaterExist
+    putTextLn $ "Does file exist: " <> show updaterExist
+    if updaterExist 
         then do
             exitCode <- case buildOS of
                 Windows -> do
-                    writeWindowsUpdaterRunner archive
-                    runCommand archive args archive -- Process dies here
-                _ -> runCommand path args archive
+                    writeWindowsUpdaterRunner runnerPath
+                    runCommand runnerPath (toS path:args) -- Process dies here
+                _ -> do
+                    putTextLn "Running updater"
+                    runCommand path (toS archive:args)
             case exitCode of --- On windows, the function will never reach here
                 ExitSuccess -> do
                     whenM (doesFileExist archive) $ removeFile archive

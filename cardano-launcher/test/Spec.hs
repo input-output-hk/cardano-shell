@@ -1,10 +1,10 @@
+{-# LANGUAGE CPP #-}
+
 module Main where
 
 import           Cardano.Prelude
-
-import           Test.Hspec (describe, hspec)
-
 import           LauncherSpec (launcherSpec)
+import           Test.Hspec (describe, hspec)
 import           UpdaterSpec (updaterSpec)
 
 -- | Entry point for tests.
