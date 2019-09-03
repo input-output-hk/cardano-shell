@@ -30,7 +30,7 @@ data UpdaterData = UpdaterData
     { udPath        :: !FilePath
     , udArgs        :: ![Text]
     , udArchivePath :: !FilePath
--- We might add checksum value for updater to ensure that we're launching the right updater
+    -- ^ We might add checksum value for updater to ensure that we're launching the right updater
     }
 
 -- Windows: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/win64.dhall#L32-L35
@@ -83,8 +83,10 @@ runUpdater' runCommand ud = do
     let path = udPath ud
     let args = map toS $ udArgs ud
     let archive = (udArchivePath ud)
+
     updaterExist <- doesFileExist path
-    if updaterExist 
+
+    if updaterExist
         then do
             exitCode <- case buildOS of
                 Windows -> do
