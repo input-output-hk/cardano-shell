@@ -33,7 +33,6 @@ import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
 import           Data.Time.Units (Microsecond, fromMicroseconds)
 import           Data.Yaml (ParseException, decodeFileEither)
-import           Prelude (String)
 import qualified System.Process as Process
 import           Turtle (system)
 
