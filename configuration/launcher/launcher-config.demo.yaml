@@ -23,23 +23,23 @@ nodeArgs:
 - 127.0.0.1:0
 - --update-with-package
 statePath: ${XDG_DATA_HOME}/Daedalus/mainnet
-walletPath: ./test/Launcher/testDaedalusFrontend.sh
+walletPath: ./cardano-launcher/test/testDaedalusFrontend.sh
 nodePath: cardano-node
 launcherLogsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs/
 walletArgs: []
 nodeDbPath: ${XDG_DATA_HOME}/Daedalus/mainnet/DB/
-updaterPath: ./test/Launcher/testUpdater.sh
+updaterPath: ./cardano-launcher/test/testUpdater.sh
 workingDir: ${XDG_DATA_HOME}/Daedalus/mainnet
 frontendOnlyMode: true
 nodeLogPath: null
-updaterArgs: ["main"]
+updaterArgs: []
 logsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs
 configuration:
   seed: null
   filePath: ./configuration/cert-configuration.yaml
   key: dev
   systemStart: null
-updateArchive: ""
+updateArchive: "main"
 nodeLogConfig: ${DAEDALUS_CONFIG}/log-config-prod.yaml
 nodeTimeoutSec: 60
 updateWindowsRunner: null

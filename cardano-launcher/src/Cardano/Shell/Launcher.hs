@@ -189,81 +189,35 @@ runWalletProcess ed walletMode walletPath walletArguments updaterData = do
 -- Todo: Add haddock comment for each field
 -- | Launcher options
 data LauncherOptions = LauncherOptions
-    { loNodePath            :: !FilePath
-    , loNodeArgs            :: ![Text]
-    , loNodeDbPath          :: !FilePath
-    , loNodeLogConfig       :: !(Maybe FilePath)
-    , loNodeLogPath         :: !(Maybe FilePath)
-    , loWalletPath          :: !FilePath
-    , loFrontendOnlyMode    :: !Bool
-    , loWalletArgs          :: ![Text]
-    , loWalletLogging       :: !Bool
-    , loWalletLogPath       :: !(Maybe FilePath)
-    , loWorkingDir          :: !FilePath
-    , loX509ToolPath        :: !FilePath
+    { loConfiguration       :: !ConfigurationOptions
+    , loTlsPath             :: !FilePath
     , loUpdaterPath         :: !FilePath
     , loUpdaterArgs         :: ![Text]
     , loUpdateArchive       :: !(Maybe FilePath)
     , loUpdateWindowsRunner :: !(Maybe FilePath)
-    , loNodeTimeoutSec      :: !Int
-    , loReportServer        :: !(Maybe String)
-    , loStatePath           :: !FilePath
-    , loConfiguration       :: !ConfigurationOptions
-    , loTlsPath             :: !FilePath
-    -- | This prefix will be passed as logs-prefix to the node. Launcher logs
-    -- will be written into "pub" subdirectory of the prefix (as well as to
-    -- console, except on Windows where we don't output anything to console
-    -- because it crashes).
-    , loLogsPrefix          :: !(Maybe FilePath)
+    , loWalletPath          :: !FilePath
+    , loWalletArgs          :: ![Text]
     } deriving (Show, Generic)
 
 instance FromJSON LauncherOptions where
     parseJSON = withObject "LauncherOptions" $ \o -> do
-        nodePath <- o .: "nodePath"
-        nodeArgs <- o .: "nodeArgs"
-        nodeDbPath <- o .: "nodeDbPath"
-        nodeLogConfig <- o .: "nodeLogConfig"
-        nodeLogPath <- o .: "nodeLogPath"
         walletPath <- o .: "walletPath"
-        frontendOnlyMode <- o .: "frontendOnlyMode"
         walletArgs <- o .: "walletArgs"
-        walletLogging <- o .: "walletLogging"
-        walletLogPath <- o .:? "walletLogPath" -- walletLogPath
-        workingDir <- o .: "workingDir"
-        x509ToolPath <- o .: "x509ToolPath"
         updaterPath <- o .: "updaterPath"
         updaterArgs <- o .: "updaterArgs"
         updateArchive <- o .: "updateArchive"
-        updateWindowRunner <- o .: "updateWindowsRunner"
-        nodeTimeoutSec <- o .: "nodeTimeoutSec"
-        reportServer <- o .:? "reportServer"
-        statePath <- o .: "statePath"
+        updateWindowsRunner <- o .: "updateWindowsRunner"
         configuration <- o .: "configuration"
         tlsPath <- o .: "tlsPath"
-        logPrefix <- o .:? "logPrefix"
         pure $ LauncherOptions
-                    nodePath
-                    nodeArgs
-                    nodeDbPath
-                    nodeLogConfig
-                    nodeLogPath
-                    walletPath
-                    frontendOnlyMode
-                    walletArgs
-                    walletLogging
-                    walletLogPath
-                    workingDir
-                    x509ToolPath
-                    updaterPath
-                    updaterArgs
-                    updateArchive
-                    updateWindowRunner
-                    nodeTimeoutSec
-                    reportServer
-                    statePath
-                    configuration
-                    tlsPath
-                    logPrefix
+            configuration
+            tlsPath
+            updaterPath
+            updaterArgs
+            updateArchive
+            updateWindowsRunner
+            walletPath
+            walletArgs
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
