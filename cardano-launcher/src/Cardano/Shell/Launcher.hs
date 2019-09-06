@@ -1,19 +1,24 @@
 {-# LANGUAGE LambdaCase #-}
 
 module Cardano.Shell.Launcher
-    ( LauncherConfig (..)
+    ( WalletMode (..)
+    , LauncherConfig (..)
     , WalletArguments (..)
     , WalletPath (..)
     , ExternalDependencies (..)
     -- * Functions
-    , runWallet
+    , runWalletProcess
+    -- * Critical exports (testing)
+    , DaedalusExitCodes (..)
+    , handleDaedalusExitCode
+    , UpdateRunner (..)
+    , WalletRunner (..)
     ) where
 
 import           Cardano.Prelude
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import qualified System.Process as Process
 import           Turtle (system)
-
 
 --------------------------------------------------------------------------------
 -- Types
@@ -31,6 +36,10 @@ newtype WalletArguments = WalletArguments
     { getWalletArguments    :: [Text]
     } deriving (Eq, Show)
 
+-- | We define the instance on it's wrapped type.
+instance Semigroup WalletArguments where
+    (<>) = \wArgs1 wArgs2 -> WalletArguments $ getWalletArguments wArgs1 <> getWalletArguments wArgs2
+
 newtype WalletPath = WalletPath
     { getWalletPath         :: Text
     } deriving (Eq, Show)
@@ -41,14 +50,20 @@ data ExternalDependencies = ExternalDependencies
     , logNotice :: Text -> IO ()
     }
 
--- This is here so we don't mess up the order. It's VERY important.
+-- | This is here so we don't mess up the order. It's VERY important.
+-- The type that runs the update.
 newtype UpdateRunner = UpdateRunner { runUpdate :: IO ExitCode }
 
-newtype LauncherRunner = LauncherRunner { runLauncher :: IO ExitCode }
+-- | This type is responsible for launching and re-launching the wallet
+-- inside the launcher process.
+newtype WalletRunner = WalletRunner { runWallet :: IO ExitCode }
 
---------------------------------------------------------------------------------
--- Functions
---------------------------------------------------------------------------------
+-- | The wallet mode that it's supposed to use.
+-- Here we are making the @WalletMode@ explicit.
+data WalletMode
+    = WalletModeNormal
+    | WalletModeSafe
+    deriving (Eq, Show)
 
 -- | All the important exit codes. Since we cover "other" cases as well, this is a total mapping.
 -- That is good.
@@ -65,21 +80,25 @@ data DaedalusExitCodes
     | ExitCodeSuccess
     -- ^ Daedalus "happy path" where it could shut down with success.
 
+--------------------------------------------------------------------------------
+-- Functions
+--------------------------------------------------------------------------------
+
 -- | Here we handle the exit codes.
 -- It's a simple mapping from exit code to actions that the launcher takes.
 --
 -- This is much simpler to test, no?
-handleDaedalusExitcode
+handleDaedalusExitCode
     :: UpdateRunner
-    -> LauncherRunner
+    -> WalletRunner
     -> DaedalusExitCodes
     -> IO ExitCode
-handleDaedalusExitcode runUpdaterFunction restartLauncherFunction = \case
-    RunUpdate               -> runUpdate runUpdaterFunction >> runLauncher restartLauncherFunction
+handleDaedalusExitCode runUpdaterFunction restartWalletFunction = \case
+    RunUpdate               -> runUpdate runUpdaterFunction >> runWallet restartWalletFunction
     -- ^ Run the actual update, THEN restart launcher.
-    RestartInGPUSafeMode    -> runLauncher restartLauncherFunction
+    RestartInGPUSafeMode    -> runWallet restartWalletFunction
     -- ^ Enable safe mode (GPU safe mode). TODO(KS): Feedback from Daedalus?
-    RestartInGPUNormalMode  -> runLauncher restartLauncherFunction
+    RestartInGPUNormalMode  -> runWallet restartWalletFunction
     -- ^ Disable safe mode (GPU safe mode).
     ExitCodeOther ef        -> return $ ExitFailure ef
     -- ^ Some other unexpected error popped up.
@@ -90,18 +109,32 @@ handleDaedalusExitcode runUpdaterFunction restartLauncherFunction = \case
 -- For now, this is really light since we don't know whether we will reuse the
 -- older configuration and if so, which parts of it.
 -- We passed in the bare minimum and if we require anything else, we will add it.
-runWallet
+runWalletProcess
     :: ExternalDependencies
+    -> WalletMode
     -> WalletPath
     -> WalletArguments
     -> UpdaterData
     -> IO ExitCode
-runWallet ed walletPath walletArguments updaterData = do
-    let restart = runWallet ed walletPath walletArguments updaterData
-    (logNotice ed) "Starting the wallet"
+runWalletProcess ed walletMode walletPath walletArguments updaterData = do
+
+    let restart :: IO ExitCode
+        restart = runWalletProcess ed walletMode walletPath walletArguments updaterData
+
+    -- Additional arguments we need to pass if it's a SAFE mode.
+    let walletSafeModeArgs :: WalletArguments
+        walletSafeModeArgs = WalletArguments [ "--safe-mode", "--disable-gpu", "--disable-d3d11" ]
+
+    -- Daedalus safe mode.
+    let walletArgs :: WalletArguments
+        walletArgs =    if walletMode == WalletModeSafe
+                            then walletArguments <> walletSafeModeArgs
+                            else walletArguments
+
+    logNotice ed $ "Starting the wallet"
 
     -- create the wallet process
-    walletExitStatus <- system (createProc Process.Inherit walletPath walletArguments) mempty
+    walletExitStatus <- system (createProc Process.Inherit walletPath walletArgs) mempty
 
     -- Let us map the interesting commands into a very simple "language".
     let exitCode :: DaedalusExitCodes
@@ -117,9 +150,9 @@ runWallet ed walletPath walletArguments updaterData = do
     -- through the function and separate it. When we decouple it, we can test parts in isolation.
     -- We separate the description of the computation, from the computation itself.
     -- There are other ways of doing this, of course.
-    handleDaedalusExitcode
+    handleDaedalusExitCode
         (UpdateRunner $ runUpdater updaterData)
-        (LauncherRunner restart)
+        (WalletRunner restart)
         exitCode
   where
     -- | The creation of the process.
@@ -129,7 +162,7 @@ runWallet ed walletPath walletArguments updaterData = do
         -> WalletArguments
         -> Process.CreateProcess
     createProc stdStream (WalletPath commandPath) (WalletArguments commandArguments) =
-        (Process.proc (strConv Lenient commandPath) (map (strConv Lenient) commandArguments))
+        (Process.proc (toS commandPath) (map toS commandArguments))
             { Process.std_in    = Process.CreatePipe
             , Process.std_out   = stdStream
             , Process.std_err   = stdStream
