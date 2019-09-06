@@ -1,12 +1,18 @@
 {-# LANGUAGE LambdaCase #-}
 
 module Cardano.Shell.Launcher
-    ( LauncherConfig (..)
+    ( WalletMode (..)
+    , LauncherConfig (..)
     , WalletArguments (..)
     , WalletPath (..)
     , ExternalDependencies (..)
     -- * Functions
     , runWallet
+    -- * Critical exports (testing)
+    , DaedalusExitCodes (..)
+    , handleDaedalusExitCode
+    , UpdateRunner (..)
+    , LauncherRunner (..)
     ) where
 
 import           Cardano.Prelude
@@ -31,6 +37,10 @@ newtype WalletArguments = WalletArguments
     { getWalletArguments    :: [Text]
     } deriving (Eq, Show)
 
+-- | We define the instance on it's wrapped type.
+instance Semigroup WalletArguments where
+    (<>) = \wArgs1 wArgs2 -> WalletArguments $ getWalletArguments wArgs1 <> getWalletArguments wArgs2
+
 newtype WalletPath = WalletPath
     { getWalletPath         :: Text
     } deriving (Eq, Show)
@@ -46,9 +56,12 @@ newtype UpdateRunner = UpdateRunner { runUpdate :: IO ExitCode }
 
 newtype LauncherRunner = LauncherRunner { runLauncher :: IO ExitCode }
 
---------------------------------------------------------------------------------
--- Functions
---------------------------------------------------------------------------------
+-- | The wallet mode that it's supposed to use.
+-- Here we are making the @WalletMode@ explicit.
+data WalletMode
+    = WalletModeNormal
+    | WalletModeSafe
+    deriving (Eq, Show)
 
 -- | All the important exit codes. Since we cover "other" cases as well, this is a total mapping.
 -- That is good.
@@ -65,16 +78,20 @@ data DaedalusExitCodes
     | ExitCodeSuccess
     -- ^ Daedalus "happy path" where it could shut down with success.
 
+--------------------------------------------------------------------------------
+-- Functions
+--------------------------------------------------------------------------------
+
 -- | Here we handle the exit codes.
 -- It's a simple mapping from exit code to actions that the launcher takes.
 --
 -- This is much simpler to test, no?
-handleDaedalusExitcode
+handleDaedalusExitCode
     :: UpdateRunner
     -> LauncherRunner
     -> DaedalusExitCodes
     -> IO ExitCode
-handleDaedalusExitcode runUpdaterFunction restartLauncherFunction = \case
+handleDaedalusExitCode runUpdaterFunction restartLauncherFunction = \case
     RunUpdate               -> runUpdate runUpdaterFunction >> runLauncher restartLauncherFunction
     -- ^ Run the actual update, THEN restart launcher.
     RestartInGPUSafeMode    -> runLauncher restartLauncherFunction
@@ -92,16 +109,27 @@ handleDaedalusExitcode runUpdaterFunction restartLauncherFunction = \case
 -- We passed in the bare minimum and if we require anything else, we will add it.
 runWallet
     :: ExternalDependencies
+    -> WalletMode
     -> WalletPath
     -> WalletArguments
     -> UpdaterData
     -> IO ExitCode
-runWallet ed walletPath walletArguments updaterData = do
-    let restart = runWallet ed walletPath walletArguments updaterData
-    (logNotice ed) "Starting the wallet"
+runWallet ed walletMode walletPath walletArguments updaterData = do
+
+    let restart = runWallet ed walletMode walletPath walletArguments updaterData
+
+    -- Additional arguments we need to pass if it's a SAFE mode.
+    let walletSafeModeArgs = WalletArguments [ "--safe-mode", "--disable-gpu", "--disable-d3d11" ]
+
+    -- Daedalus safe mode.
+    let walletArgs =    if walletMode == WalletModeSafe
+                            then walletArguments <> walletSafeModeArgs
+                            else walletArguments
+
+    logNotice ed $ "Starting the wallet"
 
     -- create the wallet process
-    walletExitStatus <- system (createProc Process.Inherit walletPath walletArguments) mempty
+    walletExitStatus <- system (createProc Process.Inherit walletPath walletArgs) mempty
 
     -- Let us map the interesting commands into a very simple "language".
     let exitCode :: DaedalusExitCodes
@@ -117,7 +145,7 @@ runWallet ed walletPath walletArguments updaterData = do
     -- through the function and separate it. When we decouple it, we can test parts in isolation.
     -- We separate the description of the computation, from the computation itself.
     -- There are other ways of doing this, of course.
-    handleDaedalusExitcode
+    handleDaedalusExitCode
         (UpdateRunner $ runUpdater updaterData)
         (LauncherRunner restart)
         exitCode
