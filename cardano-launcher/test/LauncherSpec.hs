@@ -10,7 +10,7 @@ import           Test.QuickCheck (Arbitrary (..), elements)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import           Cardano.Shell.Launcher (DaedalusExitCodes (..),
-                                         LauncherRunner (..),
+                                         WalletRunner (..),
                                          UpdateRunner (..),
                                          handleDaedalusExitCode)
 
@@ -33,14 +33,14 @@ launcherSpec = describe "Launcher system" $ modifyMaxSuccess (const 10000) $ do
 
     it "should restart launcher, normal mode" $ monadicIO $ do
         let walletExitCode      = RestartInGPUNormalMode
-        let launcherFunction    = LauncherRunner $ pure ExitSuccess
+        let launcherFunction    = WalletRunner $ pure ExitSuccess
 
         exitCode <- run $ handleDaedalusExitCode doNotUse launcherFunction walletExitCode
         assert $ exitCode == ExitSuccess
 
     it "should restart launcher, safe mode" $ monadicIO $ do
         let walletExitCode      = RestartInGPUSafeMode
-        let launcherFunction    = LauncherRunner $ pure ExitSuccess
+        let launcherFunction    = WalletRunner $ pure ExitSuccess
 
         exitCode <- run $ handleDaedalusExitCode doNotUse launcherFunction walletExitCode
         assert $ exitCode == ExitSuccess
@@ -48,7 +48,7 @@ launcherSpec = describe "Launcher system" $ modifyMaxSuccess (const 10000) $ do
     it "should run update, restart launcher, normal mode" $ monadicIO $ do
         let walletExitCode      = RunUpdate
         let updateFunction      = UpdateRunner $ pure ExitSuccess
-        let launcherFunction    = LauncherRunner $ pure ExitSuccess
+        let launcherFunction    = WalletRunner $ pure ExitSuccess
 
         exitCode <- run $ handleDaedalusExitCode updateFunction launcherFunction walletExitCode
         assert $ exitCode == ExitSuccess
