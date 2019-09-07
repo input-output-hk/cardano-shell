@@ -9,9 +9,8 @@ import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Arbitrary (..), elements)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           Cardano.Shell.Launcher (DaedalusExitCodes (..),
-                                         WalletRunner (..),
-                                         UpdateRunner (..),
+import           Cardano.Shell.Launcher (DaedalusExitCode (..),
+                                         UpdateRunner (..), WalletRunner (..),
                                          handleDaedalusExitCode)
 
 -- | The simple launcher spec.
@@ -22,28 +21,28 @@ launcherSpec = describe "Launcher system" $ modifyMaxSuccess (const 10000) $ do
         let walletExitCode = ExitCodeSuccess
 
         exitCode <- run $ handleDaedalusExitCode doNotUse doNotUse walletExitCode
-        assert $ exitCode == ExitSuccess
+        assert $ exitCode == ExitCodeSuccess
 
     prop "should return failure" $ \(exitNum :: ExitCodeNumber) -> monadicIO $ do
         let exitCodeNumber = getExitCodeNumber exitNum
-        let walletExitCode = ExitCodeOther exitCodeNumber
+        let walletExitCode = ExitCodeFailure exitCodeNumber
 
         exitCode <- run $ handleDaedalusExitCode doNotUse doNotUse walletExitCode
-        assert $ exitCode == ExitFailure exitCodeNumber
+        assert $ exitCode == ExitCodeFailure exitCodeNumber
 
     it "should restart launcher, normal mode" $ monadicIO $ do
         let walletExitCode      = RestartInGPUNormalMode
         let launcherFunction    = WalletRunner $ pure ExitSuccess
 
         exitCode <- run $ handleDaedalusExitCode doNotUse launcherFunction walletExitCode
-        assert $ exitCode == ExitSuccess
+        assert $ exitCode == ExitCodeSuccess
 
     it "should restart launcher, safe mode" $ monadicIO $ do
         let walletExitCode      = RestartInGPUSafeMode
         let launcherFunction    = WalletRunner $ pure ExitSuccess
 
         exitCode <- run $ handleDaedalusExitCode doNotUse launcherFunction walletExitCode
-        assert $ exitCode == ExitSuccess
+        assert $ exitCode == ExitCodeSuccess
 
     it "should run update, restart launcher, normal mode" $ monadicIO $ do
         let walletExitCode      = RunUpdate
@@ -51,7 +50,7 @@ launcherSpec = describe "Launcher system" $ modifyMaxSuccess (const 10000) $ do
         let launcherFunction    = WalletRunner $ pure ExitSuccess
 
         exitCode <- run $ handleDaedalusExitCode updateFunction launcherFunction walletExitCode
-        assert $ exitCode == ExitSuccess
+        assert $ exitCode == ExitCodeSuccess
 
   where
     -- | A simple utility function so we don't have to pass panic around.

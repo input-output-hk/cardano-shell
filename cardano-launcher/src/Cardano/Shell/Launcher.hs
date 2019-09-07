@@ -1,4 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Cardano.Shell.Launcher
     ( WalletMode (..)
@@ -9,10 +10,12 @@ module Cardano.Shell.Launcher
     -- * Functions
     , runWalletProcess
     -- * Critical exports (testing)
-    , DaedalusExitCodes (..)
+    , DaedalusExitCode (..)
     , handleDaedalusExitCode
     , UpdateRunner (..)
     , WalletRunner (..)
+    -- * Typeclass
+    , Isomorphism (..)
     ) where
 
 import           Cardano.Prelude
@@ -41,7 +44,7 @@ instance Semigroup WalletArguments where
     (<>) = \wArgs1 wArgs2 -> WalletArguments $ getWalletArguments wArgs1 <> getWalletArguments wArgs2
 
 newtype WalletPath = WalletPath
-    { getWalletPath         :: Text
+    { getWalletPath :: Text
     } deriving (Eq, Show)
 
 data ExternalDependencies = ExternalDependencies
@@ -68,17 +71,49 @@ data WalletMode
 -- | All the important exit codes. Since we cover "other" cases as well, this is a total mapping.
 -- That is good.
 -- TODO(KS): We could extend this to try to encode some interesting properties about it.
-data DaedalusExitCodes
+data DaedalusExitCode
     = RunUpdate
     -- ^ Daedalus is ready to run the update system.
     | RestartInGPUSafeMode
     -- ^ Daedalus asks launcher to relaunch Daedalus with GPU safe mode.
     | RestartInGPUNormalMode
     -- ^ Daedalus asks launcher to relaunch Daedalus with normal mode (turn off GPU safe mode).
-    | ExitCodeOther Int
+    | ExitCodeFailure Int
     -- ^ Daedalus wants launcher to exit as well. Unexpected exit code.
     | ExitCodeSuccess
     -- ^ Daedalus "happy path" where it could shut down with success.
+    deriving (Eq, Show)
+
+-- | A simplified typeclass. Maybe we could fetch it from somewhere?
+-- This will work for this case.
+--
+-- from . to == to . from == id
+class Isomorphism a b where
+    isoFrom     :: a -> b
+    isoTo       :: b -> a
+
+-- | A simple instance for converting there and back.
+-- The main reason we have it is so we can decouple the implementation.
+-- It's a very convenient way to define what exit code means what.
+-- Not all that type safe, though, but at least it's defined in one place.
+instance Isomorphism DaedalusExitCode ExitCode where
+
+    isoFrom =   \case
+        RunUpdate               -> ExitFailure 20
+        RestartInGPUSafeMode    -> ExitFailure 21
+        RestartInGPUNormalMode  -> ExitFailure 22
+
+        ExitCodeFailure ef      -> ExitFailure ef
+        ExitCodeSuccess         -> ExitSuccess
+
+    isoTo   =   \case
+        ExitFailure 20          -> RunUpdate
+        ExitFailure 21          -> RestartInGPUSafeMode
+        ExitFailure 22          -> RestartInGPUNormalMode
+
+        ExitFailure ef          -> ExitCodeFailure ef
+        ExitSuccess             -> ExitCodeSuccess
+
 
 --------------------------------------------------------------------------------
 -- Functions
@@ -91,19 +126,28 @@ data DaedalusExitCodes
 handleDaedalusExitCode
     :: UpdateRunner
     -> WalletRunner
-    -> DaedalusExitCodes
-    -> IO ExitCode
-handleDaedalusExitCode runUpdaterFunction restartWalletFunction = \case
+    -> DaedalusExitCode
+    -> IO DaedalusExitCode
+handleDaedalusExitCode runUpdaterFunction restartWalletFunction = isoTo <<$>> \case
     RunUpdate               -> runUpdate runUpdaterFunction >> runWallet restartWalletFunction
     -- ^ Run the actual update, THEN restart launcher.
+    -- Do we maybe need to handle the update ExitCode as well?
     RestartInGPUSafeMode    -> runWallet restartWalletFunction
-    -- ^ Enable safe mode (GPU safe mode). TODO(KS): Feedback from Daedalus?
+    -- ^ Enable safe mode (GPU safe mode).
     RestartInGPUNormalMode  -> runWallet restartWalletFunction
     -- ^ Disable safe mode (GPU safe mode).
-    ExitCodeOther ef        -> return $ ExitFailure ef
+    ExitCodeFailure ef      -> return $ ExitFailure ef
     -- ^ Some other unexpected error popped up.
     ExitCodeSuccess         -> return ExitSuccess
     -- ^ All is well, exit "mucho bien".
+
+-- | Wallet runner type.
+-- I give you the path to the wallet, it's arguments and you execute it
+-- and return me the @ExitCode@.
+-- TODO(KS): Replace so we can get more flexibile and testable code?
+--newtype WalletRunner = WalletRunner
+--    { runWalletSystemProcess :: WalletPath -> WalletArguments -> IO ExitCode
+--    }
 
 -- | Launching the wallet.
 -- For now, this is really light since we don't know whether we will reuse the
@@ -137,20 +181,14 @@ runWalletProcess ed walletMode walletPath walletArguments updaterData = do
     walletExitStatus <- system (createProc Process.Inherit walletPath walletArgs) mempty
 
     -- Let us map the interesting commands into a very simple "language".
-    let exitCode :: DaedalusExitCodes
-        exitCode = case walletExitStatus of
-            ExitFailure 20  -> RunUpdate
-            ExitFailure 21  -> RestartInGPUSafeMode
-            ExitFailure 22  -> RestartInGPUNormalMode
-
-            ExitFailure ef  -> ExitCodeOther ef
-            ExitSuccess     -> ExitCodeSuccess
+    let exitCode :: DaedalusExitCode
+        exitCode = isoTo walletExitStatus
 
     -- Here we can interpret what that simple "language" means. This allows us to "cut"
     -- through the function and separate it. When we decouple it, we can test parts in isolation.
     -- We separate the description of the computation, from the computation itself.
     -- There are other ways of doing this, of course.
-    handleDaedalusExitCode
+    isoFrom <$> handleDaedalusExitCode
         (UpdateRunner $ runUpdater updaterData)
         (WalletRunner restart)
         exitCode
