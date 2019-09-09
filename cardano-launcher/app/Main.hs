@@ -25,6 +25,7 @@ import           Cardano.Shell.Launcher (ConfigurationOptions (..),
                                          getUpdaterData, getWPath, getWargs,
                                          runWalletProcess, walletRunnerProcess)
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
+import Cardano.Shell.CLI (getLauncherOptions)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
@@ -42,11 +43,11 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
 -- | Main function.
 main :: IO ()
 main = do
-    -- Todo: make it so that you can specify the path via CLI
-    launcherOptions <- either
-        (\err -> throwM $ LauncherOptionsError (show err))
-        return
-        =<< getLauncherOption "./cardano-launcher/configuration/launcher/launcher-config.demo.yaml"
+    launcherOptions <- do
+        eLauncherOptions <- getLauncherOptions
+        case eLauncherOptions of
+            Left err -> throwM $ LauncherOptionsError (show err)
+            Right lo -> pure lo
 
     -- Really no clue what to put there and how will the wallet work.
     -- These will be refactored in the future
