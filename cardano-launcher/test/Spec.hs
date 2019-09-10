@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 module Main where
 
 import           Cardano.Prelude
