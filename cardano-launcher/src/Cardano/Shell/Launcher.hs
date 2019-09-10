@@ -1,4 +1,10 @@
-{-# LANGUAGE LambdaCase #-}
+{-| This module exports functions and datatypes that are needed to launch
+cardano-launcher
+-}
+
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 
 module Cardano.Shell.Launcher
     ( WalletMode (..)
@@ -13,10 +19,20 @@ module Cardano.Shell.Launcher
     , handleDaedalusExitCode
     , UpdateRunner (..)
     , WalletRunner (..)
+    , ConfigurationOptions(..)
+    , LauncherOptions(..)
+    , getUpdaterData
+    , getWargs
+    , getWPath
+    , getLauncherOption
     ) where
 
 import           Cardano.Prelude
+
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
+import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
+import           Data.Time.Units (Microsecond, fromMicroseconds)
+import           Data.Yaml (ParseException, decodeFileEither)
 import qualified System.Process as Process
 import           Turtle (system)
 
@@ -32,8 +48,9 @@ data LauncherConfig = LauncherConfig
     , lcfgSeed        :: !(Maybe Integer)
     } deriving (Eq, Show)
 
+-- | Arguments that will be used to execute the wallet
 newtype WalletArguments = WalletArguments
-    { getWalletArguments    :: [Text]
+    { getWalletArguments :: [Text]
     } deriving (Eq, Show)
 
 -- | We define the instance on it's wrapped type.
@@ -41,7 +58,7 @@ instance Semigroup WalletArguments where
     (<>) = \wArgs1 wArgs2 -> WalletArguments $ getWalletArguments wArgs1 <> getWalletArguments wArgs2
 
 newtype WalletPath = WalletPath
-    { getWalletPath         :: Text
+    { getWalletPath :: Text
     } deriving (Eq, Show)
 
 data ExternalDependencies = ExternalDependencies
@@ -139,12 +156,12 @@ runWalletProcess ed walletMode walletPath walletArguments updaterData = do
     -- Let us map the interesting commands into a very simple "language".
     let exitCode :: DaedalusExitCodes
         exitCode = case walletExitStatus of
-            ExitFailure 20  -> RunUpdate
-            ExitFailure 21  -> RestartInGPUSafeMode
-            ExitFailure 22  -> RestartInGPUNormalMode
+            ExitFailure 20 -> RunUpdate
+            ExitFailure 21 -> RestartInGPUSafeMode
+            ExitFailure 22 -> RestartInGPUNormalMode
 
-            ExitFailure ef  -> ExitCodeOther ef
-            ExitSuccess     -> ExitCodeSuccess
+            ExitFailure ef -> ExitCodeOther ef
+            ExitSuccess    -> ExitCodeSuccess
 
     -- Here we can interpret what that simple "language" means. This allows us to "cut"
     -- through the function and separate it. When we decouple it, we can test parts in isolation.
@@ -168,3 +185,101 @@ runWalletProcess ed walletMode walletPath walletArguments updaterData = do
             , Process.std_err   = stdStream
             }
 
+-- Todo: Add haddock comment for each field
+-- | Launcher options
+data LauncherOptions = LauncherOptions
+    { loConfiguration       :: !ConfigurationOptions
+    , loTlsPath             :: !FilePath
+    , loUpdaterPath         :: !FilePath
+    , loUpdaterArgs         :: ![Text]
+    , loUpdateArchive       :: !(Maybe FilePath)
+    , loUpdateWindowsRunner :: !(Maybe FilePath)
+    , loWalletPath          :: !FilePath
+    , loWalletArgs          :: ![Text]
+    } deriving (Show, Generic)
+
+instance FromJSON LauncherOptions where
+    parseJSON = withObject "LauncherOptions" $ \o -> do
+        walletPath <- o .: "walletPath"
+        walletArgs <- o .: "walletArgs"
+        updaterPath <- o .: "updaterPath"
+        updaterArgs <- o .: "updaterArgs"
+        updateArchive <- o .: "updateArchive"
+        updateWindowsRunner <- o .: "updateWindowsRunner"
+        configuration <- o .: "configuration"
+        tlsPath <- o .: "tlsPath"
+        pure $ LauncherOptions
+            configuration
+            tlsPath
+            updaterPath
+            updaterArgs
+            updateArchive
+            updateWindowsRunner
+            walletPath
+            walletArgs
+
+-- | Configuration yaml file location and the key to use. The file should
+-- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
+-- in the map.
+data ConfigurationOptions = ConfigurationOptions
+    { cfoFilePath    :: !FilePath
+    , cfoKey         :: !Text
+    , cfoSystemStart :: !(Maybe Timestamp)
+    -- ^ An optional system start time override. Required when using a
+    -- testnet genesis configuration.
+    , cfoSeed        :: !(Maybe Integer)
+    -- ^ Seed for secrets generation can be provided via CLI, in
+    -- this case it overrides one from configuration file.
+    } deriving (Show)
+
+-- | Timestamp is a number which represents some point in time. It is
+-- used in MonadSlots and its meaning is up to implementation of this
+-- type class. The only necessary knowledge is that difference between
+-- timestamps is microsecond. Hence underlying type is Microsecond.
+-- Amount of microseconds since Jan 1, 1970 UTC.
+
+newtype Timestamp = Timestamp
+    { getTimestamp :: Microsecond
+    } deriving (Show, Num, Eq, Ord, Enum, Real, Integral, Typeable, Generic)
+
+instance FromJSON ConfigurationOptions where
+    parseJSON = withObject "ConfigurationOptions" $ \o -> do
+        path <- o .: "filePath"
+        key <- o .: "key"
+        systemStart <- (Timestamp . fromMicroseconds . (*) 1000000) <<$>> o .:? "systemStart"
+        seed <- o .:? "seed"
+        pure $ ConfigurationOptions path key systemStart seed
+
+-- | Parses config file and return @LauncherOptions@ if successful
+getLauncherOption :: FilePath -> IO (Either ParseException LauncherOptions)
+getLauncherOption = decodeFileEither
+
+--------------------------------------------------------------------------------
+-- These functions will take LauncherOptions as an argument and put together
+-- that data so that it can be used
+--------------------------------------------------------------------------------
+
+-- | Create @UpdaterData@ with given @LauncherOptions@
+getUpdaterData :: LauncherOptions -> UpdaterData
+getUpdaterData lo =
+    let path = loUpdaterPath lo
+        args = loUpdaterArgs lo
+        windowsRunner = loUpdateWindowsRunner lo
+        archivePath = fromMaybe "" (loUpdateArchive lo)
+    in UpdaterData path args windowsRunner archivePath
+
+-- I think it'll be easier if we introduce sum type that will put together all
+-- the datas that are need to launch wallet-frontend..
+-- Something like this:
+--data NodeData = NodeData
+-- { ndPath    :: !FilePath
+-- , ndArgs    :: ![Text]
+-- , ndLogPath :: Maybe FilePath }
+
+-- | Return WalletArguments
+getWargs :: LauncherOptions -> WalletArguments
+getWargs lo = WalletArguments $ loWalletArgs lo
+
+-- | Return WalletPath
+getWPath :: LauncherOptions -> WalletPath
+getWPath lo = WalletPath $ toS $ loWalletPath lo

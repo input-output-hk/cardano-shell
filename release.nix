@@ -6,7 +6,7 @@ commonLib.nix-tools.release-nix {
 
   # packages from our stack.yaml or plan file (via nix/pkgs.nix) we
   # are interested in building on CI via nix-tools.
-  packages = [ "cardano-shell" ];
+  packages = [ "cardano-shell" "cardano-launcher" ];
 
   # non nix-tools jobs from default.nix that we want to build for
   # all supported systems.
