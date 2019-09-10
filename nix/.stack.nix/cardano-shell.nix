@@ -33,7 +33,6 @@
           (hsPkgs.async)
           (hsPkgs.text)
           (hsPkgs.transformers)
-          (hsPkgs.turtle)
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {

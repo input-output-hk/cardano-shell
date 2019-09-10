@@ -54,7 +54,6 @@ library
     , async
     , text
     , transformers
-    , turtle
   if os(windows)
     build-depends:     Win32
 
