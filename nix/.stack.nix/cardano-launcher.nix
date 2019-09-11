@@ -17,6 +17,7 @@
     components = {
       "library" = {
         depends = [
+          (hsPkgs.aeson)
           (hsPkgs.base)
           (hsPkgs.Cabal)
           (hsPkgs.cardano-prelude)
@@ -26,6 +27,8 @@
           (hsPkgs.QuickCheck)
           (hsPkgs.text)
           (hsPkgs.turtle)
+          (hsPkgs.yaml)
+          (hsPkgs.time-units)
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {
@@ -70,6 +73,7 @@
             (hsPkgs.cardano-prelude)
             (hsPkgs.QuickCheck)
             (hsPkgs.hspec)
+            (hsPkgs.yaml)
             ];
           };
         };

@@ -14,9 +14,12 @@ import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
 import           Cardano.Shell.Launcher (ExternalDependencies (..),
-                                         LauncherConfig (..),
-                                         WalletArguments (..), WalletPath (..),
-                                         runWallet)
+                                         WalletArguments (..), WalletMode (..),
+                                         WalletPath (..), runWalletProcess
+                                         , ConfigurationOptions (..),
+                                         LauncherOptions (..),
+                                         getLauncherOption, getUpdaterData,
+                                         getWPath, getWargs)
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
@@ -32,40 +35,39 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
 -- Main
 --------------------------------------------------------------------------------
 
--- | Yes, this is something we probably need to replace with actual loggging.
--- If we want. Otherwise, we can print out to console out just for launcher configs.
-externalDependencies :: ExternalDependencies
-externalDependencies = ExternalDependencies
-    { logInfo            = putTextLn
-    , logError           = putTextLn
-    , logNotice          = putTextLn
-    }
-
 -- | Main function.
 main :: IO ()
 main = do
-
-    let launcherConfig :: LauncherConfig
-        launcherConfig = LauncherConfig
-            { lcfgFilePath    = "./configuration/cert-configuration.yaml"
-            , lcfgKey         = "dev"
-            , lcfgSystemStart = Nothing
-            , lcfgSeed        = Nothing
-            }
+    -- Todo: make it so that you can specify the path via CLI
+    launcherOptions <- either
+        (\err -> throwM $ LauncherOptionsError (show err))
+        return
+        =<< getLauncherOption "./cardano-launcher/configuration/launcher/launcher-config.demo.yaml"
 
     -- Really no clue what to put there and how will the wallet work.
+    -- These will be refactored in the future
+    let launcherConfig :: ConfigurationOptions
+        launcherConfig = loConfiguration launcherOptions
+
     let walletPath :: WalletPath
-        walletPath = WalletPath "./test/testDaedalusFrontend.sh"
+        walletPath = getWPath launcherOptions
 
     let walletArgs :: WalletArguments
-        walletArgs = WalletArguments ["./launcher-config.yaml"]
+        walletArgs = getWargs launcherOptions
 
-    -- | This is a mock for updater, need to replace with actual data
     let updaterData :: UpdaterData
-        updaterData = UpdaterData
-            { udPath = "./test/testUpdater.sh"
-            , udArgs = ["main"]
-            , udArchivePath = ""
+        updaterData = getUpdaterData launcherOptions
+
+    -- where to generate the certificates
+    let tlsPath :: TLSPath
+        tlsPath = TLSPath $ loTlsPath launcherOptions
+    
+    -- | Yes, this is something we probably need to replace with actual loggging.
+    let externalDependencies :: ExternalDependencies
+        externalDependencies = ExternalDependencies
+            { logInfo       = putTextLn
+            , logError      = putTextLn
+            , logNotice     = putTextLn
             }
 
     -- | If we need to, we first check if there are certificates so we don't have
@@ -74,11 +76,17 @@ main = do
     generateTlsCertificates
         externalDependencies
         launcherConfig
-        (TLSPath "./configuration/") -- where to generate the certificates
+        tlsPath
 
     void $ runUpdater updaterData -- On windows, process dies here
     -- You still want to run the wallet even if the update fails
-    exitCode <- runWallet externalDependencies walletPath walletArgs updaterData
+    exitCode <- runWalletProcess
+                    externalDependencies
+                    WalletModeNormal
+                    walletPath
+                    walletArgs
+                    updaterData
+
     exitWith exitCode
 
 --------------------------------------------------------------------------------
@@ -97,6 +105,7 @@ newtype TLSPath = TLSPath { getTLSFilePath :: FilePath }
 
 data LauncherExceptions
     = CannotGenerateTLS
+    | LauncherOptionsError Text
     deriving (Eq)
 
 instance Buildable LauncherExceptions where
@@ -104,6 +113,9 @@ instance Buildable LauncherExceptions where
         CannotGenerateTLS -> bprint "Couldn't generate TLS certificates; \
             \ Daedalus wallet won't work without TLS. Please check your configuration \
             \ and make sure you aren't already running an instance of Daedalus wallet."
+        LauncherOptionsError err -> bprint
+               "Error occured during loading configuration file:\n"
+            <> Formatting.Buildable.build err
 
 instance Show LauncherExceptions where
     show = formatToString Formatting.build
@@ -120,8 +132,8 @@ textToFilePath = strConv Strict
 
 -- | Generation of the TLS certificates.
 -- This just covers the generation of the TLS certificates and nothing else.
-generateTlsCertificates :: ExternalDependencies -> LauncherConfig -> TLSPath -> IO ()
-generateTlsCertificates externalDependencies' launcherConfig (TLSPath tlsPath) = do
+generateTlsCertificates :: ExternalDependencies -> ConfigurationOptions -> TLSPath -> IO ()
+generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsPath) = do
 
     let tlsServer = tlsPath </> "server"
     let tlsClient = tlsPath </> "client"
@@ -133,7 +145,7 @@ generateTlsCertificates externalDependencies' launcherConfig (TLSPath tlsPath) =
     createDirectoryIfMissing True tlsClient
 
     -- Generate the certificates.
-    generateCertificates launcherConfig tlsServer tlsClient
+    generateCertificates tlsServer tlsClient
         `onException` throwM CannotGenerateTLS
         -- ^ unfortunate since we gobble up the real cause,
         -- but we want the client to have a nice message
@@ -141,11 +153,13 @@ generateTlsCertificates externalDependencies' launcherConfig (TLSPath tlsPath) =
   where
     -- | The generation of the certificates. More or less copied from
     -- `cardano-sl`.
-    generateCertificates :: LauncherConfig -> FilePath -> FilePath -> IO ()
-    generateCertificates launcherConfig' tlsServer' tlsClient = do
+    generateCertificates :: FilePath -> FilePath -> IO ()
+    generateCertificates tlsServer' tlsClient = do
 
-        let cfgFilePath = lcfgFilePath launcherConfig'
-        let cfgKey      = lcfgKey launcherConfig'
+        let configFile = cfoFilePath configurationOptions
+        -- | Configuration key within the config file
+        let configKey :: ConfigurationKey
+            configKey = ConfigurationKey . textToFilePath . cfoKey $ configurationOptions
 
         let outDirectories :: DirConfiguration -- ^ Output directories configuration
             outDirectories = DirConfiguration
@@ -153,13 +167,6 @@ generateTlsCertificates externalDependencies' launcherConfig (TLSPath tlsPath) =
                 , outDirClients = tlsClient
                 , outDirCA      = Nothing -- TODO(KS): AFAIK, we don't output the CA.
                 }
-
-        -- | Configuration key within the config file
-        let configKey :: ConfigurationKey
-            configKey = ConfigurationKey . textToFilePath $ cfgKey
-
-        let configFile :: FilePath
-            configFile = textToFilePath cfgFilePath
 
         -- | TLS configuration
         tlsConfig <- decodeConfigFile configKey configFile

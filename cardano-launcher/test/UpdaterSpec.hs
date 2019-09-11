@@ -26,12 +26,13 @@ updaterSpec = describe "Update system" $ do
 testUpdaterData :: UpdaterData
 testUpdaterData =
     UpdaterData
-        "./test/testUpdater.sh"
+        "./cardano-launcher/test/testUpdater.sh"
         []
+        Nothing
         ""
 
-testRunCmd :: ExitNum -> FilePath -> [String] -> FilePath -> IO ExitCode
-testRunCmd (ExitNum num) _ _ _ = return $ ExitFailure num
+testRunCmd :: ExitNum -> FilePath -> [String] -> IO ExitCode
+testRunCmd (ExitNum num) _ _ = return $ ExitFailure num
 
 newtype ExitNum = ExitNum {
     getExitNum :: Int

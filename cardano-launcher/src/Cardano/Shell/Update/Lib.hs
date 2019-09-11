@@ -8,7 +8,6 @@
 module Cardano.Shell.Update.Lib
     ( UpdaterData(..)
     , RunCmdFunc
-    , updaterData
     , runUpdater
     , runUpdater'
     ) where
@@ -27,29 +26,12 @@ import           System.Win32.Process (getCurrentProcessId)
 
 -- | Updater path, args, windows runner path, archive path
 data UpdaterData = UpdaterData
-    { udPath        :: !FilePath
-    , udArgs        :: ![Text]
-    , udArchivePath :: !FilePath
--- We might add checksum value for updater to ensure that we're launching the right updater
+    { udPath          :: !FilePath
+    , udArgs          :: ![Text]
+    , udWindowsRunner :: !(Maybe FilePath)
+    , udArchivePath   :: !FilePath
+-- ^We might add checksum value for updater to ensure that we're launching the right updater
     }
-
--- Windows: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/win64.dhall#L32-L35
--- MacOS: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/macos64.dhall#L31-L34
--- Linux: https://github.com/input-output-hk/daedalus/blob/develop/installers/dhall/linux64.dhall#L29-L32
-updaterData :: UpdaterData
-updaterData = case buildOS of
-    Windows -> UpdaterData
-                   "Installer.exe"
-                   []
-                   "Installer.bat"
-    OSX     -> UpdaterData
-                    "/usr/bin/open"
-                    ["-FW"]
-                    "\\${HOME}/Library/Application Support/Daedalus/installer.pkg"
-    _       -> UpdaterData
-                    "/bin/update-runner" -- Does this path exist?
-                    []
-                    "\\${XDG_DATA_HOME}/Daedalus/installer.sh"
 
 -- | Run the update system
 --
@@ -65,15 +47,14 @@ updaterData = case buildOS of
 runUpdater :: UpdaterData -> IO ExitCode
 runUpdater = runUpdater' runCmd
   where
-    runCmd :: FilePath -> [String] -> FilePath -> IO ExitCode
-    runCmd path args archive =
-        withCreateProcess (proc path (args <> [archive]))
+    runCmd :: FilePath -> [String] -> IO ExitCode
+    runCmd path args =
+        withCreateProcess (proc path args)
             $ \_in _out _err ph -> waitForProcess ph
 
 type RunCmdFunc
     = FilePath
     -> [String]
-    -> FilePath
     -> IO ExitCode
 
 -- | @runUpdater@ but can inject any runCommand function.
@@ -83,14 +64,18 @@ runUpdater' runCommand ud = do
     let path = udPath ud
     let args = map toS $ udArgs ud
     let archive = (udArchivePath ud)
+    let runnerPath = fromMaybe mempty (udWindowsRunner ud)
     updaterExist <- doesFileExist path
+    putTextLn $ "Does file exist: " <> show updaterExist
     if updaterExist 
         then do
             exitCode <- case buildOS of
                 Windows -> do
-                    writeWindowsUpdaterRunner archive
-                    runCommand archive args archive -- Process dies here
-                _ -> runCommand path args archive
+                    writeWindowsUpdaterRunner runnerPath
+                    runCommand runnerPath (toS path:args) -- Process dies here
+                _ -> do
+                    putTextLn "Running updater"
+                    runCommand path (toS archive:args)
             case exitCode of --- On windows, the function will never reach here
                 ExitSuccess -> do
                     whenM (doesFileExist archive) $ removeFile archive
