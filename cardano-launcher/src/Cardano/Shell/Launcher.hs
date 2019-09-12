@@ -1,13 +1,15 @@
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Cardano.Shell.Launcher
     ( WalletMode (..)
     , LauncherConfig (..)
     , WalletArguments (..)
     , WalletPath (..)
+    , WalletRunner (..)
+    , walletRunnerProcess
     , ExternalDependencies (..)
     -- * Functions
     , runWalletProcess
@@ -15,7 +17,7 @@ module Cardano.Shell.Launcher
     , DaedalusExitCode (..)
     , handleDaedalusExitCode
     , UpdateRunner (..)
-    , WalletRunner (..)
+    , RestartRunner (..)
     -- * Typeclass
     , Isomorphism (..)
     -- * Configuration
@@ -29,12 +31,14 @@ module Cardano.Shell.Launcher
 
 import           Cardano.Prelude
 
-import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
 import           Data.Time.Units (Microsecond, fromMicroseconds)
 import           Data.Yaml (ParseException, decodeFileEither)
+
 import qualified System.Process as Process
 import           Turtle (system)
+
+import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 
 --------------------------------------------------------------------------------
 -- Types
@@ -73,7 +77,7 @@ newtype UpdateRunner = UpdateRunner { runUpdate :: IO ExitCode }
 
 -- | This type is responsible for launching and re-launching the wallet
 -- inside the launcher process.
-newtype WalletRunner = WalletRunner { runWallet :: IO ExitCode }
+newtype RestartRunner = RestartRunner { runRestart :: IO ExitCode }
 
 -- | The wallet mode that it's supposed to use.
 -- Here we are making the @WalletMode@ explicit.
@@ -96,7 +100,7 @@ data DaedalusExitCode
     -- ^ Daedalus wants launcher to exit as well. Unexpected exit code.
     | ExitCodeSuccess
     -- ^ Daedalus "happy path" where it could shut down with success.
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic)
 
 -- | A simplified typeclass. Maybe we could fetch it from somewhere?
 -- This will work for this case.
@@ -139,16 +143,16 @@ instance Isomorphism DaedalusExitCode ExitCode where
 -- This is much simpler to test, no?
 handleDaedalusExitCode
     :: UpdateRunner
-    -> WalletRunner
+    -> RestartRunner
     -> DaedalusExitCode
     -> IO DaedalusExitCode
 handleDaedalusExitCode runUpdaterFunction restartWalletFunction = isoTo <<$>> \case
-    RunUpdate               -> runUpdate runUpdaterFunction >> runWallet restartWalletFunction
+    RunUpdate               -> runUpdate runUpdaterFunction >> runRestart restartWalletFunction
     -- ^ Run the actual update, THEN restart launcher.
     -- Do we maybe need to handle the update ExitCode as well?
-    RestartInGPUSafeMode    -> runWallet restartWalletFunction
+    RestartInGPUSafeMode    -> runRestart restartWalletFunction
     -- ^ Enable safe mode (GPU safe mode).
-    RestartInGPUNormalMode  -> runWallet restartWalletFunction
+    RestartInGPUNormalMode  -> runRestart restartWalletFunction
     -- ^ Disable safe mode (GPU safe mode).
     ExitCodeFailure ef      -> return $ ExitFailure ef
     -- ^ Some other unexpected error popped up.
@@ -158,10 +162,9 @@ handleDaedalusExitCode runUpdaterFunction restartWalletFunction = isoTo <<$>> \c
 -- | Wallet runner type.
 -- I give you the path to the wallet, it's arguments and you execute it
 -- and return me the @ExitCode@.
--- TODO(KS): Replace so we can get more flexibile and testable code?
---newtype WalletRunner = WalletRunner
---    { runWalletSystemProcess :: WalletPath -> WalletArguments -> IO ExitCode
---    }
+newtype WalletRunner = WalletRunner
+    { runWalletSystemProcess :: WalletPath -> WalletArguments -> IO ExitCode
+    }
 
 -- | Launching the wallet.
 -- For now, this is really light since we don't know whether we will reuse the
@@ -172,12 +175,19 @@ runWalletProcess
     -> WalletMode
     -> WalletPath
     -> WalletArguments
+    -> WalletRunner
     -> UpdaterData
     -> IO ExitCode
-runWalletProcess ed walletMode walletPath walletArguments updaterData = do
+runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterData = do
 
     let restart :: IO ExitCode
-        restart = runWalletProcess ed walletMode walletPath walletArguments updaterData
+        restart =   runWalletProcess
+                        ed
+                        walletMode
+                        walletPath
+                        walletArguments
+                        walletRunner
+                        updaterData
 
     -- Additional arguments we need to pass if it's a SAFE mode.
     let walletSafeModeArgs :: WalletArguments
@@ -192,7 +202,7 @@ runWalletProcess ed walletMode walletPath walletArguments updaterData = do
     logNotice ed $ "Starting the wallet"
 
     -- create the wallet process
-    walletExitStatus <- system (createProc Process.Inherit walletPath walletArgs) mempty
+    walletExitStatus <- runWalletSystemProcess walletRunner walletPath walletArgs
 
     -- Let us map the interesting commands into a very simple "language".
     let exitCode :: DaedalusExitCode
@@ -204,8 +214,14 @@ runWalletProcess ed walletMode walletPath walletArguments updaterData = do
     -- There are other ways of doing this, of course.
     isoFrom <$> handleDaedalusExitCode
         (UpdateRunner $ runUpdater updaterData)
-        (WalletRunner restart)
+        (RestartRunner restart)
         exitCode
+
+
+-- | Create the wallet runner proces which will actually run the wallet.
+walletRunnerProcess :: WalletRunner
+walletRunnerProcess = WalletRunner $ \walletPath walletArgs ->
+    system (createProc Process.Inherit walletPath walletArgs) mempty
   where
     -- | The creation of the process.
     createProc
@@ -219,6 +235,10 @@ runWalletProcess ed walletMode walletPath walletArguments updaterData = do
             , Process.std_out   = stdStream
             , Process.std_err   = stdStream
             }
+
+--------------------------------------------------------------------------------
+-- Configuration
+--------------------------------------------------------------------------------
 
 -- Todo: Add haddock comment for each field
 -- | Launcher options
@@ -235,14 +255,16 @@ data LauncherOptions = LauncherOptions
 
 instance FromJSON LauncherOptions where
     parseJSON = withObject "LauncherOptions" $ \o -> do
-        walletPath <- o .: "walletPath"
-        walletArgs <- o .: "walletArgs"
-        updaterPath <- o .: "updaterPath"
-        updaterArgs <- o .: "updaterArgs"
-        updateArchive <- o .: "updateArchive"
-        updateWindowsRunner <- o .: "updateWindowsRunner"
-        configuration <- o .: "configuration"
-        tlsPath <- o .: "tlsPath"
+
+        walletPath              <- o .: "walletPath"
+        walletArgs              <- o .: "walletArgs"
+        updaterPath             <- o .: "updaterPath"
+        updaterArgs             <- o .: "updaterArgs"
+        updateArchive           <- o .: "updateArchive"
+        updateWindowsRunner     <- o .: "updateWindowsRunner"
+        configuration           <- o .: "configuration"
+        tlsPath                 <- o .: "tlsPath"
+
         pure $ LauncherOptions
             configuration
             tlsPath
@@ -279,10 +301,10 @@ newtype Timestamp = Timestamp
 
 instance FromJSON ConfigurationOptions where
     parseJSON = withObject "ConfigurationOptions" $ \o -> do
-        path <- o .: "filePath"
-        key <- o .: "key"
-        systemStart <- (Timestamp . fromMicroseconds . (*) 1000000) <<$>> o .:? "systemStart"
-        seed <- o .:? "seed"
+        path            <- o .: "filePath"
+        key             <- o .: "key"
+        systemStart     <- (Timestamp . fromMicroseconds . (*) 1000000) <<$>> o .:? "systemStart"
+        seed            <- o .:? "seed"
         pure $ ConfigurationOptions path key systemStart seed
 
 -- | Parses config file and return @LauncherOptions@ if successful
@@ -297,10 +319,10 @@ getLauncherOption = decodeFileEither
 -- | Create @UpdaterData@ with given @LauncherOptions@
 getUpdaterData :: LauncherOptions -> UpdaterData
 getUpdaterData lo =
-    let path = loUpdaterPath lo
-        args = loUpdaterArgs lo
-        windowsRunner = loUpdateWindowsRunner lo
-        archivePath = fromMaybe "" (loUpdateArchive lo)
+    let path            = loUpdaterPath lo
+        args            = loUpdaterArgs lo
+        windowsRunner   = loUpdateWindowsRunner lo
+        archivePath     = fromMaybe "" (loUpdateArchive lo)
     in UpdaterData path args windowsRunner archivePath
 
 -- I think it'll be easier if we introduce sum type that will put together all

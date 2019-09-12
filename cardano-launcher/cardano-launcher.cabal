@@ -87,6 +87,7 @@ test-suite cardano-launcher-test
   other-modules:
       UpdaterSpec
     , LauncherSpec
+    , LauncherSMSpec
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -94,8 +95,13 @@ test-suite cardano-launcher-test
       base >=4.7 && <5
     , cardano-launcher
     , cardano-prelude
+    , directory
     -- quickcheck
     , QuickCheck
+    -- SM
+    , quickcheck-state-machine >= 0.6
+    -- required because of QSM
+    , tree-diff
     -- tests
     , hspec
     , yaml
@@ -103,7 +109,7 @@ test-suite cardano-launcher-test
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
 
-  ghc-options:         -Wall
+  ghc-options:         
                        -Werror
                        -Wcompat
                        -Wincomplete-record-updates
