@@ -14,9 +14,10 @@ import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
 import           Cardano.BM.Setup (setupTrace_, shutdown)
-import           Cardano.BM.Tracing
 import qualified Cardano.BM.Trace as Trace
+import           Cardano.BM.Tracing
 
+import           Cardano.Shell.CLI (getLauncherOptions)
 import           Cardano.Shell.Launcher (ConfigurationOptions (..),
                                          ExternalDependencies (..),
                                          LauncherOptions (..),
@@ -25,7 +26,6 @@ import           Cardano.Shell.Launcher (ConfigurationOptions (..),
                                          getUpdaterData, getWPath, getWargs,
                                          runWalletProcess, walletRunnerProcess)
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
-import Cardano.Shell.CLI (getLauncherOptions)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,

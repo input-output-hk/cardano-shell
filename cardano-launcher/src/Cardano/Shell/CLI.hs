@@ -24,7 +24,6 @@ newtype LauncherOptionPath = LauncherOptionPath
 --
 -- this will enable the launcher to load launcher-config.yaml from the same
 -- directory as the cardano-launcher binary
--- This will be used if the filepath was not provided via CLI
 getDefaultConfigPath :: IO FilePath
 getDefaultConfigPath = do
     launcherDir <- takeDirectory <$> getExecutablePath
@@ -32,14 +31,13 @@ getDefaultConfigPath = do
 
 -- | CLI for @LauncherOptionPath@
 launcherArgsParser :: FilePath -> Parser LauncherOptionPath
-launcherArgsParser defaultPath = LauncherOptionPath <$>
-    strOption (
-        short   'c' <>
-        long    "config" <>
-        help    ("Path to the launcher configuration file. If not provided, it'll\
-                \ instead use\n" <> defaultPath) <>
-        metavar "PATH" <>
-        value defaultPath )
+launcherArgsParser defaultPath = LauncherOptionPath <$> strOption (
+    short   'c' <>
+    long    "config" <>
+    help    ("Path to the launcher configuration file. If not provided, it'll\
+        \ instead use\n" <> defaultPath) <>
+    metavar "PATH" <>
+    value defaultPath )
 
 data LauncherOptionError =
     FailedToParseLauncherOption ParseException
