@@ -29,6 +29,7 @@
           (hsPkgs.turtle)
           (hsPkgs.yaml)
           (hsPkgs.time-units)
+          (hsPkgs.mtl)
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {
