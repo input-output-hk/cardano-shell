@@ -2,6 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeApplications           #-}
 
 module Cardano.Shell.Launcher
     ( WalletMode (..)
@@ -30,6 +31,7 @@ module Cardano.Shell.Launcher
     ) where
 
 import           Cardano.Prelude
+import           Prelude (Show (..))
 
 import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
 import           Data.Time.Units (Microsecond, fromMicroseconds)
@@ -75,9 +77,17 @@ data ExternalDependencies = ExternalDependencies
 -- The type that runs the update.
 newtype UpdateRunner = UpdateRunner { runUpdate :: IO ExitCode }
 
+-- | There is no way we can show this value.
+instance Show UpdateRunner where
+    show _ = "<UpdateRunner>"
+
 -- | This type is responsible for launching and re-launching the wallet
 -- inside the launcher process.
 newtype RestartRunner = RestartRunner { runRestart :: IO ExitCode }
+
+-- | There is no way we can show this value.
+instance Show RestartRunner where
+    show _ = "<RestartRunner>"
 
 -- | The wallet mode that it's supposed to use.
 -- Here we are making the @WalletMode@ explicit.
@@ -121,16 +131,16 @@ instance Isomorphism DaedalusExitCode ExitCode where
         RestartInGPUSafeMode    -> ExitFailure 21
         RestartInGPUNormalMode  -> ExitFailure 22
 
-        ExitCodeFailure ef      -> ExitFailure ef
         ExitCodeSuccess         -> ExitSuccess
+        ExitCodeFailure ef      -> ExitFailure ef
 
     isoTo   =   \case
         ExitFailure 20          -> RunUpdate
         ExitFailure 21          -> RestartInGPUSafeMode
         ExitFailure 22          -> RestartInGPUNormalMode
 
-        ExitFailure ef          -> ExitCodeFailure ef
         ExitSuccess             -> ExitCodeSuccess
+        ExitFailure ef          -> ExitCodeFailure ef
 
 
 --------------------------------------------------------------------------------
@@ -154,10 +164,10 @@ handleDaedalusExitCode runUpdaterFunction restartWalletFunction = isoTo <<$>> \c
     -- ^ Enable safe mode (GPU safe mode).
     RestartInGPUNormalMode  -> runRestart restartWalletFunction
     -- ^ Disable safe mode (GPU safe mode).
-    ExitCodeFailure ef      -> return $ ExitFailure ef
-    -- ^ Some other unexpected error popped up.
     ExitCodeSuccess         -> return ExitSuccess
     -- ^ All is well, exit "mucho bien".
+    ExitCodeFailure ef      -> return $ ExitFailure ef
+    -- ^ Some other unexpected error popped up.
 
 -- | Wallet runner type.
 -- I give you the path to the wallet, it's arguments and you execute it

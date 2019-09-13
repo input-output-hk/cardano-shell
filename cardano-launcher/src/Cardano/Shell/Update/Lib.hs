@@ -66,15 +66,15 @@ runUpdater' runCommand ud = do
     let archive = (udArchivePath ud)
     let runnerPath = fromMaybe mempty (udWindowsRunner ud)
     updaterExist <- doesFileExist path
-    putTextLn $ "Does file exist: " <> show updaterExist
-    if updaterExist 
+    -- putTextLn $ "Does file exist: " <> show updaterExist
+    if updaterExist
         then do
             exitCode <- case buildOS of
                 Windows -> do
                     writeWindowsUpdaterRunner runnerPath
                     runCommand runnerPath (toS path:args) -- Process dies here
                 _ -> do
-                    putTextLn "Running updater"
+                    --putTextLn "Running updater"
                     runCommand path (toS archive:args)
             case exitCode of --- On windows, the function will never reach here
                 ExitSuccess -> do

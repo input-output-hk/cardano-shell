@@ -109,7 +109,7 @@ test-suite cardano-launcher-test
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
 
-  ghc-options:         
+  ghc-options:         -Wall
                        -Werror
                        -Wcompat
                        -Wincomplete-record-updates
