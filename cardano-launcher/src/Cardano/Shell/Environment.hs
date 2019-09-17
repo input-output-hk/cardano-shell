@@ -1,9 +1,10 @@
-{-| This is an example of how you can perform env var substitution
-}
-
 {-# LANGUAGE OverloadedStrings #-}
 
-module Cardano.Shell.Environment where
+module Cardano.Shell.Environment
+  ( SubstitutionError(..)
+  , substituteEnvVars
+  , getLauncherOption'
+  ) where
 
 import           Cardano.Prelude
 
@@ -57,7 +58,7 @@ data SubstitutionError
   -- ^ Failed to read/decode yaml file
   | FailedToParseLauncherOption
   -- ^ Failed to convert @Value@ into @LauncherOptions@
-  deriving Show
+  deriving (Eq, Show)
 
 -- | Given an Aeson 'Value', parse and substitute environment variables in all
 -- 'String' objects.
