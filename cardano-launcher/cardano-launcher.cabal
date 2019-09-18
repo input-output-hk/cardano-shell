@@ -22,6 +22,7 @@ library
       -- Update system
     , Cardano.Shell.Update.Lib
     , Cardano.Shell.Update.Types
+    , Cardano.Shell.Template
   hs-source-dirs:
       src
   build-depends:
@@ -37,6 +38,7 @@ library
     , turtle
     , yaml
     , time-units
+    , mtl
   if os(windows)
     build-depends:     Win32
 
@@ -88,6 +90,7 @@ test-suite cardano-launcher-test
       UpdaterSpec
     , LauncherSpec
     , LauncherSMSpec
+    , TemplateSpec
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
