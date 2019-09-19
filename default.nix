@@ -74,7 +74,7 @@ in defaultNix // rec {
 
   runCoveralls = pkgs.stdenv.mkDerivation {
     name = "run-coveralls";
-    buildInputs = with pkgs; [ stack-hpc-coveralls stack ];
+    buildInputs = with pkgs; [ commonLib.stack-hpc-coveralls stack ];
     shellHook = ''
       echo '~~~ stack nix test'
       stack test --coverage
