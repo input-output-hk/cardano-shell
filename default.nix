@@ -52,8 +52,9 @@ let
   defaultNix = commonLib.nix-tools.default-nix ./nix/pkgs.nix {
     inherit system crossSystem config pkgs;
   };
-in defaultNix // {
+in defaultNix // rec {
   # ... and add additional packages we want to build on CI:
+  #pkgs.commonLib.stack-hpc-coveralls = pkgs.haskell.lib.dontCheck (pkgs.callPackage ./stack-hpc-coveralls.nix {});
 
   shell = defaultNix.nix-tools.shellFor {
     inherit withHoogle;
@@ -73,12 +74,12 @@ in defaultNix // {
 
   runCoveralls = pkgs.stdenv.mkDerivation {
     name = "run-coveralls";
-    buildInputs = with pkgs; [ commonLib.stack-hpc-coveralls stack ];
+    buildInputs = with pkgs; [ stack-hpc-coveralls stack ];
     shellHook = ''
       echo '~~~ stack nix test'
-      stack test --nix --coverage
+      stack test --coverage
       echo '~~~ shc'
-      shc --repo-token=$COVERALLS_REPO_TOKEN cardano-shell cardano-shell-test
+      shc --repo-token=$COVERALLS_REPO_TOKEN combined all
       exit
     '';
   };
