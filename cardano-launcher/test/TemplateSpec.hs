@@ -33,20 +33,21 @@ instance Arbitrary EnvValue where
 -- environment variable
 templateSpec :: Spec
 templateSpec = modifyMaxSuccess (const 5000) $ do
-    prop "should be able to perform env var substitution" $ \(EnvValue var value)-> monadicIO $ do
-        shouldBeValue <- run $ do
-            setEnv (toS var) (toS value)
-            let text = "${" <> var <> "}"
-            subbed <- substituteA text substituteVar
-            return $ toStrict subbed
-        assert $ shouldBeValue == value
-    prop "should throw error if substitution fails" $ \(EnvValue var _value) -> monadicIO $ do
-        (eShouldFail :: Either IOException Text) <- run $ try $ do
-            unsetEnv (toS var)
-            let text = "${" <> var <> "}"
-            subbed <- substituteA text substituteVar
-            return $ toStrict subbed
-        assert $ isLeft eShouldFail
+    prop "should be able to perform env var substitution" $
+        \(EnvValue var value)-> monadicIO $ do
+            shouldBeValue <- run $ do
+                subbed <- withEnv var value
+                    (substituteA ("${" <> var <> "}") substituteVar)
+                return $ toStrict subbed
+            assert $ shouldBeValue == value
+    prop "should throw error if substitution fails" $
+        \(EnvValue var _value) -> monadicIO $ do
+            (eShouldFail :: Either IOException Text) <- run . try $ do
+                unsetEnv (toS var)
+                let text = "${" <> var <> "}"
+                subbed <- substituteA text substituteVar
+                return $ toStrict subbed
+            assert $ isLeft eShouldFail
   where
     substituteVar :: Text -> IO Text
     substituteVar var' = do
@@ -54,3 +55,8 @@ templateSpec = modifyMaxSuccess (const 5000) $ do
         case mValue of
             Nothing -> ioError $ userError "Environment variable not found!"
             Just value -> return $ toS value
+    withEnv :: Text -> Text -> IO a -> IO a
+    withEnv var value action = bracket
+        (setEnv (toS var) (toS value))
+        (const $ unsetEnv (toS var))
+        (const action)

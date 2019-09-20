@@ -1,6 +1,7 @@
 module Main where
 
 import           Cardano.Prelude
+import           EnvironmentSpec (envSubstitutionSpec)
 import           LauncherSMSpec (launcherSMSpec)
 import           LauncherSpec (launcherSpec)
 import           TemplateSpec (templateSpec)
@@ -14,4 +15,5 @@ main = hspec $ do
     describe "Launcher spec" launcherSpec
     describe "LauncherSM spec" launcherSMSpec
     describe "Template spec" templateSpec
+    describe "Env substitution spec" envSubstitutionSpec
 

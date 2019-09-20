@@ -58,6 +58,8 @@
             (hsPkgs.tree-diff)
             (hsPkgs.hspec)
             (hsPkgs.yaml)
+            (hsPkgs.unordered-containers)
+            (hsPkgs.vector)
             ];
           };
         };
