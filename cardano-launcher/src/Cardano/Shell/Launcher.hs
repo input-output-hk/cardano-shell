@@ -158,16 +158,16 @@ handleDaedalusExitCode
     -> IO DaedalusExitCode
 handleDaedalusExitCode runUpdaterFunction restartWalletFunction = isoTo <<$>> \case
     RunUpdate               -> runUpdate runUpdaterFunction >> runRestart restartWalletFunction
-    -- ^ Run the actual update, THEN restart launcher.
+    -- Run the actual update, THEN restart launcher.
     -- Do we maybe need to handle the update ExitCode as well?
     RestartInGPUSafeMode    -> runRestart restartWalletFunction
-    -- ^ Enable safe mode (GPU safe mode).
+    -- Enable safe mode (GPU safe mode).
     RestartInGPUNormalMode  -> runRestart restartWalletFunction
-    -- ^ Disable safe mode (GPU safe mode).
+    -- Disable safe mode (GPU safe mode).
     ExitCodeSuccess         -> return ExitSuccess
-    -- ^ All is well, exit "mucho bien".
+    -- All is well, exit "mucho bien".
     ExitCodeFailure ef      -> return $ ExitFailure ef
-    -- ^ Some other unexpected error popped up.
+    -- Some other unexpected error popped up.
 
 -- | Wallet runner type.
 -- I give you the path to the wallet, it's arguments and you execute it
