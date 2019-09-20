@@ -1,9 +1,9 @@
 steps:
-  - label: 'stack coveralls coverage'
-    command:
-      - 'nix-shell -A runCoveralls'
-    agents:
-      system: x86_64-linux
+    #  - label: 'stack coveralls coverage'
+    #    command:
+    #      - 'nix-shell -A runCoveralls'
+    #    agents:
+    #      system: x86_64-linux
 
   - label: 'check-hydra'
     command: 'ci/check-hydra.sh'

@@ -6,7 +6,7 @@ commonLib.nix-tools.release-nix {
 
   # packages from our stack.yaml or plan file (via nix/pkgs.nix) we
   # are interested in building on CI via nix-tools.
-  packages = [ "cardano-shell" ];
+  packages = [ "cardano-shell" "cardano-launcher" ];
 
   # non nix-tools jobs from default.nix that we want to build for
   # all supported systems.
@@ -57,6 +57,7 @@ commonLib.nix-tools.release-nix {
     # tests
     jobs.tests.ipc.x86_64-linux
     # jobs.tests.ipc.x86_64-darwin # See comment in test.nix
+    jobs.nix-tools.tests.cardano-launcher.cardano-launcher-test.x86_64-linux
   ];
   extraBuilds = {
     tests.ipc = import ./test.nix;

@@ -1,40 +1,25 @@
-resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/8273fe5f00ac03b0c66ef3841c8e957139ee18f2/snapshot.yaml
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/56fadcea03417771f4b3666fd1dfc9bad8df1484/snapshot.yaml
 
 packages:
 - .
+- ./cardano-launcher
 
 extra-deps:
   - quickcheck-state-machine-0.6.0  # Used a specific dependency, new release.
   - pretty-show-1.9.5               # Used for quickcheck-state-machine.
+  - time-units-1.0.0
 
   - git: https://github.com/input-output-hk/cardano-prelude
-    commit: 8273fe5f00ac03b0c66ef3841c8e957139ee18f2
+    commit: 56fadcea03417771f4b3666fd1dfc9bad8df1484
     subdirs:
       - .
       - test
 
-  - git: https://github.com/input-output-hk/iohk-monitoring-framework
-    commit: 0dae43937d2858b437bfc93f7952ba93b88607e6
-    subdirs:
-      - contra-tracer
-      - iohk-monitoring
-
   # Extracted from cardano-sl since it's quite useful
   - git: https://github.com/input-output-hk/cardano-sl-x509
-    commit: ec96c64c665b741c17b4e38f611315bae9b0b054
+    commit: 43a036c5bbe68ca2e9cbe611eab7982e2348fe49
     subdirs:
       - .
-
-  - katip-0.7.0.0@sha256:4b30d0643e18d01a3fd264d3d75921b49b2f464336a52fa46fa049107ebbfe04
-  - time-units-1.0.0@sha256:27cf54091c4a0ca73d504fc11d5c31ab4041d17404fe3499945e2055697746c1
-  - ekg-0.4.0.15@sha256:f52d7c00654d72d2ab988255f30adba95a52484ac310bab9c136c64732e69f4b
-  - ekg-json-0.1.0.6@sha256:4ff2e9cac213a5868ae8b4a7c72a16a9a76fac14d944ae819b3d838a9725569b
-  - generic-monoid-0.1.0.0@sha256:00d1a7b7ff0890a3e3cba4032be24fe377c26e5e45d73afcacd42c98abb3b7e3
-
-  - ekg-prometheus-adapter-0.1.0.4
-  - prometheus-2.1.1
-  - containers-0.5.11.0
-  - libsystemd-journal-1.4.4
 
 nix:
   shell-file: stack-shell.nix

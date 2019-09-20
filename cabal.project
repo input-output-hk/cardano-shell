@@ -1,32 +1,18 @@
 packages:
   ./
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: 0dae43937d2858b437bfc93f7952ba93b88607e6
-  subdir: contra-tracer
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: 0dae43937d2858b437bfc93f7952ba93b88607e6
-  subdir: iohk-monitoring
+  ./cardano-launcher
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-sl-x509
-  tag: ec96c64c665b741c17b4e38f611315bae9b0b054
+  tag: 43a036c5bbe68ca2e9cbe611eab7982e2348fe49
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-prelude
-  tag: 8273fe5f00ac03b0c66ef3841c8e957139ee18f2
+  tag: 56fadcea03417771f4b3666fd1dfc9bad8df1484
 
 source-repository-package
   type: git
   location: http://github.com/well-typed/canonical-json
   tag: ddfe3593b80b5ceb88842bb7a6f2268df75d2c2f
-
-constraints:
-  libsystemd-journal >= 1.4.4

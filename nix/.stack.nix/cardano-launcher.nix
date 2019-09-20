@@ -3,7 +3,7 @@
     flags = {};
     package = {
       specVersion = "2.2";
-      identifier = { name = "cardano-shell"; version = "0.1.0.0"; };
+      identifier = { name = "cardano-launcher"; version = "0.1.0.0"; };
       license = "Apache-2.0";
       copyright = "2018 IOHK";
       maintainer = "operations@iohk.io";
@@ -19,56 +19,49 @@
         depends = [
           (hsPkgs.aeson)
           (hsPkgs.base)
-          (hsPkgs.binary)
-          (hsPkgs.bytestring)
           (hsPkgs.Cabal)
           (hsPkgs.cardano-prelude)
-          (hsPkgs.concurrency)
           (hsPkgs.containers)
           (hsPkgs.directory)
-          (hsPkgs.formatting)
           (hsPkgs.process)
           (hsPkgs.QuickCheck)
-          (hsPkgs.safe-exceptions)
-          (hsPkgs.async)
           (hsPkgs.text)
-          (hsPkgs.transformers)
+          (hsPkgs.turtle)
+          (hsPkgs.yaml)
+          (hsPkgs.time-units)
+          (hsPkgs.mtl)
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {
-        "node-ipc" = {
+        "cardano-launcher" = {
           depends = [
             (hsPkgs.base)
-            (hsPkgs.cardano-shell)
             (hsPkgs.cardano-prelude)
-            ];
-          };
-        "daedalus-ipc" = {
-          depends = [
-            (hsPkgs.base)
-            (hsPkgs.cardano-shell)
-            (hsPkgs.cardano-prelude)
+            (hsPkgs.cardano-launcher)
+            (hsPkgs.cardano-sl-x509)
+            (hsPkgs.directory)
+            (hsPkgs.filepath)
+            (hsPkgs.formatting)
+            (hsPkgs.safe-exceptions)
             ];
           };
         };
       tests = {
-        "cardano-shell-test" = {
+        "cardano-launcher-test" = {
           depends = [
-            (hsPkgs.aeson)
             (hsPkgs.base)
-            (hsPkgs.cardano-shell)
+            (hsPkgs.cardano-launcher)
             (hsPkgs.cardano-prelude)
-            (hsPkgs.process)
-            (hsPkgs.yaml)
+            (hsPkgs.directory)
             (hsPkgs.QuickCheck)
             (hsPkgs.quickcheck-state-machine)
             (hsPkgs.tree-diff)
             (hsPkgs.hspec)
-            ];
-          build-tools = [
-            (hsPkgs.buildPackages.cardano-shell or (pkgs.buildPackages.cardano-shell))
+            (hsPkgs.yaml)
+            (hsPkgs.unordered-containers)
+            (hsPkgs.vector)
             ];
           };
         };
       };
-    } // rec { src = (pkgs.lib).mkDefault ../.././.; }
+    } // rec { src = (pkgs.lib).mkDefault ../../././cardano-launcher; }
