@@ -57,6 +57,7 @@ commonLib.nix-tools.release-nix {
     # tests
     jobs.tests.ipc.x86_64-linux
     # jobs.tests.ipc.x86_64-darwin # See comment in test.nix
+    jobs.nix-tools.tests.cardano-launcher.cardano-launcher-test.x86_64-linux
   ];
   extraBuilds = {
     tests.ipc = import ./test.nix;
