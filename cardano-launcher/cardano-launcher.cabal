@@ -69,6 +69,8 @@ executable cardano-launcher
     , filepath
     -- formatting
     , formatting
+    -- logging
+    , iohk-monitoring
     -- exception handling
     , safe-exceptions
 

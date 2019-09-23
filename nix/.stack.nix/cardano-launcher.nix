@@ -42,6 +42,7 @@
             (hsPkgs.directory)
             (hsPkgs.filepath)
             (hsPkgs.formatting)
+            (hsPkgs.iohk-monitoring)
             (hsPkgs.safe-exceptions)
             ];
           };

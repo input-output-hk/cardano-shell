@@ -13,6 +13,10 @@ import           System.FilePath ((</>))
 import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
+import           Cardano.BM.Setup (setupTrace_, shutdown)
+import           Cardano.BM.Tracing
+import qualified Cardano.BM.Trace as Trace
+
 import           Cardano.Shell.Launcher (ConfigurationOptions (..),
                                          ExternalDependencies (..),
                                          LauncherOptions (..),
@@ -62,12 +66,14 @@ main = do
     let tlsPath :: TLSPath
         tlsPath = TLSPath $ loTlsPath launcherOptions
 
-    -- | Yes, this is something we probably need to replace with actual loggging.
+    logConfig <- defaultConfigStdout
+    (baseTrace, sb) <- setupTrace_ logConfig "launcher"
+
     let externalDependencies :: ExternalDependencies
         externalDependencies = ExternalDependencies
-            { logInfo       = putTextLn
-            , logError      = putTextLn
-            , logNotice     = putTextLn
+            { logInfo       = Trace.logInfo baseTrace
+            , logError      = Trace.logError baseTrace
+            , logNotice     = Trace.logNotice baseTrace
             }
 
     -- | If we need to, we first check if there are certificates so we don't have
@@ -88,6 +94,8 @@ main = do
                     walletArgs
                     walletRunnerProcess
                     updaterData
+
+    shutdown sb
 
     exitWith exitCode
 
