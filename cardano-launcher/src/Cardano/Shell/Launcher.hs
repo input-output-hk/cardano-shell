@@ -2,7 +2,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeApplications           #-}
 
 module Cardano.Shell.Launcher
     ( WalletMode (..)
@@ -83,7 +82,8 @@ instance Show UpdateRunner where
 
 -- | This type is responsible for launching and re-launching the wallet
 -- inside the launcher process.
-newtype RestartRunner = RestartRunner { runRestart :: IO ExitCode }
+-- Do we want to restart it in @WalletModeSafe@ or not?
+newtype RestartRunner = RestartRunner { runRestart :: WalletMode -> IO ExitCode }
 
 -- | There is no way we can show this value.
 instance Show RestartRunner where
@@ -156,13 +156,13 @@ handleDaedalusExitCode
     -> RestartRunner
     -> DaedalusExitCode
     -> IO DaedalusExitCode
-handleDaedalusExitCode runUpdaterFunction restartWalletFunction = isoTo <<$>> \case
-    RunUpdate               -> runUpdate runUpdaterFunction >> runRestart restartWalletFunction
+handleDaedalusExitCode runUpdater restartWallet = isoTo <<$>> \case
+    RunUpdate               -> runUpdate runUpdater >> runRestart restartWallet WalletModeNormal
     -- Run the actual update, THEN restart launcher.
     -- Do we maybe need to handle the update ExitCode as well?
-    RestartInGPUSafeMode    -> runRestart restartWalletFunction
+    RestartInGPUSafeMode    -> runRestart restartWallet WalletModeSafe
     -- Enable safe mode (GPU safe mode).
-    RestartInGPUNormalMode  -> runRestart restartWalletFunction
+    RestartInGPUNormalMode  -> runRestart restartWallet WalletModeNormal
     -- Disable safe mode (GPU safe mode).
     ExitCodeSuccess         -> return ExitSuccess
     -- All is well, exit "mucho bien".
@@ -190,10 +190,12 @@ runWalletProcess
     -> IO ExitCode
 runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterData = do
 
-    let restart :: IO ExitCode
-        restart =   runWalletProcess
+    -- Parametrized by @WalletMode@ so we can change it on restart depending
+    -- on the Daedalus exit code.
+    let restart :: WalletMode -> IO ExitCode
+        restart =  \walletMode' -> runWalletProcess
                         ed
-                        walletMode
+                        walletMode'
                         walletPath
                         walletArguments
                         walletRunner

@@ -43,14 +43,14 @@ launcherSystemSpec =
 
         it "should restart launcher, normal mode" $ monadicIO $ do
             let walletExitCode      = RestartInGPUNormalMode
-            let launcherFunction    = RestartRunner $ pure ExitSuccess
+            let launcherFunction    = RestartRunner $ \_wm -> pure ExitSuccess
 
             exitCode <- run $ handleDaedalusExitCode doNotUse launcherFunction walletExitCode
             assert $ exitCode == ExitCodeSuccess
 
         it "should restart launcher, safe mode" $ monadicIO $ do
             let walletExitCode      = RestartInGPUSafeMode
-            let launcherFunction    = RestartRunner $ pure ExitSuccess
+            let launcherFunction    = RestartRunner $ \_wm -> pure ExitSuccess
 
             exitCode <- run $ handleDaedalusExitCode doNotUse launcherFunction walletExitCode
             assert $ exitCode == ExitCodeSuccess
@@ -58,7 +58,7 @@ launcherSystemSpec =
         it "should run update, restart launcher, normal mode" $ monadicIO $ do
             let walletExitCode      = RunUpdate
             let updateFunction      = UpdateRunner $ pure ExitSuccess
-            let launcherFunction    = RestartRunner $ pure ExitSuccess
+            let launcherFunction    = RestartRunner $ \_wm -> pure ExitSuccess
 
             exitCode <- run $ handleDaedalusExitCode updateFunction launcherFunction walletExitCode
             assert $ exitCode == ExitCodeSuccess
