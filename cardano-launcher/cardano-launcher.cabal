@@ -24,6 +24,7 @@ library
     , Cardano.Shell.Update.Types
     , Cardano.Shell.Template
     , Cardano.Shell.Environment
+    , Cardano.Shell.CLI
   hs-source-dirs:
       src
   build-depends:
@@ -33,6 +34,7 @@ library
     , cardano-prelude
     , containers
     , directory
+    , filepath
     , process
     , QuickCheck
     , text
@@ -40,6 +42,7 @@ library
     , yaml
     , time-units
     , mtl
+    , optparse-applicative
   if os(windows)
     build-depends:     Win32
 
