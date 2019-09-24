@@ -1,5 +1,5 @@
 packages:
-  ./
+  ./cardano-shell
   ./cardano-launcher
 
 source-repository-package
