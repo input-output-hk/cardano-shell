@@ -16,6 +16,8 @@
         cardano-launcher = ./cardano-launcher.nix;
         cardano-prelude = ./cardano-prelude.nix;
         cardano-prelude-test = ./cardano-prelude-test.nix;
+        contra-tracer = ./contra-tracer.nix;
+        iohk-monitoring = ./iohk-monitoring.nix;
         cardano-sl-x509 = ./cardano-sl-x509.nix;
         cardano-crypto = ./cardano-crypto.nix;
         };

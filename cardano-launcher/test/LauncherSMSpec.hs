@@ -65,15 +65,15 @@ smUnused = launcherSM
 
 -- Probably need to wrap in a newtype.
 type UpdateExitCode = DaedalusExitCode
-type RunnerExitCode = DaedalusExitCode
+type WalletExitCode = DaedalusExitCode
 
 -- | The list of commands/actions the model can take.
 -- The __r__ type here is the polymorphic type param for symbolic and concrete @Action@.
 data Action (r :: Type -> Type)
-    = RunUpdateAction UpdateExitCode RunnerExitCode
+    = RunUpdateAction !UpdateExitCode !WalletExitCode
     -- ^ The update functions with @UpdateRunner@ and @RestartRunner@.
-    | WalletSafeModeAction
-    | WalletNormalModeAction
+    | WalletSafeModeAction !WalletExitCode
+    | WalletNormalModeAction !WalletExitCode
     deriving (Show, Generic1, Rank2.Foldable, Rank2.Traversable, Rank2.Functor, CommandNames)
 
 -- | The types of responses of the model.
@@ -100,9 +100,9 @@ instance Exception Error
 
 -- | Abstract to concrete.
 actionToConcrete :: Action r -> DaedalusExitCode
-actionToConcrete (RunUpdateAction _ _)  = RunUpdate
-actionToConcrete WalletSafeModeAction   = RestartInGPUSafeMode
-actionToConcrete WalletNormalModeAction = RestartInGPUNormalMode
+actionToConcrete (RunUpdateAction _ _)          = RunUpdate
+actionToConcrete (WalletSafeModeAction _)       = RestartInGPUSafeMode
+actionToConcrete (WalletNormalModeAction _)     = RestartInGPUNormalMode
 
 -- | Abstract to concrete.
 responseToConcrete :: Response r -> DaedalusExitCode
@@ -188,23 +188,23 @@ launcherSM = StateMachine
     mPostconditions _   (RunUpdateAction _               ExitCodeSuccess)   ExitCodeSuccessResponse     = Top
     -- If it's any other ExitCode but success, that is wrong.
     mPostconditions _   (RunUpdateAction ExitCodeSuccess ExitCodeSuccess)   _                           = Bot
-    mPostconditions _   (RunUpdateAction _updaterFun     runnerFunction )   exitCodeResponse            =
-        runnerFunction .== (responseToConcrete exitCodeResponse)
+    mPostconditions _   (RunUpdateAction _updaterFun     walletFunction )   exitCodeResponse            =
+        walletFunction .== (responseToConcrete exitCodeResponse)
 
-    mPostconditions _   WalletSafeModeAction                                WalletSafeModeResponse      = Top
-    mPostconditions _   WalletSafeModeAction                                ExitCodeSuccessResponse     = Top
-    mPostconditions _   WalletSafeModeAction                                _                           = Bot
+    -- The launcher exit code is what the wallet returns.
+    mPostconditions _   (WalletSafeModeAction walletFunction)               exitCodeResponse            =
+        walletFunction .== (responseToConcrete exitCodeResponse)
 
-    mPostconditions _   WalletNormalModeAction                              WalletNormalModeResponse    = Top
-    mPostconditions _   WalletNormalModeAction                              ExitCodeSuccessResponse     = Top
-    mPostconditions _   WalletNormalModeAction                              _                           = Bot
+    -- The launcher exit code is what the wallet returns.
+    mPostconditions _   (WalletNormalModeAction walletFunction)             exitCodeResponse            =
+        walletFunction .== (responseToConcrete exitCodeResponse)
 
     -- | Generator for symbolic actions.
     mGenerator :: Model Symbolic -> Maybe (Gen (Action Symbolic))
     mGenerator _            = Just $ oneof
         [ RunUpdateAction <$> arbitraryDaedalusExitCode <*> arbitraryDaedalusExitCode
-        , return WalletSafeModeAction
-        , return WalletNormalModeAction
+        , WalletSafeModeAction <$> arbitraryDaedalusExitCode
+        , WalletNormalModeAction <$> arbitraryDaedalusExitCode
         ]
 
     -- | Trivial shrinker. __No shrinker__.
@@ -213,32 +213,38 @@ launcherSM = StateMachine
 
     -- | Here we'd do the dispatch to the actual SUT.
     mSemantics :: Action Concrete -> IO (Response Concrete)
-    mSemantics (RunUpdateAction updateFunctionDEC launcherFunctionDEC)    =
+    mSemantics (RunUpdateAction updateFunctionDEC launcherFunctionDEC)  =
         let
             updateRunner :: UpdateRunner
             updateRunner = UpdateRunner . return $ isoFrom updateFunctionDEC
 
             restartRunner :: RestartRunner
-            restartRunner = RestartRunner . return $ isoFrom launcherFunctionDEC
+            restartRunner = RestartRunner $ \_wm -> return $ isoFrom launcherFunctionDEC
         in
             concreteToResponse <$>
                 handleDaedalusExitCode updateRunner restartRunner RunUpdate
 
-    mSemantics WalletSafeModeAction     = concreteToResponse <$>
-        handleDaedalusExitCode doNotUse launcherFunction RestartInGPUSafeMode
+    mSemantics (WalletSafeModeAction launcherFunctionDEC)               =
+        let
+            restartRunner :: RestartRunner
+            restartRunner = RestartRunner $ \_wm -> return $ isoFrom launcherFunctionDEC
+         in
+            concreteToResponse <$>
+                handleDaedalusExitCode doNotUse restartRunner RestartInGPUSafeMode
 
-    mSemantics WalletNormalModeAction   = concreteToResponse <$>
-        handleDaedalusExitCode doNotUse launcherFunction RestartInGPUNormalMode
+    mSemantics (WalletNormalModeAction launcherFunctionDEC)             =
+        let
+            restartRunner :: RestartRunner
+            restartRunner = RestartRunner $ \_wm -> return $ isoFrom launcherFunctionDEC
+        in
+            concreteToResponse <$>
+                handleDaedalusExitCode doNotUse restartRunner RestartInGPUNormalMode
 
     -- | Compare sybolic and SUT.
     mMock :: Model Symbolic -> Action Symbolic -> GenSym (Response Symbolic)
-    mMock _ (RunUpdateAction _ _)  = return UpdateRunResponse
-    mMock _ WalletSafeModeAction   = return WalletSafeModeResponse
-    mMock _ WalletNormalModeAction = return WalletNormalModeResponse
-
--- | Temporary "sunny day" @RestartRunner@.
-launcherFunction :: RestartRunner
-launcherFunction    = RestartRunner $ pure ExitSuccess
+    mMock _ (RunUpdateAction _ _)       = return UpdateRunResponse
+    mMock _ (WalletSafeModeAction _)    = return WalletSafeModeResponse
+    mMock _ (WalletNormalModeAction _)  = return WalletNormalModeResponse
 
 -- | A simple utility function so we don't have to pass panic around.
 doNotUse :: a
