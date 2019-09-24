@@ -26,18 +26,17 @@ module Cardano.Shell.Launcher
     , getUpdaterData
     , getWargs
     , getWPath
-    , getLauncherOption
     , setWorkingDirectory
     ) where
 
 import           Cardano.Prelude
-import           Prelude (Show (..))
 
 import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
 import           Data.Time.Units (Microsecond, fromMicroseconds)
 import           Data.Yaml (ParseException, decodeFileEither)
 
 import           System.Directory (doesDirectoryExist, setCurrentDirectory)
+import           Prelude (Show (..))
 import qualified System.Process as Process
 import           Turtle (system)
 
@@ -323,10 +322,6 @@ instance FromJSON ConfigurationOptions where
         systemStart     <- (Timestamp . fromMicroseconds . (*) 1000000) <<$>> o .:? "systemStart"
         seed            <- o .:? "seed"
         pure $ ConfigurationOptions path key systemStart seed
-
--- | Parses config file and return @LauncherOptions@ if successful
-getLauncherOption :: FilePath -> IO (Either ParseException LauncherOptions)
-getLauncherOption = decodeFileEither
 
 --------------------------------------------------------------------------------
 -- These functions will take LauncherOptions as an argument and put together
