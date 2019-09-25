@@ -42,8 +42,8 @@ let
       {
         #packages.cardano-shell.src      = haskell.cleanSourceHaskell ../.;
 
-        packages.cardano-shell.src      = haskell.cleanSourceHaskell (../. + /cardano-shell);
-        packages.cardano-launcher.src   = haskell.cleanSourceHaskell (../. + /cardano-launcher);
+        #packages.cardano-shell.src      = haskell.cleanSourceHaskell (../. + /cardano-shell);
+        #packages.cardano-launcher.src   = haskell.cleanSourceHaskell (../. + /cardano-launcher);
 
         packages.cardano-shell.components.tests.cardano-shell-test.build-tools = [ pkgs.nodejs ];
       }
