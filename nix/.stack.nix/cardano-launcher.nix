@@ -23,6 +23,7 @@
           (hsPkgs.cardano-prelude)
           (hsPkgs.containers)
           (hsPkgs.directory)
+          (hsPkgs.filepath)
           (hsPkgs.process)
           (hsPkgs.QuickCheck)
           (hsPkgs.text)
@@ -30,6 +31,7 @@
           (hsPkgs.yaml)
           (hsPkgs.time-units)
           (hsPkgs.mtl)
+          (hsPkgs.optparse-applicative)
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {
