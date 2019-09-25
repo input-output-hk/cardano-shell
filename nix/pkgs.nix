@@ -40,7 +40,7 @@ let
       }
 
       {
-        packages.cardano-shell.src = haskell.cleanSourceHaskell ../.;
+        #packages.cardano-shell.src = haskell.cleanSourceHaskell ../.;
         packages.cardano-shell.components.tests.cardano-shell-test.build-tools = [ pkgs.nodejs ];
       }
     ];
