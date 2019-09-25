@@ -263,19 +263,21 @@ data LauncherOptions = LauncherOptions
     , loUpdateWindowsRunner :: !(Maybe FilePath)
     , loWalletPath          :: !FilePath
     , loWalletArgs          :: ![Text]
+    , loWorkingDirectory    :: !FilePath
     } deriving (Show, Generic)
 
 instance FromJSON LauncherOptions where
     parseJSON = withObject "LauncherOptions" $ \o -> do
 
-        walletPath              <- o .: "walletPath"
-        walletArgs              <- o .: "walletArgs"
-        updaterPath             <- o .: "updaterPath"
-        updaterArgs             <- o .: "updaterArgs"
-        updateArchive           <- o .: "updateArchive"
-        updateWindowsRunner     <- o .: "updateWindowsRunner"
-        configuration           <- o .: "configuration"
-        tlsPath                 <- o .: "tlsPath"
+        walletPath          <- o .: "walletPath"
+        walletArgs          <- o .: "walletArgs"
+        updaterPath         <- o .: "updaterPath"
+        updaterArgs         <- o .: "updaterArgs"
+        updateArchive       <- o .: "updateArchive"
+        updateWindowsRunner <- o .: "updateWindowsRunner"
+        configuration       <- o .: "configuration"
+        tlsPath             <- o .: "tlsPath"
+        workingDir          <- o .: "workingDir"
 
         pure $ LauncherOptions
             configuration
@@ -286,6 +288,7 @@ instance FromJSON LauncherOptions where
             updateWindowsRunner
             walletPath
             walletArgs
+            workingDir
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys

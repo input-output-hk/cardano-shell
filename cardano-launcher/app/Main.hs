@@ -6,7 +6,8 @@ module Main where
 import           Cardano.Prelude
 import qualified Prelude
 
-import           System.Directory (createDirectoryIfMissing)
+import           System.Directory (createDirectoryIfMissing, doesDirectoryExist,
+                                   setCurrentDirectory)
 import           System.Exit (exitWith)
 import           System.FilePath ((</>))
 
@@ -48,6 +49,14 @@ main = do
         case eLauncherOptions of
             Left err -> throwM $ LauncherOptionsError (show err)
             Right lo -> pure lo
+
+    let workingDir = loWorkingDirectory launcherOptions
+
+    -- Every platform will run a script before running the launcher that creates a
+    -- working directory, so workingDir should always exist.
+    ifM (doesDirectoryExist workingDir)
+        (setCurrentDirectory workingDir)
+        (throwM . WorkingDirectoryDoesNotExist $ workingDir)
 
     -- Really no clue what to put there and how will the wallet work.
     -- These will be refactored in the future
@@ -117,6 +126,7 @@ newtype TLSPath = TLSPath { getTLSFilePath :: FilePath }
 data LauncherExceptions
     = CannotGenerateTLS
     | LauncherOptionsError Text
+    | WorkingDirectoryDoesNotExist FilePath
     deriving (Eq)
 
 instance Buildable LauncherExceptions where
@@ -127,6 +137,9 @@ instance Buildable LauncherExceptions where
         LauncherOptionsError err -> bprint
                "Error occured during loading configuration file:\n"
             <> Formatting.Buildable.build err
+        WorkingDirectoryDoesNotExist path -> bprint
+               "Failed to set working directory because it does not exist: "
+            <> Formatting.Buildable.build path
 
 instance Show LauncherExceptions where
     show = formatToString Formatting.build
