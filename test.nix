@@ -16,7 +16,7 @@ let
     in pkgs.runCommand "test-ipc-${arch}" {
       buildInputs = [ shell.nix-tools.cexes.cardano-shell.node-ipc pkgs.nodejs ];
     } ''
-      cp ${./app/NodeIPCClient/server.js} server.js
+      cp ${./cardano-shell/app/NodeIPCClient/server.js} server.js
       node server.js
       touch $out
     '';

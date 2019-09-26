@@ -43,13 +43,6 @@
             (hsPkgs.cardano-prelude)
             ];
           };
-        "daedalus-ipc" = {
-          depends = [
-            (hsPkgs.base)
-            (hsPkgs.cardano-shell)
-            (hsPkgs.cardano-prelude)
-            ];
-          };
         };
       tests = {
         "cardano-shell-test" = {
@@ -65,10 +58,7 @@
             (hsPkgs.tree-diff)
             (hsPkgs.hspec)
             ];
-          build-tools = [
-            (hsPkgs.buildPackages.cardano-shell or (pkgs.buildPackages.cardano-shell))
-            ];
           };
         };
       };
-    } // rec { src = (pkgs.lib).mkDefault ../.././.; }
+    } // rec { src = (pkgs.lib).mkDefault ../../././cardano-shell; }

@@ -78,7 +78,7 @@ in defaultNix // {
       echo '~~~ stack nix test'
       stack test --nix --coverage
       echo '~~~ shc'
-      shc --repo-token=$COVERALLS_REPO_TOKEN cardano-shell cardano-shell-test
+      shc --repo-token=$COVERALLS_REPO_TOKEN combined all
       exit
     '';
   };

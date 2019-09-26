@@ -22,9 +22,9 @@ import           Cardano.Shell.Launcher (ConfigurationOptions (..),
                                          ExternalDependencies (..),
                                          LauncherOptions (..),
                                          WalletArguments (..), WalletMode (..),
-                                         WalletPath (..), getLauncherOption,
-                                         getUpdaterData, getWPath, getWargs,
-                                         runWalletProcess, walletRunnerProcess)
+                                         WalletPath (..), getUpdaterData,
+                                         getWPath, getWargs, runWalletProcess,
+                                         walletRunnerProcess)
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
