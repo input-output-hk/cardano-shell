@@ -2,6 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Cardano.Shell.Launcher
     ( WalletMode (..)
@@ -9,6 +10,7 @@ module Cardano.Shell.Launcher
     , WalletArguments (..)
     , WalletPath (..)
     , WalletRunner (..)
+    , WalletModeConfigPath(..)
     , walletRunnerProcess
     , ExternalDependencies (..)
     -- * Functions
@@ -27,14 +29,17 @@ module Cardano.Shell.Launcher
     , getWargs
     , getWPath
     , getLauncherOption
+    , loToWalletModeConfigPath
+    , readWalletMode
     ) where
 
 import           Cardano.Prelude
 import           Prelude (Show (..))
 
-import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
+import           Data.Aeson (FromJSON (..), ToJSON (..), withObject, (.:),
+                             (.:?))
 import           Data.Time.Units (Microsecond, fromMicroseconds)
-import           Data.Yaml (ParseException, decodeFileEither)
+import           Data.Yaml (ParseException, decodeFileEither, encodeFile)
 
 import qualified System.Process as Process
 import           Turtle (system)
@@ -94,7 +99,10 @@ instance Show RestartRunner where
 data WalletMode
     = WalletModeNormal
     | WalletModeSafe
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic)
+
+instance FromJSON WalletMode
+instance ToJSON WalletMode
 
 -- | All the important exit codes. Since we cover "other" cases as well, this is a total mapping.
 -- That is good.
@@ -152,17 +160,22 @@ instance Isomorphism DaedalusExitCode ExitCode where
 --
 -- This is much simpler to test, no?
 handleDaedalusExitCode
-    :: UpdateRunner
+    :: StoreWalletMode
+    -> UpdateRunner
     -> RestartRunner
     -> DaedalusExitCode
     -> IO DaedalusExitCode
-handleDaedalusExitCode runUpdater restartWallet = isoTo <<$>> \case
+handleDaedalusExitCode stwm runUpdater restartWallet = isoTo <<$>> \case
     RunUpdate               -> runUpdate runUpdater >> runRestart restartWallet WalletModeNormal
     -- Run the actual update, THEN restart launcher.
     -- Do we maybe need to handle the update ExitCode as well?
-    RestartInGPUSafeMode    -> runRestart restartWallet WalletModeSafe
+    RestartInGPUSafeMode    -> do
+        storeWalletMode stwm WalletModeSafe
+        runRestart restartWallet WalletModeSafe
     -- Enable safe mode (GPU safe mode).
-    RestartInGPUNormalMode  -> runRestart restartWallet WalletModeNormal
+    RestartInGPUNormalMode  -> do
+        storeWalletMode stwm WalletModeNormal
+        runRestart restartWallet WalletModeNormal
     -- Disable safe mode (GPU safe mode).
     ExitCodeSuccess         -> return ExitSuccess
     -- All is well, exit "mucho bien".
@@ -176,25 +189,31 @@ newtype WalletRunner = WalletRunner
     { runWalletSystemProcess :: WalletPath -> WalletArguments -> IO ExitCode
     }
 
+newtype StoreWalletMode = StoreWalletMode
+    { storeWalletMode :: WalletMode -> IO ()
+    }
+
 -- | Launching the wallet.
 -- For now, this is really light since we don't know whether we will reuse the
 -- older configuration and if so, which parts of it.
 -- We passed in the bare minimum and if we require anything else, we will add it.
 runWalletProcess
     :: ExternalDependencies
+    -> WalletModeConfigPath
     -> WalletMode
     -> WalletPath
     -> WalletArguments
     -> WalletRunner
     -> UpdaterData
     -> IO ExitCode
-runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterData = do
+runWalletProcess ed wmPath walletMode walletPath walletArguments walletRunner updaterData = do
 
     -- Parametrized by @WalletMode@ so we can change it on restart depending
     -- on the Daedalus exit code.
     let restart :: WalletMode -> IO ExitCode
         restart =  \walletMode' -> runWalletProcess
                         ed
+                        wmPath
                         walletMode'
                         walletPath
                         walletArguments
@@ -225,6 +244,7 @@ runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterDa
     -- We separate the description of the computation, from the computation itself.
     -- There are other ways of doing this, of course.
     isoFrom <$> handleDaedalusExitCode
+        (StoreWalletMode $ saveWalletMode wmPath)
         (UpdateRunner $ runUpdater updaterData)
         (RestartRunner restart)
         exitCode
@@ -263,6 +283,7 @@ data LauncherOptions = LauncherOptions
     , loUpdateWindowsRunner :: !(Maybe FilePath)
     , loWalletPath          :: !FilePath
     , loWalletArgs          :: ![Text]
+    , loStatePath           :: !FilePath
     } deriving (Show, Generic)
 
 instance FromJSON LauncherOptions where
@@ -276,6 +297,7 @@ instance FromJSON LauncherOptions where
         updateWindowsRunner     <- o .: "updateWindowsRunner"
         configuration           <- o .: "configuration"
         tlsPath                 <- o .: "tlsPath"
+        statePath               <- o .: "statePath"
 
         pure $ LauncherOptions
             configuration
@@ -286,6 +308,7 @@ instance FromJSON LauncherOptions where
             updateWindowsRunner
             walletPath
             walletArgs
+            statePath
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
@@ -352,3 +375,23 @@ getWargs lo = WalletArguments $ loWalletArgs lo
 -- | Return WalletPath
 getWPath :: LauncherOptions -> WalletPath
 getWPath lo = WalletPath $ toS $ loWalletPath lo
+
+loToWalletModeConfigPath :: LauncherOptions -> WalletModeConfigPath
+loToWalletModeConfigPath lo = WalletModeConfigPath $ loStatePath lo <> "walletmode.yaml"
+
+-- | FilePath to config file that stores the state of @WalletMode@
+newtype WalletModeConfigPath = WalletModeConfigPath {
+    getWalletModeConfigPath :: FilePath
+    } deriving Show
+
+-- | Save given @WalletMode@ on config file
+saveWalletMode :: WalletModeConfigPath -> WalletMode -> IO ()
+saveWalletMode wmPath walletMode = encodeFile (getWalletModeConfigPath wmPath) walletMode
+
+-- | Read @WalletMode@ from config file
+readWalletMode :: WalletModeConfigPath -> IO WalletMode
+readWalletMode wmModePath = do
+    eDecoded <- decodeFileEither (getWalletModeConfigPath wmModePath)
+    case eDecoded of
+        Right value -> return value
+        Left _      -> return WalletModeNormal

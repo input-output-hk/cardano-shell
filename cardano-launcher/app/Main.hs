@@ -21,10 +21,13 @@ import           Cardano.Shell.CLI (getLauncherOptions)
 import           Cardano.Shell.Launcher (ConfigurationOptions (..),
                                          ExternalDependencies (..),
                                          LauncherOptions (..),
-                                         WalletArguments (..), WalletMode (..),
+                                         WalletArguments (..),
+                                         WalletModeConfigPath (..),
                                          WalletPath (..), getLauncherOption,
                                          getUpdaterData, getWPath, getWargs,
-                                         runWalletProcess, walletRunnerProcess)
+                                         loToWalletModeConfigPath,
+                                         readWalletMode, runWalletProcess,
+                                         walletRunnerProcess)
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
@@ -88,9 +91,14 @@ main = do
     void $ runUpdater updaterData -- On windows, process dies here
 
     -- You still want to run the wallet even if the update fails
+    let walletModePath :: WalletModeConfigPath
+        walletModePath = loToWalletModeConfigPath launcherOptions
+
+    walletMode <- readWalletMode walletModePath
     exitCode <- runWalletProcess
                     externalDependencies
-                    WalletModeNormal
+                    walletModePath
+                    walletMode
                     walletPath
                     walletArgs
                     walletRunnerProcess
