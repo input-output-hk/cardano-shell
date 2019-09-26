@@ -1,4 +1,4 @@
-resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/b83730dccab14111d62144b048084eec7900d091/snapshot.yaml
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/12ab51e27539c9cce042ded0c89efc0ccae6137a/snapshot.yaml
 
 packages:
 - .
@@ -10,14 +10,20 @@ extra-deps:
   - time-units-1.0.0
 
   - git: https://github.com/input-output-hk/cardano-prelude
-    commit: b83730dccab14111d62144b048084eec7900d091
+    commit: 12ab51e27539c9cce042ded0c89efc0ccae6137a
     subdirs:
       - .
       - test
 
+  - git: https://github.com/input-output-hk/iohk-monitoring-framework
+    commit: 1ebe57df3a76a8ae4e3b5a31a9b85132f71534fc
+    subdirs:
+      - contra-tracer
+      - iohk-monitoring
+
   # Extracted from cardano-sl since it's quite useful
   - git: https://github.com/input-output-hk/cardano-sl-x509
-    commit: ec96c64c665b741c17b4e38f611315bae9b0b054
+    commit: 43a036c5bbe68ca2e9cbe611eab7982e2348fe49
     subdirs:
       - .
 

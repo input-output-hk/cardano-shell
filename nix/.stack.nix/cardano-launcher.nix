@@ -23,12 +23,15 @@
           (hsPkgs.cardano-prelude)
           (hsPkgs.containers)
           (hsPkgs.directory)
+          (hsPkgs.filepath)
           (hsPkgs.process)
           (hsPkgs.QuickCheck)
           (hsPkgs.text)
           (hsPkgs.turtle)
           (hsPkgs.yaml)
           (hsPkgs.time-units)
+          (hsPkgs.mtl)
+          (hsPkgs.optparse-applicative)
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {
@@ -41,6 +44,7 @@
             (hsPkgs.directory)
             (hsPkgs.filepath)
             (hsPkgs.formatting)
+            (hsPkgs.iohk-monitoring)
             (hsPkgs.safe-exceptions)
             ];
           };
@@ -71,9 +75,14 @@
             (hsPkgs.base)
             (hsPkgs.cardano-launcher)
             (hsPkgs.cardano-prelude)
+            (hsPkgs.directory)
             (hsPkgs.QuickCheck)
+            (hsPkgs.quickcheck-state-machine)
+            (hsPkgs.tree-diff)
             (hsPkgs.hspec)
             (hsPkgs.yaml)
+            (hsPkgs.unordered-containers)
+            (hsPkgs.vector)
             ];
           };
         };

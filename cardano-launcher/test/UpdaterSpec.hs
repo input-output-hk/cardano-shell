@@ -22,11 +22,12 @@ updaterSpec = describe "Update system" $ do
     prop "should return expected error" $ \(exitNum :: ExitNum) -> monadicIO $ do
         exitCode <- run $ runUpdater' (testRunCmd exitNum) testUpdaterData
         assert $ exitCode == (ExitFailure . getExitNum $ exitNum)
+
 -- Won't work on windows
 testUpdaterData :: UpdaterData
 testUpdaterData =
     UpdaterData
-        "./cardano-launcher/test/testUpdater.sh"
+        "./test/testUpdater.sh"
         []
         Nothing
         ""

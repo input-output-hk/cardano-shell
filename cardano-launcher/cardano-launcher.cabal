@@ -22,6 +22,9 @@ library
       -- Update system
     , Cardano.Shell.Update.Lib
     , Cardano.Shell.Update.Types
+    , Cardano.Shell.Template
+    , Cardano.Shell.Environment
+    , Cardano.Shell.CLI
   hs-source-dirs:
       src
   build-depends:
@@ -31,12 +34,15 @@ library
     , cardano-prelude
     , containers
     , directory
+    , filepath
     , process
     , QuickCheck
     , text
     , turtle
     , yaml
     , time-units
+    , mtl
+    , optparse-applicative
   if os(windows)
     build-depends:     Win32
 
@@ -66,6 +72,8 @@ executable cardano-launcher
     , filepath
     -- formatting
     , formatting
+    -- logging
+    , iohk-monitoring
     -- exception handling
     , safe-exceptions
 
@@ -143,6 +151,9 @@ test-suite cardano-launcher-test
   other-modules:
       UpdaterSpec
     , LauncherSpec
+    , LauncherSMSpec
+    , TemplateSpec
+    , EnvironmentSpec
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -150,11 +161,18 @@ test-suite cardano-launcher-test
       base >=4.7 && <5
     , cardano-launcher
     , cardano-prelude
+    , directory
     -- quickcheck
     , QuickCheck
+    -- SM
+    , quickcheck-state-machine >= 0.6
+    -- required because of QSM
+    , tree-diff
     -- tests
     , hspec
     , yaml
+    , unordered-containers
+    , vector
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings

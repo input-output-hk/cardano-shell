@@ -13,13 +13,18 @@ import           System.FilePath ((</>))
 import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
-import           Cardano.Shell.Launcher (ExternalDependencies (..),
-                                         WalletArguments (..), WalletMode (..),
-                                         WalletPath (..), runWalletProcess
-                                         , ConfigurationOptions (..),
+import           Cardano.BM.Setup (setupTrace_, shutdown)
+import qualified Cardano.BM.Trace as Trace
+import           Cardano.BM.Tracing
+
+import           Cardano.Shell.CLI (getLauncherOptions)
+import           Cardano.Shell.Launcher (ConfigurationOptions (..),
+                                         ExternalDependencies (..),
                                          LauncherOptions (..),
-                                         getLauncherOption, getUpdaterData,
-                                         getWPath, getWargs)
+                                         WalletArguments (..), WalletMode (..),
+                                         WalletPath (..), getLauncherOption,
+                                         getUpdaterData, getWPath, getWargs,
+                                         runWalletProcess, walletRunnerProcess)
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
@@ -38,11 +43,11 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
 -- | Main function.
 main :: IO ()
 main = do
-    -- Todo: make it so that you can specify the path via CLI
-    launcherOptions <- either
-        (\err -> throwM $ LauncherOptionsError (show err))
-        return
-        =<< getLauncherOption "./cardano-launcher/configuration/launcher/launcher-config.demo.yaml"
+    launcherOptions <- do
+        eLauncherOptions <- getLauncherOptions
+        case eLauncherOptions of
+            Left err -> throwM $ LauncherOptionsError (show err)
+            Right lo -> pure lo
 
     -- Really no clue what to put there and how will the wallet work.
     -- These will be refactored in the future
@@ -61,13 +66,15 @@ main = do
     -- where to generate the certificates
     let tlsPath :: TLSPath
         tlsPath = TLSPath $ loTlsPath launcherOptions
-    
-    -- | Yes, this is something we probably need to replace with actual loggging.
+
+    logConfig <- defaultConfigStdout
+    (baseTrace, sb) <- setupTrace_ logConfig "launcher"
+
     let externalDependencies :: ExternalDependencies
         externalDependencies = ExternalDependencies
-            { logInfo       = putTextLn
-            , logError      = putTextLn
-            , logNotice     = putTextLn
+            { logInfo       = Trace.logInfo baseTrace
+            , logError      = Trace.logError baseTrace
+            , logNotice     = Trace.logNotice baseTrace
             }
 
     -- | If we need to, we first check if there are certificates so we don't have
@@ -79,13 +86,17 @@ main = do
         tlsPath
 
     void $ runUpdater updaterData -- On windows, process dies here
+
     -- You still want to run the wallet even if the update fails
     exitCode <- runWalletProcess
                     externalDependencies
                     WalletModeNormal
                     walletPath
                     walletArgs
+                    walletRunnerProcess
                     updaterData
+
+    shutdown sb
 
     exitWith exitCode
 
