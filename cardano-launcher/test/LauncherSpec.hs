@@ -4,7 +4,8 @@ module LauncherSpec where
 
 import           Cardano.Prelude
 
-import           Data.Yaml (ParseException (..), decodeFileEither)
+import           Data.Yaml (ParseException (..), Value (..), decodeFileEither,
+                            encodeFile)
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.QuickCheck
 import           Test.QuickCheck (Arbitrary (..), elements)
@@ -12,8 +13,12 @@ import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import           System.Directory (doesFileExist, getCurrentDirectory,
                                    setCurrentDirectory)
+import           System.Environment (setEnv, unsetEnv)
+import           System.FilePath ((</>))
 import           System.IO.Temp (withSystemTempDirectory)
 
+import           Cardano.Shell.CLI (LauncherOptionPath (..),
+                                    decodeLauncherOption, setupEnvVars)
 import           Cardano.Shell.Launcher (DaedalusExitCode (..),
                                          LauncherOptions (..),
                                          RestartRunner (..), UpdateRunner (..),
@@ -97,25 +102,13 @@ launcherDatas =
 -- | Test that given configuration file can be parsed as @LauncherOptions@
 testLauncherParsable :: FilePath -> Spec
 testLauncherParsable configFilePath = describe "Launcher configuration" $ do
-
     it "should exist" $ monadicIO $ do
-
-        doesConfigFileExist     <- run $ doesFileExist configFullFilePath
+        doesConfigFileExist <- run $ doesFileExist (configFullFilePath configFilePath)
         assert doesConfigFileExist
 
     it ("should be able to parse configuration file: " <> configFilePath) $ monadicIO $ do
-
-        eParsedConfigFile       <- run $ decodeFileEither configFullFilePath
+        eParsedConfigFile <- run $ decodeFileEither (configFullFilePath configFilePath)
         assert $ isRight (eParsedConfigFile :: Either ParseException LauncherOptions)
-
-  where
-    configFullFilePath :: FilePath
-    configFullFilePath = "./configuration/launcher/" <> configFilePath
-
--- | Launcher spec
-configurationSpec :: Spec
-configurationSpec = describe "configuration files" $ modifyMaxSuccess (const 1) $
-     mapM_ testLauncherParsable launcherDatas
 
 setWorkingDirectorySpec :: Spec
 setWorkingDirectorySpec = describe "Set working directory" $ do
@@ -140,3 +133,68 @@ setWorkingDirectorySpec = describe "Set working directory" $ do
             return (done, before, after)
         assert $ not done
         assert $ before == after
+
+configurationSpec :: Spec
+configurationSpec = describe "configuration files" $ modifyMaxSuccess (const 1) $ do
+    mapM_ testLauncherParsable launcherDatas
+    describe "getLauncherOptions" $ do
+        mapM_ testGetLauncherOption launcherDatas
+
+        it "should fail due to passing wrong file path" $ monadicIO $ do
+            eLauncherOption <- run $ do
+                -- Path to the launcher file is incorrect
+                let launcherOptionPath = LauncherOptionPath "this will fail"
+                withSystemTempDirectory "test-XXXXXX" $ \tmpDir ->
+                    withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption launcherOptionPath
+            assert $ isLeft eLauncherOption
+
+        it "should fail due to missing env vars" $ monadicIO $ do
+            eLauncherOption <- run $ do
+                let launcherOptionPath = LauncherOptionPath (configFullFilePath "launcher-config-mainnet.linux.yaml")
+                -- Not environment variables are set!
+                decodeLauncherOption launcherOptionPath
+            assert $ isLeft eLauncherOption
+
+        it "should fail due to failing to convert to LauncherOption" $ monadicIO $ do
+            eLauncherOption <- run $ do
+                withSystemTempDirectory "test-XXXXXX" $ \tmpDir -> do
+                    -- Create invalid yaml file
+                    let val = String "this is not launcher option"
+                    let yamlPath = tmpDir </> "launcher.yaml"
+                    encodeFile yamlPath val
+                    let launcherOptionPath = LauncherOptionPath yamlPath
+                    withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption launcherOptionPath
+            assert $ isLeft eLauncherOption
+
+-- | Test that env var substitution works as expected on actual config files
+testGetLauncherOption :: FilePath -> Spec
+testGetLauncherOption configPath = it ("should be able to perform env substitution on config: " <> configPath) $ monadicIO $ do
+    eLauncherOption <- run $ do
+        let launcherOptionPath = LauncherOptionPath (configFullFilePath configPath)
+        withSystemTempDirectory "test-XXXXXX" $ \tmpDir ->
+            withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption launcherOptionPath
+    assert $ isRight eLauncherOption
+
+configFullFilePath :: FilePath -> FilePath
+configFullFilePath configPath = "./configuration/launcher/" <> configPath
+
+-- | Set all the envrionment variables that are needed to perform env var
+-- substituion then unset them afterwards
+withSetEnvs :: LauncherOptionPath -> FilePath -> IO a -> IO a
+withSetEnvs path homePath action = bracket
+    (do
+        -- Scripts that runs the launcher sets DAEDALUS_CONFIG variable
+        setEnv "DAEDALUS_CONFIG" "Foo"
+        -- Every operating system have HOME variable set
+        setEnv "HOME" homePath
+        setupEnvVars path
+    )
+    (const $ mapM_ unsetEnv
+        [ "DAEDALUS_CONFIG"
+        , "HOME"
+        , "XDG_DATA_HOME"
+        , "DAEDALUS_INSTALL_DIRECTORY"
+        , "LAUNCHER_CONFIG"
+        ]
+    )
+    (const $ action)

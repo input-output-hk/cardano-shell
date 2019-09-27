@@ -31,12 +31,11 @@ module Cardano.Shell.Launcher
 
 import           Cardano.Prelude
 
-import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
 import           Data.Time.Units (Microsecond, fromMicroseconds)
-import           Data.Yaml (ParseException, decodeFileEither)
+import           Data.Yaml (FromJSON (..), withObject, (.:), (.:?))
 
-import           System.Directory (doesDirectoryExist, setCurrentDirectory)
 import           Prelude (Show (..))
+import           System.Directory (doesDirectoryExist, setCurrentDirectory)
 import qualified System.Process as Process
 import           Turtle (system)
 
@@ -157,8 +156,8 @@ handleDaedalusExitCode
     -> RestartRunner
     -> DaedalusExitCode
     -> IO DaedalusExitCode
-handleDaedalusExitCode runUpdater restartWallet = isoTo <<$>> \case
-    RunUpdate               -> runUpdate runUpdater >> runRestart restartWallet WalletModeNormal
+handleDaedalusExitCode runUpdater' restartWallet = isoTo <<$>> \case
+    RunUpdate               -> runUpdate runUpdater' >> runRestart restartWallet WalletModeNormal
     -- Run the actual update, THEN restart launcher.
     -- Do we maybe need to handle the update ExitCode as well?
     RestartInGPUSafeMode    -> runRestart restartWallet WalletModeSafe

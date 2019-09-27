@@ -1,5 +1,9 @@
 module Cardano.Shell.CLI
     ( getLauncherOptions
+    , decodeLauncherOption
+    , LauncherOptionPath(..)
+    , LauncherOptionError(..)
+    , setupEnvVars
     ) where
 
 import           Cardano.Prelude
@@ -10,7 +14,6 @@ import           Cardano.Shell.Launcher (LauncherOptions (..))
 import           Control.Monad.Except (liftEither)
 import           Data.Aeson (Result (..), fromJSON)
 import           Data.Yaml (ParseException, decodeFileEither)
-import           Distribution.System (OS (Windows), buildOS)
 import           Options.Applicative (Parser, ParserInfo, execParser, fullDesc,
                                       header, help, helper, info, long, metavar,
                                       progDesc, short, strOption, value)
@@ -70,25 +73,26 @@ getLauncherOptions = do
         <> progDesc "Tool for launching Daedalus"
         <> header "cardano-launcher"
         )
-    -- There a lot of @withExceptT@ 's since all these function returns different
-    -- types of @Either@ so I have to make the types align
-    decodeLauncherOption :: LauncherOptionPath -> IO (Either LauncherOptionError LauncherOptions)
-    decodeLauncherOption loPath = runExceptT $ do
-            decodedVal <- withExceptT FailedToDecodeFile .
-                ExceptT . decodeFileEither . getLauncherOptionPath $ loPath
-            substituted <- withExceptT SubstitutionFailed .
-                substituteEnvVars $ decodedVal
-            parsed <- withExceptT FailedToParseLauncherOption .
-                liftEither . resultToEither . fromJSON $ substituted
-            return parsed
-    -- Set environment variables that we need in order for launcher to perform
-    -- env var substitution
-    setupEnvVars :: LauncherOptionPath -> IO ()
-    setupEnvVars (LauncherOptionPath configPath) = do
-        daedalusDir <- takeDirectory <$> getExecutablePath
-        setEnv "DAEDALUS_INSTALL_DIRECTORY" daedalusDir
-        getXdgDirectory XdgData "" >>= setEnv "XDG_DATA_HOME"
-        setEnv "LAUNCHER_CONFIG" configPath
+-- There a lot of @withExceptT@ 's since all these function returns different
+-- types of @Either@ so I have to make the types align
+decodeLauncherOption :: LauncherOptionPath -> IO (Either LauncherOptionError LauncherOptions)
+decodeLauncherOption loPath = runExceptT $ do
+        decodedVal <- withExceptT FailedToDecodeFile .
+            ExceptT . decodeFileEither . getLauncherOptionPath $ loPath
+        substituted <- withExceptT SubstitutionFailed .
+            substituteEnvVars $ decodedVal
+        parsed <- withExceptT FailedToParseLauncherOption .
+            liftEither . resultToEither . fromJSON $ substituted
+        return parsed
+
+-- Set environment variables that we need in order for launcher to perform
+-- env var substitution
+setupEnvVars :: LauncherOptionPath -> IO ()
+setupEnvVars (LauncherOptionPath configPath) = do
+    daedalusDir <- takeDirectory <$> getExecutablePath
+    setEnv "DAEDALUS_INSTALL_DIRECTORY" daedalusDir
+    getXdgDirectory XdgData "" >>= setEnv "XDG_DATA_HOME"
+    setEnv "LAUNCHER_CONFIG" configPath
 
 -- | Convert @Result a@ type into @Either Text a@
 resultToEither :: Result a -> Either Text a
