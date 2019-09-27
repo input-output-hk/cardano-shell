@@ -1,7 +1,7 @@
 resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/12ab51e27539c9cce042ded0c89efc0ccae6137a/snapshot.yaml
 
 packages:
-- .
+- ./cardano-shell
 - ./cardano-launcher
 
 extra-deps:
