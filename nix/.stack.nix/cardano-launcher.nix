@@ -48,6 +48,26 @@
             (hsPkgs.safe-exceptions)
             ];
           };
+        "mock-daedalus-frontend" = {
+          depends = [
+            (hsPkgs.base)
+            (hsPkgs.cardano-prelude)
+            (hsPkgs.directory)
+            (hsPkgs.filepath)
+            (hsPkgs.formatting)
+            (hsPkgs.safe-exceptions)
+            ];
+          };
+        "mock-installer" = {
+          depends = [
+            (hsPkgs.base)
+            (hsPkgs.cardano-prelude)
+            (hsPkgs.directory)
+            (hsPkgs.filepath)
+            (hsPkgs.formatting)
+            (hsPkgs.safe-exceptions)
+            ];
+          };
         };
       tests = {
         "cardano-launcher-test" = {
