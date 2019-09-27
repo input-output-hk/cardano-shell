@@ -10,18 +10,22 @@ import           Test.Hspec.QuickCheck
 import           Test.QuickCheck (Arbitrary (..), elements)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           System.Directory (doesFileExist)
+import           System.Directory (doesFileExist, getCurrentDirectory,
+                                   setCurrentDirectory)
+import           System.IO.Temp (withSystemTempDirectory)
 
 import           Cardano.Shell.Launcher (DaedalusExitCode (..),
                                          LauncherOptions (..),
-                                         UpdateRunner (..), RestartRunner (..),
-                                         handleDaedalusExitCode)
+                                         RestartRunner (..), UpdateRunner (..),
+                                         handleDaedalusExitCode,
+                                         setWorkingDirectory)
 
 -- | The simple launcher spec.
 launcherSpec :: Spec
 launcherSpec = do
     configurationSpec
     launcherSystemSpec
+    setWorkingDirectorySpec
 
 -- | The launcher system spec.
 launcherSystemSpec :: Spec
@@ -112,3 +116,27 @@ testLauncherParsable configFilePath = describe "Launcher configuration" $ do
 configurationSpec :: Spec
 configurationSpec = describe "configuration files" $ modifyMaxSuccess (const 1) $
      mapM_ testLauncherParsable launcherDatas
+
+setWorkingDirectorySpec :: Spec
+setWorkingDirectorySpec = describe "Set working directory" $ do
+    it "Should return true and set working directory to the directory specified" $ monadicIO $ do
+        (done, destination, moved) <- run $ bracket
+            getCurrentDirectory
+            setCurrentDirectory
+            (\_ -> do
+                withSystemTempDirectory "test" $ \filePath -> do
+                    done <- setWorkingDirectory filePath
+                    moved <- getCurrentDirectory
+                    return (done, filePath, moved)
+            )
+        assert $ done
+        assert $ destination == moved
+
+    it "Should return false if non-existing directory was given" $ monadicIO $ do
+        (done, before, after) <- run $ do
+            before <- getCurrentDirectory
+            done <- setWorkingDirectory "this directory does not exist"
+            after <- getCurrentDirectory
+            return (done, before, after)
+        assert $ not done
+        assert $ before == after

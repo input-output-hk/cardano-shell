@@ -29,7 +29,7 @@ launcherLogsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs/
 walletArgs: []
 nodeDbPath: ${XDG_DATA_HOME}/Daedalus/mainnet/DB/
 updaterPath: ./cardano-launcher/test/testUpdater.sh
-workingDir: ${XDG_DATA_HOME}/Daedalus/mainnet
+workingDir: ./
 frontendOnlyMode: true
 nodeLogPath: null
 updaterArgs: []

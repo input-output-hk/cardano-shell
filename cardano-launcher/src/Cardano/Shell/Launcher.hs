@@ -27,6 +27,7 @@ module Cardano.Shell.Launcher
     , getWargs
     , getWPath
     , getLauncherOption
+    , setWorkingDirectory
     ) where
 
 import           Cardano.Prelude
@@ -36,6 +37,7 @@ import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
 import           Data.Time.Units (Microsecond, fromMicroseconds)
 import           Data.Yaml (ParseException, decodeFileEither)
 
+import           System.Directory (doesDirectoryExist, setCurrentDirectory)
 import qualified System.Process as Process
 import           Turtle (system)
 
@@ -263,19 +265,21 @@ data LauncherOptions = LauncherOptions
     , loUpdateWindowsRunner :: !(Maybe FilePath)
     , loWalletPath          :: !FilePath
     , loWalletArgs          :: ![Text]
+    , loWorkingDirectory    :: !FilePath
     } deriving (Show, Generic)
 
 instance FromJSON LauncherOptions where
     parseJSON = withObject "LauncherOptions" $ \o -> do
 
-        walletPath              <- o .: "walletPath"
-        walletArgs              <- o .: "walletArgs"
-        updaterPath             <- o .: "updaterPath"
-        updaterArgs             <- o .: "updaterArgs"
-        updateArchive           <- o .: "updateArchive"
-        updateWindowsRunner     <- o .: "updateWindowsRunner"
-        configuration           <- o .: "configuration"
-        tlsPath                 <- o .: "tlsPath"
+        walletPath          <- o .: "walletPath"
+        walletArgs          <- o .: "walletArgs"
+        updaterPath         <- o .: "updaterPath"
+        updaterArgs         <- o .: "updaterArgs"
+        updateArchive       <- o .: "updateArchive"
+        updateWindowsRunner <- o .: "updateWindowsRunner"
+        configuration       <- o .: "configuration"
+        tlsPath             <- o .: "tlsPath"
+        workingDir          <- o .: "workingDir"
 
         pure $ LauncherOptions
             configuration
@@ -286,6 +290,7 @@ instance FromJSON LauncherOptions where
             updateWindowsRunner
             walletPath
             walletArgs
+            workingDir
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
@@ -352,3 +357,11 @@ getWargs lo = WalletArguments $ loWalletArgs lo
 -- | Return WalletPath
 getWPath :: LauncherOptions -> WalletPath
 getWPath lo = WalletPath $ toS $ loWalletPath lo
+
+-- | Set working directory to given @FilePath@, return false if directory does
+-- not exist
+setWorkingDirectory :: FilePath -> IO Bool
+setWorkingDirectory filePath = do
+    directoryExists <- doesDirectoryExist filePath
+    when directoryExists $ setCurrentDirectory filePath
+    return directoryExists

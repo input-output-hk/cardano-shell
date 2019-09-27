@@ -173,6 +173,7 @@ test-suite cardano-launcher-test
     , yaml
     , unordered-containers
     , vector
+    , temporary
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings

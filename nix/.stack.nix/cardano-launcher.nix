@@ -83,6 +83,7 @@
             (hsPkgs.yaml)
             (hsPkgs.unordered-containers)
             (hsPkgs.vector)
+            (hsPkgs.temporary)
             ];
           };
         };
