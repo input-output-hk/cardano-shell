@@ -6,8 +6,7 @@ module Main where
 import           Cardano.Prelude
 import qualified Prelude
 
-import           System.Directory (createDirectoryIfMissing, doesDirectoryExist,
-                                   setCurrentDirectory)
+import           System.Directory (createDirectoryIfMissing)
 import           System.Exit (exitWith)
 import           System.FilePath ((</>))
 
@@ -25,6 +24,7 @@ import           Cardano.Shell.Launcher (ConfigurationOptions (..),
                                          WalletArguments (..), WalletMode (..),
                                          WalletPath (..), getUpdaterData,
                                          getWPath, getWargs, runWalletProcess,
+                                         setWorkingDirectory,
                                          walletRunnerProcess)
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
@@ -54,9 +54,8 @@ main = do
 
     -- Every platform will run a script before running the launcher that creates a
     -- working directory, so workingDir should always exist.
-    ifM (doesDirectoryExist workingDir)
-        (setCurrentDirectory workingDir)
-        (throwM . WorkingDirectoryDoesNotExist $ workingDir)
+    unlessM (setWorkingDirectory workingDir)
+        $ throwM . WorkingDirectoryDoesNotExist $ workingDir
 
     -- Really no clue what to put there and how will the wallet work.
     -- These will be refactored in the future

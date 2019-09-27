@@ -27,6 +27,7 @@ module Cardano.Shell.Launcher
     , getWargs
     , getWPath
     , getLauncherOption
+    , setWorkingDirectory
     ) where
 
 import           Cardano.Prelude
@@ -36,6 +37,7 @@ import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
 import           Data.Time.Units (Microsecond, fromMicroseconds)
 import           Data.Yaml (ParseException, decodeFileEither)
 
+import           System.Directory (doesDirectoryExist, setCurrentDirectory)
 import qualified System.Process as Process
 import           Turtle (system)
 
@@ -355,3 +357,11 @@ getWargs lo = WalletArguments $ loWalletArgs lo
 -- | Return WalletPath
 getWPath :: LauncherOptions -> WalletPath
 getWPath lo = WalletPath $ toS $ loWalletPath lo
+
+-- | Set working directory to given @FilePath@, return false if directory does
+-- not exist
+setWorkingDirectory :: FilePath -> IO Bool
+setWorkingDirectory filePath = do
+    directoryExists <- doesDirectoryExist filePath
+    when directoryExists $ setCurrentDirectory filePath
+    return directoryExists
