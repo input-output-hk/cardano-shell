@@ -19,13 +19,14 @@ import qualified Cardano.BM.Trace as Trace
 import           Cardano.BM.Tracing
 
 import           Cardano.Shell.CLI (getLauncherOptions)
-import           Cardano.Shell.Launcher (ConfigurationOptions (..),
-                                         ExternalDependencies (..),
-                                         LauncherOptions (..),
-                                         WalletArguments (..), WalletMode (..),
-                                         WalletPath (..), getUpdaterData,
-                                         getWPath, getWargs, runWalletProcess,
-                                         setWorkingDirectory,
+import           Cardano.Shell.Configuration (ConfigurationOptions (..),
+                                              LauncherOptions (..),
+                                              WalletArguments (..),
+                                              WalletPath (..), getUpdaterData,
+                                              getWPath, getWargs,
+                                              setWorkingDirectory)
+import           Cardano.Shell.Launcher (ExternalDependencies (..),
+                                         WalletMode (..), runWalletProcess,
                                          walletRunnerProcess)
 import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
@@ -63,8 +64,8 @@ main = do
 
     -- Really no clue what to put there and how will the wallet work.
     -- These will be refactored in the future
-    let launcherConfig :: ConfigurationOptions
-        launcherConfig = loConfiguration launcherOptions
+    let configurationOptions :: ConfigurationOptions
+        configurationOptions = loConfiguration launcherOptions
 
     let walletPath :: WalletPath
         walletPath = getWPath launcherOptions
@@ -94,7 +95,7 @@ main = do
     -- it does, it generates the certificates.
     generateTlsCertificates
         externalDependencies
-        launcherConfig
+        configurationOptions
         tlsPath
 
     void $ runUpdater updaterData -- On windows, process dies here

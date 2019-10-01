@@ -10,7 +10,6 @@ import           Cardano.Prelude
 
 import           Cardano.Shell.Environment (SubstitutionError,
                                             substituteEnvVars)
-import           Cardano.Shell.Launcher (LauncherOptions (..))
 import           Control.Monad.Except (liftEither)
 import           Data.Aeson (Result (..), fromJSON)
 import           Data.Yaml (ParseException, decodeFileEither)
@@ -20,6 +19,8 @@ import           Options.Applicative (Parser, ParserInfo, execParser, fullDesc,
 import           System.Directory (XdgDirectory (XdgData), getXdgDirectory)
 import           System.Environment (getExecutablePath, setEnv)
 import           System.FilePath (takeDirectory, (</>))
+
+import           Cardano.Shell.Configuration (LauncherOptions)
 
 -- | Path to launcher-config.yaml file
 newtype LauncherOptionPath = LauncherOptionPath

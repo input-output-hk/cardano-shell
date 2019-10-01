@@ -19,11 +19,11 @@ import           System.IO.Temp (withSystemTempDirectory)
 
 import           Cardano.Shell.CLI (LauncherOptionPath (..),
                                     decodeLauncherOption, setupEnvVars)
+import           Cardano.Shell.Configuration (LauncherOptions (..),
+                                              setWorkingDirectory)
 import           Cardano.Shell.Launcher (DaedalusExitCode (..),
-                                         LauncherOptions (..),
                                          RestartRunner (..), UpdateRunner (..),
-                                         handleDaedalusExitCode,
-                                         setWorkingDirectory)
+                                         handleDaedalusExitCode)
 
 -- | The simple launcher spec.
 launcherSpec :: Spec

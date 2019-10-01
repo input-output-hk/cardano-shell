@@ -8,7 +8,7 @@ module Cardano.Shell.Environment
 import           Cardano.Prelude
 
 import           Cardano.Shell.Template (substituteA)
-import           Data.Yaml (Value(..))
+import           Data.Yaml (Value (..))
 import           System.Environment (lookupEnv)
 
 -- | Substitute envrionment variable with value of its name.
@@ -30,7 +30,7 @@ expandVariable var = do
         Nothing    -> throwError $ FailedToLookupEnv var
         Just value -> return $ toS value
 
-data SubstitutionError 
+data SubstitutionError
   = FailedToLookupEnv Text
   -- ^ Failed to lookup environment variable
   deriving (Eq, Show)
