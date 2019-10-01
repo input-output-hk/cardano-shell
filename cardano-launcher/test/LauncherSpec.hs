@@ -136,7 +136,8 @@ setWorkingDirectorySpec = describe "Set working directory" $ do
 
 configurationSpec :: Spec
 configurationSpec = describe "configuration files" $ modifyMaxSuccess (const 1) $ do
-    mapM_ testLauncherParsable launcherDatas
+    describe "Launcher parser" $ do
+        mapM_ testLauncherParsable launcherDatas
     describe "getLauncherOptions" $ do
         mapM_ testGetLauncherOption launcherDatas
 
@@ -182,19 +183,22 @@ configFullFilePath configPath = "./configuration/launcher/" <> configPath
 -- substituion then unset them afterwards
 withSetEnvs :: LauncherOptionPath -> FilePath -> IO a -> IO a
 withSetEnvs path homePath action = bracket
-    (do
+    setEnvs
+    (\_ -> unsetEnvs)
+    (\_ -> action)
+  where
+    setEnvs :: IO ()
+    setEnvs = do
         -- Scripts that runs the launcher sets DAEDALUS_CONFIG variable
         setEnv "DAEDALUS_CONFIG" "Foo"
         -- Every operating system have HOME variable set
         setEnv "HOME" homePath
         setupEnvVars path
-    )
-    (const $ mapM_ unsetEnv
+    unsetEnvs :: IO ()
+    unsetEnvs = mapM_ unsetEnv
         [ "DAEDALUS_CONFIG"
         , "HOME"
         , "XDG_DATA_HOME"
         , "DAEDALUS_INSTALL_DIRECTORY"
         , "LAUNCHER_CONFIG"
         ]
-    )
-    (const $ action)
