@@ -84,6 +84,7 @@
             (hsPkgs.unordered-containers)
             (hsPkgs.vector)
             (hsPkgs.temporary)
+            (hsPkgs.filepath)
             ];
           };
         };

@@ -26,17 +26,15 @@ module Cardano.Shell.Launcher
     , getUpdaterData
     , getWargs
     , getWPath
-    , getLauncherOption
     , setWorkingDirectory
     ) where
 
 import           Cardano.Prelude
-import           Prelude (Show (..))
 
-import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
 import           Data.Time.Units (Microsecond, fromMicroseconds)
-import           Data.Yaml (ParseException, decodeFileEither)
+import           Data.Yaml (FromJSON (..), withObject, (.:), (.:?))
 
+import           Prelude (Show (..))
 import           System.Directory (doesDirectoryExist, setCurrentDirectory)
 import qualified System.Process as Process
 import           Turtle (system)
@@ -158,8 +156,8 @@ handleDaedalusExitCode
     -> RestartRunner
     -> DaedalusExitCode
     -> IO DaedalusExitCode
-handleDaedalusExitCode runUpdater restartWallet = isoTo <<$>> \case
-    RunUpdate               -> runUpdate runUpdater >> runRestart restartWallet WalletModeNormal
+handleDaedalusExitCode runUpdater' restartWallet = isoTo <<$>> \case
+    RunUpdate               -> runUpdate runUpdater' >> runRestart restartWallet WalletModeNormal
     -- Run the actual update, THEN restart launcher.
     -- Do we maybe need to handle the update ExitCode as well?
     RestartInGPUSafeMode    -> runRestart restartWallet WalletModeSafe
@@ -323,10 +321,6 @@ instance FromJSON ConfigurationOptions where
         systemStart     <- (Timestamp . fromMicroseconds . (*) 1000000) <<$>> o .:? "systemStart"
         seed            <- o .:? "seed"
         pure $ ConfigurationOptions path key systemStart seed
-
--- | Parses config file and return @LauncherOptions@ if successful
-getLauncherOption :: FilePath -> IO (Either ParseException LauncherOptions)
-getLauncherOption = decodeFileEither
 
 --------------------------------------------------------------------------------
 -- These functions will take LauncherOptions as an argument and put together

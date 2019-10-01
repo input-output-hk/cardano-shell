@@ -7,6 +7,7 @@ import           Cardano.Prelude
 import qualified Prelude
 
 import           System.Directory (createDirectoryIfMissing)
+import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.FilePath ((</>))
 
@@ -36,7 +37,6 @@ import           Control.Exception.Safe (throwM)
 import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
                                   validateCertificate, writeCertificate,
                                   writeCredentials)
-
 --------------------------------------------------------------------------------
 -- Main
 --------------------------------------------------------------------------------
@@ -44,6 +44,10 @@ import           Data.X509.Extra (failIfReasons, genRSA256KeyPair,
 -- | Main function.
 main :: IO ()
 main = do
+
+    setEnv "LC_ALL" "en_GB.UTF-8"
+    setEnv "LANG"   "en_GB.UTF-8"
+
     launcherOptions <- do
         eLauncherOptions <- getLauncherOptions
         case eLauncherOptions of
