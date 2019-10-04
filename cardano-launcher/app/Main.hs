@@ -28,7 +28,8 @@ import           Cardano.Shell.Configuration (ConfigurationOptions (..),
 import           Cardano.Shell.Launcher (LoggingDependencies (..),
                                          WalletMode (..), runWalletProcess,
                                          walletRunnerProcess)
-import           Cardano.Shell.Update.Lib (UpdaterData (..))
+import           Cardano.Shell.Update.Lib (UpdaterData (..),
+                                           runDefaultUpdateProcess, runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
@@ -97,6 +98,10 @@ main = do
         loggingDependencies
         configurationOptions
         tlsPath
+
+    -- In the case the user wants to avoid installing the update now, we
+    -- run the update (if there is one) when we have it downloaded.
+    void $ runUpdater runDefaultUpdateProcess loggingDependencies updaterData
 
     -- You still want to run the wallet even if the update fails
     exitCode <- runWalletProcess
