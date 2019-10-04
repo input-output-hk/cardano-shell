@@ -1,12 +1,10 @@
 # cardano-launcher
 
-## Overview
-
 `cardano-launcher` is an executable which is used to launch
 [Daedalus](https://github.com/input-output-hk/daedalus) as well as handling
 restart/exit process.
 
-Some of the key responsibilities include:
+Key responsibilities include:
 
 1. Generate TLS certificates that are needed for Daedalus to communicate with [cardano-wallet](https://github.com/input-output-hk/cardano-wallet).
 2. Setup environment variables that are needed for Daedalus to run.
@@ -14,6 +12,20 @@ Some of the key responsibilities include:
 4. Restart Daedalus in GPU-safe mode.
 4. Run an update system. For more details about how update is being done, please see
 [wiki](https://github.com/input-output-hk/cardano-shell/wiki/How-update-is-being-done-in-Cardano)
+
+### What it does
+
+`cardano-launcher` will first setup environment variables that are needed for
+Daedalus to run. It then generates TLS certificates that Daedalus uses to
+communicate with `cardano-wallet`. After that, `cardano-launcher` will spawn
+Daedalus as a child process. Depending on how Daedalus exits, `cardano-launcher`
+will perform restart process, then run Daedalus again. Restart process includes:
+
+1. Running update system when user asks Daedalus to run update.
+2. Switching between GPU-safe mode and Normal mode.
+
+When Daedalus exits, the launcher will clean itself up, and exits along with
+Daedalus.
 
 ## Developing `cardano-launcher`
 
