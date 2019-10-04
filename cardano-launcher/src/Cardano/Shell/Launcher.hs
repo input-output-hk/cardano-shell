@@ -7,7 +7,7 @@ module Cardano.Shell.Launcher
     ( WalletMode (..)
     , WalletRunner (..)
     , walletRunnerProcess
-    , ExternalDependencies (..)
+    , LoggingDependencies (..)
     -- * Functions
     , runWalletProcess
     -- * Critical exports (testing)
@@ -27,17 +27,13 @@ import           Turtle (system)
 
 import           Cardano.Shell.Configuration (WalletArguments (..),
                                               WalletPath (..))
-import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
+import           Cardano.Shell.Types (LoggingDependencies (..))
+import           Cardano.Shell.Update.Lib (UpdaterData (..),
+                                           runDefaultUpdateProcess, runUpdater)
 
 --------------------------------------------------------------------------------
 -- Types
 --------------------------------------------------------------------------------
-
-data ExternalDependencies = ExternalDependencies
-    { logInfo   :: Text -> IO ()
-    , logError  :: Text -> IO ()
-    , logNotice :: Text -> IO ()
-    }
 
 -- | This is here so we don't mess up the order. It's VERY important.
 -- The type that runs the update.
@@ -148,20 +144,20 @@ newtype WalletRunner = WalletRunner
 -- older configuration and if so, which parts of it.
 -- We passed in the bare minimum and if we require anything else, we will add it.
 runWalletProcess
-    :: ExternalDependencies
+    :: LoggingDependencies
     -> WalletMode
     -> WalletPath
     -> WalletArguments
     -> WalletRunner
     -> UpdaterData
     -> IO ExitCode
-runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterData = do
+runWalletProcess logDep walletMode walletPath walletArguments walletRunner updaterData = do
 
     -- Parametrized by @WalletMode@ so we can change it on restart depending
     -- on the Daedalus exit code.
     let restart :: WalletMode -> IO ExitCode
         restart =  \walletMode' -> runWalletProcess
-                        ed
+                        logDep
                         walletMode'
                         walletPath
                         walletArguments
@@ -178,7 +174,7 @@ runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterDa
                             then walletArguments <> walletSafeModeArgs
                             else walletArguments
 
-    logNotice ed $ "Starting the wallet"
+    logNotice logDep $ "Starting the wallet"
 
     -- create the wallet process
     walletExitStatus <- runWalletSystemProcess walletRunner walletPath walletArgs
@@ -192,7 +188,7 @@ runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterDa
     -- We separate the description of the computation, from the computation itself.
     -- There are other ways of doing this, of course.
     isoFrom <$> handleDaedalusExitCode
-        (UpdateRunner $ runUpdater updaterData)
+        (UpdateRunner $ runUpdater runDefaultUpdateProcess logDep updaterData)
         (RestartRunner restart)
         exitCode
 

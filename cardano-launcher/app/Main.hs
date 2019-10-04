@@ -25,10 +25,11 @@ import           Cardano.Shell.Configuration (ConfigurationOptions (..),
                                               WalletPath (..), getUpdaterData,
                                               getWPath, getWargs,
                                               setWorkingDirectory)
-import           Cardano.Shell.Launcher (ExternalDependencies (..),
+import           Cardano.Shell.Launcher (LoggingDependencies (..),
                                          WalletMode (..), runWalletProcess,
                                          walletRunnerProcess)
-import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
+import           Cardano.Shell.Update.Lib (UpdaterData (..),
+                                           runDefaultUpdateProcess, runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
@@ -80,11 +81,11 @@ main = do
     let tlsPath :: TLSPath
         tlsPath = TLSPath $ loTlsPath launcherOptions
 
-    logConfig <- defaultConfigStdout
+    logConfig       <- defaultConfigStdout
     (baseTrace, sb) <- setupTrace_ logConfig "launcher"
 
-    let externalDependencies :: ExternalDependencies
-        externalDependencies = ExternalDependencies
+    let loggingDependencies :: LoggingDependencies
+        loggingDependencies = LoggingDependencies
             { logInfo       = Trace.logInfo baseTrace
             , logError      = Trace.logError baseTrace
             , logNotice     = Trace.logNotice baseTrace
@@ -94,23 +95,27 @@ main = do
     -- to generate them. Since the function is called `generate...`, that's what
     -- it does, it generates the certificates.
     generateTlsCertificates
-        externalDependencies
+        loggingDependencies
         configurationOptions
         tlsPath
 
-    void $ runUpdater updaterData -- On windows, process dies here
+    -- In the case the user wants to avoid installing the update now, we
+    -- run the update (if there is one) when we have it downloaded.
+    void $ runUpdater runDefaultUpdateProcess loggingDependencies updaterData
 
     -- You still want to run the wallet even if the update fails
     exitCode <- runWalletProcess
-                    externalDependencies
+                    loggingDependencies
                     WalletModeNormal
                     walletPath
                     walletArgs
                     walletRunnerProcess
                     updaterData
 
+    -- Shut down the logging layer.
     shutdown sb
 
+    -- Exit the program with exit code.
     exitWith exitCode
 
 --------------------------------------------------------------------------------
@@ -160,7 +165,7 @@ textToFilePath = strConv Strict
 
 -- | Generation of the TLS certificates.
 -- This just covers the generation of the TLS certificates and nothing else.
-generateTlsCertificates :: ExternalDependencies -> ConfigurationOptions -> TLSPath -> IO ()
+generateTlsCertificates :: LoggingDependencies -> ConfigurationOptions -> TLSPath -> IO ()
 generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsPath) = do
 
     let tlsServer = tlsPath </> "server"
