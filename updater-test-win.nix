@@ -11,17 +11,15 @@ let
 in pkgs.runCommand "updater_test.zip" { buildInputs = [ pkgs.zip ]; } ''
   mkdir -pv $out/updater-test
   cd $out/updater-test
-  mkdir -pv configuration/client configuration/server configuration/launcher updater
+  mkdir -pv configuration/client configuration/server configuration/launcher
   cp ${crossSelf.nix-tools.cexes.cardano-launcher.cardano-launcher}/bin/cardano-launcher.exe ./cardano-launcher.exe
   cp ${crossSelf.nix-tools.cexes.cardano-launcher.mock-daedalus-frontend}/bin/mock-daedalus-frontend.exe ./daedalus.exe
-  cp ${crossSelf.nix-tools.cexes.cardano-launcher.mock-installer}/bin/mock-installer.exe ./updater/updater.exe
+  cp ${crossSelf.nix-tools.cexes.cardano-launcher.mock-installer}/bin/mock-installer.exe ./updater.exe
   cp ${pkgsCross.libffi}/bin/libffi-6.dll ./
-  cp ${pkgsCross.libffi}/bin/libffi-6.dll ./updater/
-  cp ${./configuration/launcher/launcher-config.demo.yaml} ./configuration/launcher/launcher-config.demo.yaml
+  cp ${./cardano-launcher/configuration/launcher/launcher-config-demo.windows.yaml} ./launcher-config.yaml
   cp ${./configuration/cert-configuration.yaml} ./configuration/cert-configuration.yaml
   cp ${./configuration/log-configuration.yaml} ./configuration/log-configuration.yaml
   cd ..
   zip updater_test.zip -r updater-test/
 ''
 
-# This script fails because we do not have https://github.com/input-output-hk/cardano-shell/pull/255 merged yet!

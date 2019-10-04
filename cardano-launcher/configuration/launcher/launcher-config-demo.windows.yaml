@@ -1,0 +1,25 @@
+# This is configuration that is used to manually test cardano-launcher on Windows
+walletLogging: false
+statePath: ${XDG_DATA_HOME}/Daedalus/mainnet
+walletPath: ./daedalus.exe
+nodePath: cardano-node
+launcherLogsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs/
+walletArgs: []
+nodeDbPath: ${XDG_DATA_HOME}/Daedalus/mainnet/DB/
+workingDir: ./
+frontendOnlyMode: true
+nodeLogPath: null
+updaterArgs: []
+updaterPath: updater.exe
+updateArchive: null
+logsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs
+configuration:
+  seed: null
+  filePath: ./configuration/cert-configuration.yaml
+  key: dev
+  systemStart: null
+nodeLogConfig: ./configuration/log-configuration.yaml
+nodeTimeoutSec: 60
+updateWindowsRunner: Installer.bat
+tlsPath: "./configuration"
+x509ToolPath: cardano-x509-certificates
