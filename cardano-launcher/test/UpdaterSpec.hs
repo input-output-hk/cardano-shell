@@ -44,7 +44,6 @@ testUpdaterData =
     UpdaterData
         "./test/testUpdater.sh"
         []
-        Nothing
         ""
 
 testRunCmd :: ExitNum -> FilePath -> [String] -> IO ExitCode

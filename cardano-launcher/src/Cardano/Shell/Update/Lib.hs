@@ -24,15 +24,14 @@ module Cardano.Shell.Update.Lib
 
 import           Cardano.Prelude
 
-import qualified Data.Text as T
 import           Distribution.System (OS (..), buildOS)
 import           Prelude (String)
 
 import           System.Directory (doesFileExist, removeFile)
-import           System.Environment (getExecutablePath)
 import           System.Process (proc, waitForProcess, withCreateProcess)
 
 #ifdef mingw32_HOST_OS
+import           System.Environment (getExecutablePath)
 import           System.Win32.Process (getCurrentProcessId)
 #endif
 
@@ -40,17 +39,29 @@ import           Test.QuickCheck (Arbitrary (..), oneof)
 
 import           Cardano.Shell.Types (LoggingDependencies (..))
 
--- | Updater path, args, windows runner path, archive path
+
+-- We need to add the check if the archive exists first!
+-- /usr/bin/open -FW  /../daedalus.pkg -- MAC
+-- /bin/update-runner /../installer.sh -- LINUX
+--                    ABS. PATH
+-- Installer.bat      Installer.exe
+-- WE GENERATE THIS!
+
+-- | Runner path, what we use to run the update/installer,
+-- arguments for the runner, and the actual update path for the installer.
 data UpdaterData = UpdaterData
-    { udPath          :: !FilePath
-    -- ^ Path of the updater/installer.
-    , udArgs          :: ![Text]
+    { udRunnerPath      :: !FilePath
+    -- ^ Path of the updater/installer runner. Examples:
+    -- - /usr/bin/open
+    -- - /bin/update-runner
+    -- - Installer.bat (that we generate)
+    , udArgs            :: ![Text]
     -- ^ Arguments for the updater/installer.
-    , udWindowsRunner :: !(Maybe FilePath)
-    -- ^ Windows runner path for the updater/installer.
-    , udArchivePath   :: !FilePath
-    -- ^ We might add checksum value for updater to ensure that
-    -- we're launching the right updater.
+    , udUpdatePath     :: !FilePath
+    -- ^ The update path of the update file. Examples:
+    -- - /../daedalus.pkg
+    -- - /../installer.sh
+    -- - Installer.exe (Found in the working directory)
     }
 
 -- | On what platform are we running the update?
@@ -112,11 +123,13 @@ evaluateUpdaterCmdExitCode :: RunCmdFunc -> UpdaterCommand -> IO ExitCode
 evaluateUpdaterCmdExitCode runCommand = \case
     -- The update needs to be run on Windows.
     WindowsRunUpdate runnerPath args -> do
+#ifdef mingw32_HOST_OS
         writeWindowsUpdaterRunner runnerPath
+#endif
         runCommand runnerPath (map toS args)
     -- The update needs to be run on *nix.
-    UnixRunUpdate path args -> do
-        runCommand path (map toS args)
+    UnixRunUpdate runnerPath args -> do
+        runCommand runnerPath (map toS args)
     -- The update file is missing.
     UpdaterFileMissing      -> return $ ExitFailure 1
 
@@ -141,18 +154,18 @@ evaluateUpdaterCmdLogging loggingDep = \case
 runUpdater :: RunCmdFunc -> LoggingDependencies -> UpdaterData -> IO ExitCode
 runUpdater runCommand loggingDep updaterData = do
 
-    let path       = udPath updaterData
-    let archive    = udArchivePath updaterData
+    let runnerPath  = udRunnerPath updaterData
+    let updatePath  = udUpdatePath updaterData
 
-    updaterExist <- boolToUpdaterExists <$> doesFileExist path
+    updateRunnerExist <- boolToUpdaterExists <$> doesFileExist runnerPath
 
-    logInfo loggingDep $ "Does file exist: " <> show updaterExist
+    logInfo loggingDep $ "Does file exist: " <> show updateRunnerExist
 
     let currentBuildOS :: UpdateOSPlatform
         currentBuildOS = osToUpdateOSPlatform buildOS
 
     let updaterCommand :: UpdaterCommand
-        updaterCommand = executeUpdater currentBuildOS updaterExist updaterData
+        updaterCommand = executeUpdater currentBuildOS updateRunnerExist updaterData
 
     -- Log out the results.
     evaluateUpdaterCmdLogging loggingDep updaterCommand
@@ -163,9 +176,9 @@ runUpdater runCommand loggingDep updaterData = do
 
     -- The handling of the final exit code of the updater.
     case exitCode of
-        -- If the update is a success, them remove the archive file.
+        -- If the update is a success, them remove the installer file.
         ExitSuccess -> do
-            whenM (doesFileExist archive) $ removeFile archive
+            whenM (doesFileExist updatePath) $ removeFile updatePath
             return $ ExitSuccess
         -- Otherwise, return an error.
         _           -> return $ exitCode
@@ -174,16 +187,15 @@ runUpdater runCommand loggingDep updaterData = do
 executeUpdater :: UpdateOSPlatform -> UpdaterExists -> UpdaterData -> UpdaterCommand
 executeUpdater buildOS' updaterExist updaterData = do
 
-    let path       = udPath updaterData
+    let runnerPath = udRunnerPath updaterData
     let args       = map toS $ udArgs updaterData
-    let archive    = udArchivePath updaterData
-    let runnerPath = fromMaybe mempty (udWindowsRunner updaterData)
+    let updatePath = udUpdatePath updaterData
 
     if updaterExist == UpdaterExists
         then
             case buildOS' of
-                WinOS   -> WindowsRunUpdate runnerPath (toS path:args)
-                UnixOS  -> UnixRunUpdate path (toS archive:args)
+                WinOS   -> WindowsRunUpdate runnerPath (toS updatePath:args)
+                UnixOS  -> UnixRunUpdate    runnerPath (toS updatePath:args)
         else UpdaterFileMissing
 
 -- | Create @.bat@ file on given @FilePath@
@@ -195,15 +207,13 @@ executeUpdater buildOS' updaterExist updaterData = do
 -- Because of this, we need a @.bat@ file which will run the update procedure and
 -- re-launch the launcher.
 -- Only Windows has this problem.
+#ifdef mingw32_HOST_OS
 writeWindowsUpdaterRunner :: FilePath -> IO ()
 writeWindowsUpdaterRunner runnerPath = do
     exePath         <- getExecutablePath -- (TODO): Check that it returns absolute path!
     launcherArgs    <- getArgs
-#ifdef mingw32_HOST_OS
+
     selfPid         <- getCurrentProcessId
-#else
-    let (selfPid :: Integer) = 0 -- This will never be run on non-Windows
-#endif
     writeFile (toS runnerPath) $ T.unlines
     -- What info can this file supply if it fails?
     -- How can you make this scream if it fails
@@ -225,3 +235,5 @@ writeWindowsUpdaterRunner runnerPath = do
     quote str = "\"" <> str <> "\""
     -- str = a"b
     -- possible inject attack
+#endif
+

@@ -46,11 +46,11 @@ data LauncherOptions = LauncherOptions
     , loTlsPath             :: !FilePath
     , loUpdaterPath         :: !FilePath
     , loUpdaterArgs         :: ![Text]
-    , loUpdateArchive       :: !(Maybe FilePath)
-    , loUpdateWindowsRunner :: !(Maybe FilePath)
+    , loUpdateArchive       :: !FilePath
     , loWalletPath          :: !FilePath
     , loWalletArgs          :: ![Text]
     , loWorkingDirectory    :: !FilePath
+    -- On WIN it should set this directory as current.
     } deriving (Show, Generic)
 
 instance FromJSON LauncherOptions where
@@ -61,7 +61,6 @@ instance FromJSON LauncherOptions where
         updaterPath         <- o .: "updaterPath"
         updaterArgs         <- o .: "updaterArgs"
         updateArchive       <- o .: "updateArchive"
-        updateWindowsRunner <- o .: "updateWindowsRunner"
         configuration       <- o .: "configuration"
         tlsPath             <- o .: "tlsPath"
         workingDir          <- o .: "workingDir"
@@ -72,7 +71,6 @@ instance FromJSON LauncherOptions where
             updaterPath
             updaterArgs
             updateArchive
-            updateWindowsRunner
             walletPath
             walletArgs
             workingDir
@@ -116,11 +114,10 @@ instance FromJSON ConfigurationOptions where
 -- | Create @UpdaterData@ with given @LauncherOptions@
 getUpdaterData :: LauncherOptions -> UpdaterData
 getUpdaterData lo =
-    let path            = loUpdaterPath lo
-        args            = loUpdaterArgs lo
-        windowsRunner   = loUpdateWindowsRunner lo
-        archivePath     = fromMaybe "" (loUpdateArchive lo)
-    in UpdaterData path args windowsRunner archivePath
+    let updaterPath     = loUpdaterPath lo
+        updaterArgs     = loUpdaterArgs lo
+        archivePath     = loUpdateArchive lo
+    in UpdaterData updaterPath updaterArgs archivePath
 
 -- | Return WalletArguments
 getWargs :: LauncherOptions -> WalletArguments
@@ -137,3 +134,4 @@ setWorkingDirectory filePath = do
     directoryExists <- doesDirectoryExist filePath
     when directoryExists $ setCurrentDirectory filePath
     return directoryExists
+
