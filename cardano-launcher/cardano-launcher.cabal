@@ -45,6 +45,10 @@ library
     , time-units
     , mtl
     , optparse-applicative
+    , cardano-sl-x509
+    , safe-exceptions
+    , x509-validation
+
   if os(windows)
     build-depends:     Win32
 
@@ -78,6 +82,7 @@ executable cardano-launcher
     , iohk-monitoring
     -- exception handling
     , safe-exceptions
+    , text
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
