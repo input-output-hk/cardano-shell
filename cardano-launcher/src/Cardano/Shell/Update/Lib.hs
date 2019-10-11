@@ -50,14 +50,14 @@ import           Cardano.Shell.Types (LoggingDependencies (..))
 -- | Runner path, what we use to run the update/installer,
 -- arguments for the runner, and the actual update path for the installer.
 data UpdaterData = UpdaterData
-    { udRunnerPath      :: !FilePath
+    { udUpdaterPath         :: !FilePath
     -- ^ Path of the updater/installer runner. Examples:
     -- - /usr/bin/open
     -- - /bin/update-runner
     -- - Installer.bat (that we generate)
-    , udArgs            :: ![Text]
+    , udArgs                :: ![Text]
     -- ^ Arguments for the updater/installer.
-    , udUpdatePath     :: !FilePath
+    , udArchivePath         :: !FilePath
     -- ^ The update path of the update file. Examples:
     -- - /../daedalus.pkg
     -- - /../installer.sh
@@ -122,14 +122,14 @@ isUpdaterRunOnUnix _                    = False
 evaluateUpdaterCmdExitCode :: RunCmdFunc -> UpdaterCommand -> IO ExitCode
 evaluateUpdaterCmdExitCode runCommand = \case
     -- The update needs to be run on Windows.
-    WindowsRunUpdate runnerPath args -> do
+    WindowsRunUpdate updaterPath args -> do
 #ifdef mingw32_HOST_OS
-        writeWindowsUpdaterRunner runnerPath
+        writeWindowsUpdaterRunner updaterPath
 #endif
-        runCommand runnerPath (map toS args)
+        runCommand updaterPath (map toS args)
     -- The update needs to be run on *nix.
-    UnixRunUpdate runnerPath args -> do
-        runCommand runnerPath (map toS args)
+    UnixRunUpdate updaterPath args -> do
+        runCommand updaterPath (map toS args)
     -- The update file is missing.
     UpdaterFileMissing      -> return $ ExitFailure 1
 
@@ -154,10 +154,10 @@ evaluateUpdaterCmdLogging loggingDep = \case
 runUpdater :: RunCmdFunc -> LoggingDependencies -> UpdaterData -> IO ExitCode
 runUpdater runCommand loggingDep updaterData = do
 
-    let runnerPath  = udRunnerPath updaterData
-    let updatePath  = udUpdatePath updaterData
+    let updaterPath     = udUpdaterPath updaterData
+    let archivePath     = udArchivePath updaterData
 
-    updateRunnerExist <- boolToUpdaterExists <$> doesFileExist runnerPath
+    updateRunnerExist <- boolToUpdaterExists <$> doesFileExist updaterPath
 
     logInfo loggingDep $ "Does file exist: " <> show updateRunnerExist
 
@@ -173,12 +173,11 @@ runUpdater runCommand loggingDep updaterData = do
     -- Actually execute the commands.
     exitCode <- evaluateUpdaterCmdExitCode runCommand updaterCommand
 
-
     -- The handling of the final exit code of the updater.
     case exitCode of
         -- If the update is a success, them remove the installer file.
         ExitSuccess -> do
-            whenM (doesFileExist updatePath) $ removeFile updatePath
+            whenM (doesFileExist archivePath) $ removeFile archivePath
             return $ ExitSuccess
         -- Otherwise, return an error.
         _           -> return $ exitCode
@@ -187,15 +186,15 @@ runUpdater runCommand loggingDep updaterData = do
 executeUpdater :: UpdateOSPlatform -> UpdaterExists -> UpdaterData -> UpdaterCommand
 executeUpdater buildOS' updaterExist updaterData = do
 
-    let runnerPath = udRunnerPath updaterData
-    let args       = map toS $ udArgs updaterData
-    let updatePath = udUpdatePath updaterData
+    let updaterPath = udUpdaterPath updaterData
+    let args        = map toS $ udArgs updaterData
+    let archivePath = udArchivePath updaterData
 
     if updaterExist == UpdaterExists
         then
             case buildOS' of
-                WinOS   -> WindowsRunUpdate runnerPath (toS updatePath:args)
-                UnixOS  -> UnixRunUpdate    runnerPath (toS updatePath:args)
+                WinOS   -> WindowsRunUpdate updaterPath (toS archivePath:args)
+                UnixOS  -> UnixRunUpdate    updaterPath (toS archivePath:args)
         else UpdaterFileMissing
 
 -- | Create @.bat@ file on given @FilePath@

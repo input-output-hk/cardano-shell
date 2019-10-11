@@ -20,6 +20,5 @@ configuration:
   systemStart: null
 nodeLogConfig: ./configuration/log-configuration.yaml
 nodeTimeoutSec: 60
-updateWindowsRunner: Installer.bat
 tlsPath: "./configuration"
 x509ToolPath: cardano-x509-certificates

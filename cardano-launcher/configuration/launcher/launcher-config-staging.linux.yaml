@@ -47,6 +47,5 @@ configuration:
 updateArchive: ${XDG_DATA_HOME}/Daedalus/staging/installer.sh
 nodeLogConfig: ${DAEDALUS_CONFIG}/log-config-prod.yaml
 nodeTimeoutSec: 60
-updateWindowsRunner: null
 tlsPath: ${XDG_DATA_HOME}/Daedalus/staging/tls
 x509ToolPath: cardano-x509-certificates
