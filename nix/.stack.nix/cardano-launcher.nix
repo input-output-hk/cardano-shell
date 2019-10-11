@@ -32,6 +32,9 @@
           (hsPkgs.time-units)
           (hsPkgs.mtl)
           (hsPkgs.optparse-applicative)
+          (hsPkgs.cardano-sl-x509)
+          (hsPkgs.safe-exceptions)
+          (hsPkgs.x509-validation)
           ] ++ (pkgs.lib).optional (system.isWindows) (hsPkgs.Win32);
         };
       exes = {
@@ -40,12 +43,12 @@
             (hsPkgs.base)
             (hsPkgs.cardano-prelude)
             (hsPkgs.cardano-launcher)
-            (hsPkgs.cardano-sl-x509)
             (hsPkgs.directory)
             (hsPkgs.filepath)
             (hsPkgs.formatting)
             (hsPkgs.iohk-monitoring)
             (hsPkgs.safe-exceptions)
+            (hsPkgs.text)
             ];
           };
         "mock-daedalus-frontend" = {

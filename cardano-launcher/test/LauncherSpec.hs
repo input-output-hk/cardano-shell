@@ -19,11 +19,15 @@ import           System.IO.Temp (withSystemTempDirectory)
 
 import           Cardano.Shell.CLI (LauncherOptionPath (..),
                                     decodeLauncherOption, setupEnvVars)
-import           Cardano.Shell.Configuration (LauncherOptions (..),
+import           Cardano.Shell.Configuration (ConfigurationOptions (..),
+                                              LauncherOptions (..),
                                               setWorkingDirectory)
 import           Cardano.Shell.Launcher (DaedalusExitCode (..),
-                                         RestartRunner (..), UpdateRunner (..),
+                                         RestartRunner (..), TLSError (..),
+                                         TLSPath (..), UpdateRunner (..),
+                                         generateTlsCertificates,
                                          handleDaedalusExitCode)
+import           Cardano.Shell.Types (nullLogging)
 
 -- | The simple launcher spec.
 launcherSpec :: Spec
@@ -31,6 +35,7 @@ launcherSpec = do
     configurationSpec
     launcherSystemSpec
     setWorkingDirectorySpec
+    generateTLSCertSpec
 
 -- | The launcher system spec.
 launcherSystemSpec :: Spec
@@ -202,3 +207,58 @@ withSetEnvs path homePath action = bracket
         , "DAEDALUS_INSTALL_DIRECTORY"
         , "LAUNCHER_CONFIG"
         ]
+
+generateTLSCertSpec :: Spec
+generateTLSCertSpec = describe "TLS certificate generation" $ modifyMaxSuccess (const 1) $ do
+    it "should generate tls certificates as expected" $ monadicIO $ do
+        (eTLS, filesExist) <- run $ withSystemTempDirectory "tls-test" $ \tmpDir -> do
+            let tlsPath = TLSPath $ tmpDir
+            eTLS <- generateTlsCertificates nullLogging defaultConfigurationOptions tlsPath
+            filesExist <- and <$> mapM doesFileExist (tlsFiles tmpDir)
+            return (eTLS, filesExist)
+        assert $ isRight eTLS
+        assert filesExist
+
+    it "should throw error when TLS path doesn't exist" $ monadicIO $ do
+        let invalidTLSPath = TLSPath $ "this directory does not exist"
+        eTLS <- run $ generateTlsCertificates nullLogging defaultConfigurationOptions invalidTLSPath
+        assert $ eTLS == Left (TLSDirectoryNotFound "this directory does not exist")
+
+    it "should throw error when invalid config file path was given" $ monadicIO $ do
+        let invalidConfigPath = "This path doesn't exist"
+        (eTLS, filesExist) <- run $ withSystemTempDirectory "tls-test" $ \tmpDir -> do
+            let tlsPath = TLSPath $ tmpDir
+            let invalidConfigurationOption = defaultConfigurationOptions { cfoFilePath = invalidConfigPath }
+            eTLS <- generateTlsCertificates nullLogging invalidConfigurationOption tlsPath
+            filesExist <- and <$> mapM doesFileExist (tlsFiles tmpDir)
+            return (eTLS, filesExist)
+        assert $ eTLS == Left (CertConfigNotFound invalidConfigPath)
+        assert $ not filesExist
+
+    it "should throw error when invalid key was given" $ monadicIO $ do
+        let invalidKey = "This is invalid key"
+        (eTLS, filesExist) <- run $ withSystemTempDirectory "tls-test" $ \tmpDir -> do
+            let tlsPath = TLSPath $ tmpDir
+            let invalidConfigurationOption = defaultConfigurationOptions { cfoKey = invalidKey}
+            eTLS <- generateTlsCertificates nullLogging invalidConfigurationOption tlsPath
+            filesExist <- and <$> mapM doesFileExist (tlsFiles tmpDir)
+            return (eTLS, filesExist)
+        assert $ eTLS == Left (InvalidKey invalidKey)
+        assert $ not filesExist
+  where
+    defaultConfigurationOptions :: ConfigurationOptions
+    defaultConfigurationOptions = ConfigurationOptions {
+        cfoFilePath = "./configuration/cert-configuration.yaml",
+        cfoKey = "dev",
+        cfoSystemStart = Nothing,
+        cfoSeed = Nothing
+    }
+    tlsFiles :: FilePath -> [FilePath]
+    tlsFiles path = 
+        let clientFiles :: [FilePath]
+            clientFiles = map (\file -> path </> "client" </> file)
+                ["ca.crt", "client.crt", "client.key", "client.pem"]
+            serverFiles :: [FilePath]
+            serverFiles = map (\file -> path </> "server" </> file)
+                ["ca.crt", "server.crt", "server.key", "server.pem"]
+        in clientFiles <> serverFiles
