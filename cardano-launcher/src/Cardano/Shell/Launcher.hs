@@ -44,7 +44,8 @@ import           Control.Exception.Safe (onException)
 import           Data.X509.Extra (genRSA256KeyPair, validateCertificate,
                                   writeCertificate, writeCredentials)
 import           Data.X509.Validation (FailedReason)
-import           System.Directory (createDirectoryIfMissing, doesFileExist)
+import           System.Directory (createDirectoryIfMissing, doesDirectoryExist,
+                                   doesFileExist)
 import           System.FilePath ((</>))
 
 --------------------------------------------------------------------------------
@@ -228,16 +229,8 @@ walletRunnerProcess = WalletRunner $ \walletPath walletArgs ->
             }
 
 --------------------------------------------------------------------------------
---
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
 -- Types
 --------------------------------------------------------------------------------
-
--- Not used?
--- newtype X509ToolPath = X509ToolPath { getX509ToolPath :: FilePath }
---     deriving (Eq, Show)
 
 newtype TLSPath = TLSPath { getTLSFilePath :: FilePath }
     deriving (Eq, Show)
@@ -248,10 +241,16 @@ newtype TLSPath = TLSPath { getTLSFilePath :: FilePath }
 
 -- | Generation of the TLS certificates.
 -- This just covers the generation of the TLS certificates and nothing else.
-generateTlsCertificates :: LoggingDependencies -> ConfigurationOptions -> TLSPath -> IO (Either TLSError ())
+generateTlsCertificates
+    :: LoggingDependencies
+    -> ConfigurationOptions
+    -> TLSPath
+    -> IO (Either TLSError ())
 generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsPath) = runExceptT $ do
     doesCertConfigExist <- liftIO $ doesFileExist (cfoFilePath configurationOptions)
+    doesTLSPathExist <- liftIO $ doesDirectoryExist tlsPath
     unless doesCertConfigExist $ throwError . CertConfigNotFound . cfoFilePath $ configurationOptions
+    unless doesTLSPathExist $ throwError . TLSDirectoryNotFound $ tlsPath
 
     let tlsServer = tlsPath </> "server"
     let tlsClient = tlsPath </> "client"
@@ -265,13 +264,13 @@ generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsP
         -- Generate the certificates.
     generateCertificates tlsServer tlsClient
   where
-    -- | The generation of the certificates. More or less copied from
+    -- The generation of the certificates. More or less copied from
     -- `cardano-sl`.
     generateCertificates :: FilePath -> FilePath -> ExceptT TLSError IO ()
     generateCertificates tlsServer' tlsClient = do
 
         let configFile = cfoFilePath configurationOptions
-        -- | Configuration key within the config file
+        -- Configuration key within the config file
         let configKey :: ConfigurationKey
             configKey = ConfigurationKey . textToFilePath . cfoKey $ configurationOptions
 
@@ -282,11 +281,11 @@ generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsP
                 , outDirCA      = Nothing -- TODO(KS): AFAIK, we don't output the CA.
                 }
 
-        -- | TLS configuration
+        -- TLS configuration
         tlsConfig <- decodeConfigFile configKey configFile `onException`
             (throwError . InvalidKey . cfoKey $ configurationOptions)
 
-        -- | From configuraiton
+        -- From configuraiton
         (caDesc, descs) <-
             liftIO $ fromConfiguration tlsConfig outDirectories genRSA256KeyPair <$> genRSA256KeyPair
 
@@ -295,7 +294,7 @@ generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsP
         let serverHost  = "localhost"
         let serverPort  = ""
 
-        -- | Generation of the certificate
+        -- Generation of the certificate
         (caKey, caCert) <- liftIO $ genCertificate caDesc
 
         case certOutDir caDesc of
@@ -313,7 +312,7 @@ generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsP
             liftIO $ do
                 writeCredentials (certOutDir desc </> certFilename desc) (key, cert)
                 writeCertificate (certOutDir desc </> caName) caCert
-    -- | Utility function.
+    -- Utility function.
     textToFilePath :: Text -> FilePath
     textToFilePath = strConv Strict
 
@@ -325,9 +324,13 @@ data TLSError =
     -- ^ Generation of TLS certificates failed dues to following reasons
     | InvalidKey Text
     -- ^ Given key was invalid therefore @decodeConfigFile@ threw exception
+    | TLSDirectoryNotFound FilePath
+    -- ^ TLS path does not exist
+    deriving (Eq)
 
 instance Show TLSError where
     show = \case
         CannotGenerateTLS reasons -> "Couldn't generate TLS certificates due to: " <> Prelude.show reasons
         CertConfigNotFound filepath -> "Cert configuration file was not found on: " <> Prelude.show filepath
         InvalidKey key -> "Cert configuration key value was invalid: " <> Prelude.show key
+        TLSDirectoryNotFound path -> "Given TLS path does not exist: " <> Prelude.show path

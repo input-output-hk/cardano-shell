@@ -36,7 +36,7 @@ updaterArgs: []
 logsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs
 configuration:
   seed: null
-  filePath: ./configuration/cert-configuration.yaml
+  filePath: ./cardano-launcher/configuration/cert-configuration.yaml
   key: dev
   systemStart: null
 updateArchive: "main"

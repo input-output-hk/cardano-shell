@@ -72,7 +72,6 @@ executable cardano-launcher
       base >=4.7 && <5
     , cardano-prelude
     , cardano-launcher
-    , cardano-sl-x509
     -- directory
     , directory
     , filepath

@@ -17,7 +17,7 @@ in pkgs.runCommand "updater_test.zip" { buildInputs = [ pkgs.zip ]; } ''
   cp ${crossSelf.nix-tools.cexes.cardano-launcher.mock-installer}/bin/mock-installer.exe ./updater.exe
   cp ${pkgsCross.libffi}/bin/libffi-6.dll ./
   cp ${./cardano-launcher/configuration/launcher/launcher-config-demo.windows.yaml} ./launcher-config.yaml
-  cp ${./configuration/cert-configuration.yaml} ./configuration/cert-configuration.yaml
+  cp ${./cardano-launcher/configuration/cert-configuration.yaml} ./configuration/cert-configuration.yaml
   cp ${./configuration/log-configuration.yaml} ./configuration/log-configuration.yaml
   chmod +w -R .
   cd ..
