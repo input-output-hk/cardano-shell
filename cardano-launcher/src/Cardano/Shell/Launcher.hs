@@ -2,16 +2,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeApplications           #-}
 
 module Cardano.Shell.Launcher
     ( WalletMode (..)
-    , LauncherConfig (..)
-    , WalletArguments (..)
-    , WalletPath (..)
     , WalletRunner (..)
     , walletRunnerProcess
-    , ExternalDependencies (..)
+    , LoggingDependencies (..)
     -- * Functions
     , runWalletProcess
     -- * Critical exports (testing)
@@ -19,59 +15,42 @@ module Cardano.Shell.Launcher
     , handleDaedalusExitCode
     , UpdateRunner (..)
     , RestartRunner (..)
+    -- * Generating TLS certificates
+    , generateTlsCertificates
+    , TLSPath(..)
+    , TLSError(..)
     -- * Typeclass
     , Isomorphism (..)
-    -- * Configuration
-    , ConfigurationOptions(..)
-    , LauncherOptions(..)
-    , getUpdaterData
-    , getWargs
-    , getWPath
-    , getLauncherOption
     ) where
 
-import           Cardano.Prelude
+import           Cardano.Prelude hiding (onException)
+
 import           Prelude (Show (..))
-
-import           Data.Aeson (FromJSON (..), withObject, (.:), (.:?))
-import           Data.Time.Units (Microsecond, fromMicroseconds)
-import           Data.Yaml (ParseException, decodeFileEither)
-
 import qualified System.Process as Process
 import           Turtle (system)
 
-import           Cardano.Shell.Update.Lib (UpdaterData (..), runUpdater)
+import           Cardano.Shell.Configuration (ConfigurationOptions (..),
+                                              WalletArguments (..),
+                                              WalletPath (..))
+import           Cardano.Shell.Types (LoggingDependencies (..))
+import           Cardano.Shell.Update.Lib (UpdaterData (..),
+                                           runDefaultUpdateProcess, runUpdater)
+import           Cardano.X509.Configuration (ConfigurationKey (..),
+                                             DirConfiguration (..), certChecks,
+                                             certFilename, certOutDir,
+                                             decodeConfigFile,
+                                             fromConfiguration, genCertificate)
+import           Control.Exception.Safe (onException)
+import           Data.X509.Extra (genRSA256KeyPair, validateCertificate,
+                                  writeCertificate, writeCredentials)
+import           Data.X509.Validation (FailedReason)
+import           System.Directory (createDirectoryIfMissing, doesDirectoryExist,
+                                   doesFileExist)
+import           System.FilePath ((</>))
 
 --------------------------------------------------------------------------------
 -- Types
 --------------------------------------------------------------------------------
-
--- | Launcher configuration
-data LauncherConfig = LauncherConfig
-    { lcfgFilePath    :: !Text -- We really need @FilePath@ here.
-    , lcfgKey         :: !Text
-    , lcfgSystemStart :: !(Maybe Integer)
-    , lcfgSeed        :: !(Maybe Integer)
-    } deriving (Eq, Show)
-
--- | Arguments that will be used to execute the wallet
-newtype WalletArguments = WalletArguments
-    { getWalletArguments :: [Text]
-    } deriving (Eq, Show)
-
--- | We define the instance on it's wrapped type.
-instance Semigroup WalletArguments where
-    (<>) = \wArgs1 wArgs2 -> WalletArguments $ getWalletArguments wArgs1 <> getWalletArguments wArgs2
-
-newtype WalletPath = WalletPath
-    { getWalletPath :: Text
-    } deriving (Eq, Show)
-
-data ExternalDependencies = ExternalDependencies
-    { logInfo   :: Text -> IO ()
-    , logError  :: Text -> IO ()
-    , logNotice :: Text -> IO ()
-    }
 
 -- | This is here so we don't mess up the order. It's VERY important.
 -- The type that runs the update.
@@ -83,7 +62,8 @@ instance Show UpdateRunner where
 
 -- | This type is responsible for launching and re-launching the wallet
 -- inside the launcher process.
-newtype RestartRunner = RestartRunner { runRestart :: IO ExitCode }
+-- Do we want to restart it in @WalletModeSafe@ or not?
+newtype RestartRunner = RestartRunner { runRestart :: WalletMode -> IO ExitCode }
 
 -- | There is no way we can show this value.
 instance Show RestartRunner where
@@ -156,13 +136,13 @@ handleDaedalusExitCode
     -> RestartRunner
     -> DaedalusExitCode
     -> IO DaedalusExitCode
-handleDaedalusExitCode runUpdaterFunction restartWalletFunction = isoTo <<$>> \case
-    RunUpdate               -> runUpdate runUpdaterFunction >> runRestart restartWalletFunction
+handleDaedalusExitCode runUpdater' restartWallet = isoTo <<$>> \case
+    RunUpdate               -> runUpdate runUpdater' >> runRestart restartWallet WalletModeNormal
     -- Run the actual update, THEN restart launcher.
     -- Do we maybe need to handle the update ExitCode as well?
-    RestartInGPUSafeMode    -> runRestart restartWalletFunction
+    RestartInGPUSafeMode    -> runRestart restartWallet WalletModeSafe
     -- Enable safe mode (GPU safe mode).
-    RestartInGPUNormalMode  -> runRestart restartWalletFunction
+    RestartInGPUNormalMode  -> runRestart restartWallet WalletModeNormal
     -- Disable safe mode (GPU safe mode).
     ExitCodeSuccess         -> return ExitSuccess
     -- All is well, exit "mucho bien".
@@ -181,19 +161,21 @@ newtype WalletRunner = WalletRunner
 -- older configuration and if so, which parts of it.
 -- We passed in the bare minimum and if we require anything else, we will add it.
 runWalletProcess
-    :: ExternalDependencies
+    :: LoggingDependencies
     -> WalletMode
     -> WalletPath
     -> WalletArguments
     -> WalletRunner
     -> UpdaterData
     -> IO ExitCode
-runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterData = do
+runWalletProcess logDep walletMode walletPath walletArguments walletRunner updaterData = do
 
-    let restart :: IO ExitCode
-        restart =   runWalletProcess
-                        ed
-                        walletMode
+    -- Parametrized by @WalletMode@ so we can change it on restart depending
+    -- on the Daedalus exit code.
+    let restart :: WalletMode -> IO ExitCode
+        restart =  \walletMode' -> runWalletProcess
+                        logDep
+                        walletMode'
                         walletPath
                         walletArguments
                         walletRunner
@@ -209,7 +191,7 @@ runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterDa
                             then walletArguments <> walletSafeModeArgs
                             else walletArguments
 
-    logNotice ed $ "Starting the wallet"
+    logNotice logDep $ "Starting the wallet"
 
     -- create the wallet process
     walletExitStatus <- runWalletSystemProcess walletRunner walletPath walletArgs
@@ -223,7 +205,7 @@ runWalletProcess ed walletMode walletPath walletArguments walletRunner updaterDa
     -- We separate the description of the computation, from the computation itself.
     -- There are other ways of doing this, of course.
     isoFrom <$> handleDaedalusExitCode
-        (UpdateRunner $ runUpdater updaterData)
+        (UpdateRunner $ runUpdater runDefaultUpdateProcess logDep updaterData)
         (RestartRunner restart)
         exitCode
 
@@ -247,106 +229,108 @@ walletRunnerProcess = WalletRunner $ \walletPath walletArgs ->
             }
 
 --------------------------------------------------------------------------------
--- Configuration
+-- Types
 --------------------------------------------------------------------------------
 
--- Todo: Add haddock comment for each field
--- | Launcher options
-data LauncherOptions = LauncherOptions
-    { loConfiguration       :: !ConfigurationOptions
-    , loTlsPath             :: !FilePath
-    , loUpdaterPath         :: !FilePath
-    , loUpdaterArgs         :: ![Text]
-    , loUpdateArchive       :: !(Maybe FilePath)
-    , loUpdateWindowsRunner :: !(Maybe FilePath)
-    , loWalletPath          :: !FilePath
-    , loWalletArgs          :: ![Text]
-    } deriving (Show, Generic)
-
-instance FromJSON LauncherOptions where
-    parseJSON = withObject "LauncherOptions" $ \o -> do
-
-        walletPath              <- o .: "walletPath"
-        walletArgs              <- o .: "walletArgs"
-        updaterPath             <- o .: "updaterPath"
-        updaterArgs             <- o .: "updaterArgs"
-        updateArchive           <- o .: "updateArchive"
-        updateWindowsRunner     <- o .: "updateWindowsRunner"
-        configuration           <- o .: "configuration"
-        tlsPath                 <- o .: "tlsPath"
-
-        pure $ LauncherOptions
-            configuration
-            tlsPath
-            updaterPath
-            updaterArgs
-            updateArchive
-            updateWindowsRunner
-            walletPath
-            walletArgs
-
--- | Configuration yaml file location and the key to use. The file should
--- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
--- in the map.
-data ConfigurationOptions = ConfigurationOptions
-    { cfoFilePath    :: !FilePath
-    , cfoKey         :: !Text
-    , cfoSystemStart :: !(Maybe Timestamp)
-    -- ^ An optional system start time override. Required when using a
-    -- testnet genesis configuration.
-    , cfoSeed        :: !(Maybe Integer)
-    -- ^ Seed for secrets generation can be provided via CLI, in
-    -- this case it overrides one from configuration file.
-    } deriving (Show)
-
--- | Timestamp is a number which represents some point in time. It is
--- used in MonadSlots and its meaning is up to implementation of this
--- type class. The only necessary knowledge is that difference between
--- timestamps is microsecond. Hence underlying type is Microsecond.
--- Amount of microseconds since Jan 1, 1970 UTC.
-
-newtype Timestamp = Timestamp
-    { getTimestamp :: Microsecond
-    } deriving (Show, Num, Eq, Ord, Enum, Real, Integral, Typeable, Generic)
-
-instance FromJSON ConfigurationOptions where
-    parseJSON = withObject "ConfigurationOptions" $ \o -> do
-        path            <- o .: "filePath"
-        key             <- o .: "key"
-        systemStart     <- (Timestamp . fromMicroseconds . (*) 1000000) <<$>> o .:? "systemStart"
-        seed            <- o .:? "seed"
-        pure $ ConfigurationOptions path key systemStart seed
-
--- | Parses config file and return @LauncherOptions@ if successful
-getLauncherOption :: FilePath -> IO (Either ParseException LauncherOptions)
-getLauncherOption = decodeFileEither
+newtype TLSPath = TLSPath { getTLSFilePath :: FilePath }
+    deriving (Eq, Show)
 
 --------------------------------------------------------------------------------
--- These functions will take LauncherOptions as an argument and put together
--- that data so that it can be used
+-- Functions
 --------------------------------------------------------------------------------
 
--- | Create @UpdaterData@ with given @LauncherOptions@
-getUpdaterData :: LauncherOptions -> UpdaterData
-getUpdaterData lo =
-    let path            = loUpdaterPath lo
-        args            = loUpdaterArgs lo
-        windowsRunner   = loUpdateWindowsRunner lo
-        archivePath     = fromMaybe "" (loUpdateArchive lo)
-    in UpdaterData path args windowsRunner archivePath
+-- | Generation of the TLS certificates.
+-- This just covers the generation of the TLS certificates and nothing else.
+generateTlsCertificates
+    :: LoggingDependencies
+    -> ConfigurationOptions
+    -> TLSPath
+    -> IO (Either TLSError ())
+generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsPath) = runExceptT $ do
+    doesCertConfigExist <- liftIO $ doesFileExist (cfoFilePath configurationOptions)
+    doesTLSPathExist <- liftIO $ doesDirectoryExist tlsPath
+    unless doesCertConfigExist $ throwError . CertConfigNotFound . cfoFilePath $ configurationOptions
+    unless doesTLSPathExist $ throwError . TLSDirectoryNotFound $ tlsPath
 
--- I think it'll be easier if we introduce sum type that will put together all
--- the datas that are need to launch wallet-frontend..
--- Something like this:
---data NodeData = NodeData
--- { ndPath    :: !FilePath
--- , ndArgs    :: ![Text]
--- , ndLogPath :: Maybe FilePath }
+    let tlsServer = tlsPath </> "server"
+    let tlsClient = tlsPath </> "client"
 
--- | Return WalletArguments
-getWargs :: LauncherOptions -> WalletArguments
-getWargs lo = WalletArguments $ loWalletArgs lo
+    -- Create the directories.
+    liftIO $ do
+        logInfo externalDependencies' $ "Generating the certificates!"
+        createDirectoryIfMissing True tlsServer
+        createDirectoryIfMissing True tlsClient
 
--- | Return WalletPath
-getWPath :: LauncherOptions -> WalletPath
-getWPath lo = WalletPath $ toS $ loWalletPath lo
+        -- Generate the certificates.
+    generateCertificates tlsServer tlsClient
+  where
+    -- The generation of the certificates. More or less copied from
+    -- `cardano-sl`.
+    generateCertificates :: FilePath -> FilePath -> ExceptT TLSError IO ()
+    generateCertificates tlsServer' tlsClient = do
+
+        let configFile = cfoFilePath configurationOptions
+        -- Configuration key within the config file
+        let configKey :: ConfigurationKey
+            configKey = ConfigurationKey . textToFilePath . cfoKey $ configurationOptions
+
+        let outDirectories :: DirConfiguration -- ^ Output directories configuration
+            outDirectories = DirConfiguration
+                { outDirServer  = tlsServer'
+                , outDirClients = tlsClient
+                , outDirCA      = Nothing -- TODO(KS): AFAIK, we don't output the CA.
+                }
+
+        -- TLS configuration
+        tlsConfig <- decodeConfigFile configKey configFile `onException`
+            (throwError . InvalidKey . cfoKey $ configurationOptions)
+
+        -- From configuraiton
+        (caDesc, descs) <-
+            liftIO $ fromConfiguration tlsConfig outDirectories genRSA256KeyPair <$> genRSA256KeyPair
+
+        let caName      = certFilename caDesc
+
+        let serverHost  = "localhost"
+        let serverPort  = ""
+
+        -- Generation of the certificate
+        (caKey, caCert) <- liftIO $ genCertificate caDesc
+
+        case certOutDir caDesc of
+            Nothing  -> return ()
+            Just dir -> liftIO $ writeCredentials (dir </> caName) (caKey, caCert)
+
+        forM_ descs $ \desc -> do
+            (key, cert) <- liftIO $ genCertificate desc
+            failedReasons <- liftIO $ validateCertificate
+                caCert
+                (certChecks desc)
+                (serverHost, serverPort)
+                cert
+            when (not . null $ failedReasons) $ throwError (CannotGenerateTLS failedReasons)
+            liftIO $ do
+                writeCredentials (certOutDir desc </> certFilename desc) (key, cert)
+                writeCertificate (certOutDir desc </> caName) caCert
+    -- Utility function.
+    textToFilePath :: Text -> FilePath
+    textToFilePath = strConv Strict
+
+-- | Error that can be thrown when generating TSL certificates
+data TLSError =
+      CertConfigNotFound FilePath
+    -- ^ FilePath to configuration file is invalid
+    | CannotGenerateTLS [FailedReason]
+    -- ^ Generation of TLS certificates failed dues to following reasons
+    | InvalidKey Text
+    -- ^ Given key was invalid therefore @decodeConfigFile@ threw exception
+    | TLSDirectoryNotFound FilePath
+    -- ^ TLS path does not exist
+    deriving (Eq)
+
+instance Show TLSError where
+    show = \case
+        CannotGenerateTLS reasons -> "Couldn't generate TLS certificates due to: " <> Prelude.show reasons
+        CertConfigNotFound filepath -> "Cert configuration file was not found on: " <> Prelude.show filepath
+        InvalidKey key -> "Cert configuration key value was invalid: " <> Prelude.show key
+        TLSDirectoryNotFound path -> "Given TLS path does not exist: " <> Prelude.show path
