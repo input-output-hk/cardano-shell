@@ -3,6 +3,7 @@
 module Main where
 
 import Cardano.Prelude
+import System.Exit (exitWith)
 
 seconds :: Int
 seconds = 1000000
@@ -12,4 +13,4 @@ main = do
     putTextLn $ "Starting Daedalus"
     threadDelay $ 5 * seconds
     putText $ "Exiting for update"
-    return $ ExitFailure 20
+    exitWith $ ExitFailure 20
