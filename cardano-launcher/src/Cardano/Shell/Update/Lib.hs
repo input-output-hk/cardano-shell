@@ -31,6 +31,7 @@ import           System.Directory (doesFileExist, removeFile)
 import           System.Process (proc, waitForProcess, withCreateProcess)
 
 #ifdef mingw32_HOST_OS
+import qualified Data.Text as T
 import           System.Environment (getExecutablePath)
 import           System.Win32.Process (getCurrentProcessId)
 #endif
