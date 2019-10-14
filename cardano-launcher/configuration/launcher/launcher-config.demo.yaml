@@ -42,6 +42,5 @@ configuration:
 updateArchive: "main"
 nodeLogConfig: ${DAEDALUS_CONFIG}/log-config-prod.yaml
 nodeTimeoutSec: 60
-updateWindowsRunner: null
 tlsPath: "./configuration"
 x509ToolPath: cardano-x509-certificates
