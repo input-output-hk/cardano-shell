@@ -82,7 +82,6 @@ decodeLauncherOption loPath = runExceptT $ do
             ExceptT . decodeFileEither . getLauncherOptionPath $ loPath
         substituted <- withExceptT SubstitutionFailed .
             substituteEnvVars $ decodedVal
-        lift $ putTextLn $ show substituted
         parsed <- withExceptT FailedToParseLauncherOption .
             liftEither . resultToEither . fromJSON $ substituted
         return parsed
