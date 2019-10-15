@@ -350,7 +350,15 @@ data TLSError =
 
 instance Show TLSError where
     show = \case
-        CannotGenerateTLS reasons -> "Couldn't generate TLS certificates due to: " <> Prelude.show reasons
-        CertConfigNotFound filepath -> "Cert configuration file was not found on: " <> Prelude.show filepath
-        InvalidKey key -> "Cert configuration key value was invalid: " <> Prelude.show key
-        TLSDirectoryNotFound path -> "Given TLS path does not exist: " <> Prelude.show path
+        CannotGenerateTLS reasons ->
+            "Couldn't generate TLS certificates due to: " <> Prelude.show reasons
+
+        CertConfigNotFound filepath ->
+            "Cert configuration file was not found on: " <> Prelude.show filepath
+
+        InvalidKey key ->
+            "Cert configuration key value was invalid: " <> Prelude.show key
+
+        TLSDirectoryNotFound path ->
+            "Given TLS path does not exist: " <> Prelude.show path
+
