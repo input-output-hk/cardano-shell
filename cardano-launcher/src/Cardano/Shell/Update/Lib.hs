@@ -13,6 +13,7 @@ module Cardano.Shell.Update.Lib
     -- * Intepretable language
     , UpdaterExists (..)
     , UpdaterCommand (..)
+    , RemoveArchiveAfterInstall (..)
     , executeUpdater
     , isUpdaterRunOnWin
     , isUpdaterRunOnUnix
@@ -104,6 +105,13 @@ boolToUpdaterExists :: Bool -> UpdaterExists
 boolToUpdaterExists True    = UpdaterExists
 boolToUpdaterExists False   = UpdaterDoesntExist
 
+-- | The @Bool@ isomorphic type that signifies if we delete the archive/install
+-- file or not.
+data RemoveArchiveAfterInstall
+    = RemoveArchiveAfterInstall
+    | DoNotRemoveArchiveAfterInstall
+    deriving (Eq, Show)
+
 -- | The small language we use to distinct between execution.
 data UpdaterCommand
     = WindowsRunUpdate !FilePath ![Text]
@@ -131,8 +139,9 @@ evaluateUpdaterCmdExitCode runCommand = \case
     -- The update needs to be run on *nix.
     UnixRunUpdate updaterPath args -> do
         runCommand updaterPath (map toS args)
-    -- The update file is missing.
-    UpdaterFileMissing      -> return $ ExitFailure 1
+    -- The update file is missing. Maybe there is a more
+    -- meaningful exit signal than this?
+    UpdaterFileMissing      -> return $ ExitFailure 127
 
 -- | Interpret the small language into the logging semantics.
 evaluateUpdaterCmdLogging :: LoggingDependencies -> UpdaterCommand -> IO ()
@@ -152,21 +161,29 @@ evaluateUpdaterCmdLogging loggingDep = \case
 -- Check that @udPath@ exists, but instead of running the command directly, you
 -- first have to generate a @.bat@ file which will act as a script.
 -- After it being generated, you run that script.
-runUpdater :: RunCmdFunc -> LoggingDependencies -> UpdaterData -> IO ExitCode
-runUpdater runCommand loggingDep updaterData = do
+runUpdater
+    :: RemoveArchiveAfterInstall
+    -> RunCmdFunc
+    -> LoggingDependencies
+    -> UpdaterData
+    -> IO ExitCode
+runUpdater removeArchive runCommand loggingDep updaterData = do
 
+    -- The thing that runs the update installation.
     let updaterPath     = udUpdaterPath updaterData
+    -- The update installation.
     let archivePath     = udArchivePath updaterData
 
-    updateRunnerExist <- boolToUpdaterExists <$> doesFileExist updaterPath
+    -- Does the actual archive, the update installation, called here "updater", exists?
+    updaterExist <- boolToUpdaterExists <$> doesFileExist archivePath
 
-    logInfo loggingDep $ "Does file exist: " <> show updateRunnerExist
+    logInfo loggingDep $ "Does update installation exist: " <> show updaterExist
 
     let currentBuildOS :: UpdateOSPlatform
         currentBuildOS = osToUpdateOSPlatform buildOS
 
     let updaterCommand :: UpdaterCommand
-        updaterCommand = executeUpdater currentBuildOS updateRunnerExist updaterData
+        updaterCommand = executeUpdater currentBuildOS updaterExist updaterData
 
     -- Log out the results.
     evaluateUpdaterCmdLogging loggingDep updaterCommand
@@ -178,10 +195,15 @@ runUpdater runCommand loggingDep updaterData = do
     case exitCode of
         -- If the update is a success, them remove the installer file.
         ExitSuccess -> do
-            whenM (doesFileExist archivePath) $ removeFile archivePath
+            let removeArchivePath = removeArchive == RemoveArchiveAfterInstall
+            doesArchiveFileExist <- doesFileExist archivePath
+
+            when (removeArchivePath && doesArchiveFileExist) $
+                removeFile archivePath
+
             return $ ExitSuccess
         -- Otherwise, return an error.
-        _           -> return $ exitCode
+        _           -> return exitCode -- Maybe exitWith?
 
 -- | Pure execution of @UpdaterCommand@.
 executeUpdater :: UpdateOSPlatform -> UpdaterExists -> UpdaterData -> UpdaterCommand

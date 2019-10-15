@@ -151,14 +151,14 @@ configurationSpec = describe "configuration files" $ modifyMaxSuccess (const 1) 
                 -- Path to the launcher file is incorrect
                 let launcherOptionPath = LauncherOptionPath "this will fail"
                 withSystemTempDirectory "test-XXXXXX" $ \tmpDir ->
-                    withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption launcherOptionPath
+                    withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption nullLogging launcherOptionPath
             assert $ isLeft eLauncherOption
 
         it "should fail due to missing env vars" $ monadicIO $ do
             eLauncherOption <- run $ do
                 let launcherOptionPath = LauncherOptionPath (configFullFilePath "launcher-config-mainnet.linux.yaml")
                 -- Not environment variables are set!
-                decodeLauncherOption launcherOptionPath
+                decodeLauncherOption nullLogging launcherOptionPath
             assert $ isLeft eLauncherOption
 
         it "should fail due to failing to convert to LauncherOption" $ monadicIO $ do
@@ -169,7 +169,7 @@ configurationSpec = describe "configuration files" $ modifyMaxSuccess (const 1) 
                     let yamlPath = tmpDir </> "launcher.yaml"
                     encodeFile yamlPath val
                     let launcherOptionPath = LauncherOptionPath yamlPath
-                    withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption launcherOptionPath
+                    withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption nullLogging launcherOptionPath
             assert $ isLeft eLauncherOption
 
 -- | Test that env var substitution works as expected on actual config files
@@ -178,7 +178,7 @@ testGetLauncherOption configPath = it ("should be able to perform env substituti
     eLauncherOption <- run $ do
         let launcherOptionPath = LauncherOptionPath (configFullFilePath configPath)
         withSystemTempDirectory "test-XXXXXX" $ \tmpDir ->
-            withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption launcherOptionPath
+            withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption nullLogging launcherOptionPath
     assert $ isRight eLauncherOption
 
 configFullFilePath :: FilePath -> FilePath
@@ -246,6 +246,7 @@ generateTLSCertSpec = describe "TLS certificate generation" $ modifyMaxSuccess (
         assert $ eTLS == Left (InvalidKey invalidKey)
         assert $ not filesExist
   where
+
     defaultConfigurationOptions :: ConfigurationOptions
     defaultConfigurationOptions = ConfigurationOptions {
         cfoFilePath = "./configuration/cert-configuration.yaml",
@@ -253,12 +254,16 @@ generateTLSCertSpec = describe "TLS certificate generation" $ modifyMaxSuccess (
         cfoSystemStart = Nothing,
         cfoSeed = Nothing
     }
+
     tlsFiles :: FilePath -> [FilePath]
-    tlsFiles path = 
+    tlsFiles path =
+
         let clientFiles :: [FilePath]
             clientFiles = map (\file -> path </> "client" </> file)
                 ["ca.crt", "client.crt", "client.key", "client.pem"]
+
             serverFiles :: [FilePath]
             serverFiles = map (\file -> path </> "server" </> file)
                 ["ca.crt", "server.crt", "server.key", "server.pem"]
+
         in clientFiles <> serverFiles

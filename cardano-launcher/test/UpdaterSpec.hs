@@ -11,7 +11,8 @@ import           Test.QuickCheck (Arbitrary (..), elements, (===))
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
 import           Cardano.Shell.Types (nullLogging)
-import           Cardano.Shell.Update.Lib (UpdateOSPlatform (..),
+import           Cardano.Shell.Update.Lib (RemoveArchiveAfterInstall (..),
+                                           UpdateOSPlatform (..),
                                            UpdaterData (..), executeUpdater,
                                            isUpdaterRunOnUnix,
                                            isUpdaterRunOnWin,
@@ -22,11 +23,22 @@ import           Cardano.Shell.Update.Lib (UpdateOSPlatform (..),
 updaterSpec :: Spec
 updaterSpec = describe "Update system" $ do
     it "should be successful" $ monadicIO $ do
-        exitCode <- run $ runUpdater runDefaultUpdateProcess nullLogging testUpdaterData
+        exitCode <- run $ runUpdater
+            DoNotRemoveArchiveAfterInstall
+            runDefaultUpdateProcess
+            nullLogging
+            testUpdaterData
+
+        run . putTextLn . show $ exitCode
         assert $ exitCode == ExitSuccess
 
     prop "should return expected error" $ \(exitNum :: ExitNum) -> monadicIO $ do
-        exitCode <- run $ runUpdater (testRunCmd exitNum) nullLogging testUpdaterData
+        exitCode <- run $ runUpdater
+            DoNotRemoveArchiveAfterInstall
+            (testRunCmd exitNum)
+            nullLogging
+            testUpdaterData
+
         assert $ exitCode == (ExitFailure . getExitNum $ exitNum)
 
     prop "should handle update on WIN" $ \(updaterExists) ->
@@ -42,9 +54,9 @@ updaterSpec = describe "Update system" $ do
 testUpdaterData :: UpdaterData
 testUpdaterData =
     UpdaterData
-        "./test/testUpdater.sh"
+        "bash"
         []
-        ""
+        "./test/testUpdater.sh"
 
 testRunCmd :: ExitNum -> FilePath -> [String] -> IO ExitCode
 testRunCmd (ExitNum num) _ _ = return $ ExitFailure num
