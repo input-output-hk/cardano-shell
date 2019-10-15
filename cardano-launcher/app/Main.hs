@@ -1,5 +1,6 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 
 module Main where
 
@@ -39,6 +40,10 @@ import           Data.Text.Lazy.Builder (fromString, fromText)
 -- | Main function.
 main :: IO ()
 main = do
+    logConfig       <- defaultConfigStdout
+    (baseTrace, sb) <- setupTrace_ logConfig "launcher"
+
+    Trace.logNotice baseTrace "Starting cardano-launcher"
 
     setEnv "LC_ALL" "en_GB.UTF-8"
     setEnv "LANG"   "en_GB.UTF-8"
@@ -46,15 +51,19 @@ main = do
     launcherOptions <- do
         eLauncherOptions <- getLauncherOptions
         case eLauncherOptions of
-            Left err -> throwM $ LauncherOptionsError (show err)
+            Left err -> do
+                Trace.logError baseTrace $
+                    "Error occured while parsing configuraiton file: " <> show err
+                throwM $ LauncherOptionsError (show err)
             Right lo -> pure lo
 
     let workingDir = loWorkingDirectory launcherOptions
 
     -- Every platform will run a script before running the launcher that creates a
     -- working directory, so workingDir should always exist.
-    unlessM (setWorkingDirectory workingDir)
-        $ throwM . WorkingDirectoryDoesNotExist $ workingDir
+    unlessM (setWorkingDirectory workingDir) $ do
+        Trace.logError baseTrace $ "Working directory does not exist: " <> toS workingDir
+        throwM . WorkingDirectoryDoesNotExist $ workingDir
 
     -- Really no clue what to put there and how will the wallet work.
     -- These will be refactored in the future
@@ -74,9 +83,6 @@ main = do
     let tlsPath :: TLSPath
         tlsPath = TLSPath $ loTlsPath launcherOptions
 
-    logConfig       <- defaultConfigStdout
-    (baseTrace, sb) <- setupTrace_ logConfig "launcher"
-
     let loggingDependencies :: LoggingDependencies
         loggingDependencies = LoggingDependencies
             { logInfo       = Trace.logInfo baseTrace
@@ -93,7 +99,10 @@ main = do
         tlsPath
 
     case eTLSGeneration of
-        Left generationError -> throwM $ FailedToGenerateTLS generationError
+        Left generationError -> do
+            Trace.logError baseTrace $
+                "Error occured while generating TLS certificates: " <> show generationError
+            throwM $ FailedToGenerateTLS generationError
         Right _              -> return ()
 
     -- In the case the user wants to avoid installing the update now, we
@@ -109,6 +118,9 @@ main = do
                     walletRunnerProcess
                     updaterData
 
+    Trace.logNotice baseTrace $
+        "Shutting down cardano-launcher with exitcode: " <> show exitCode
+
     -- Shut down the logging layer.
     shutdown sb
 
@@ -120,16 +132,12 @@ main = do
 --------------------------------------------------------------------------------
 
 data LauncherExceptions
-    = CannotGenerateTLS
-    | LauncherOptionsError Text
+    = LauncherOptionsError Text
     | WorkingDirectoryDoesNotExist FilePath
     | FailedToGenerateTLS TLSError
 
 instance Buildable LauncherExceptions where
     build = \case
-        CannotGenerateTLS -> bprint "Couldn't generate TLS certificates; \
-            \ Daedalus wallet won't work without TLS. Please check your configuration \
-            \ and make sure you aren't already running an instance of Daedalus wallet."
         LauncherOptionsError err -> bprint
                "Error occured during loading configuration file:\n"
             <> fromText err

@@ -191,14 +191,33 @@ runWalletProcess logDep walletMode walletPath walletArguments walletRunner updat
                             then walletArguments <> walletSafeModeArgs
                             else walletArguments
 
-    logNotice logDep $ "Starting the wallet"
+    logNotice logDep $ "Starting the wallet with arguments: " <> Cardano.Prelude.show walletArgs
 
     -- create the wallet process
     walletExitStatus <- runWalletSystemProcess walletRunner walletPath walletArgs
 
+    logNotice logDep $ "Wallet exited with exitcode: " <> Cardano.Prelude.show walletExitStatus
+
     -- Let us map the interesting commands into a very simple "language".
     let exitCode :: DaedalusExitCode
         exitCode = isoTo walletExitStatus
+
+    let msg = case exitCode of
+            RunUpdate -> 
+                "Running the update system"
+            RestartInGPUNormalMode -> 
+                "Restart Daedalus in normal mode"
+            RestartInGPUSafeMode -> 
+                "Restart Daedalus in GPU safe mode"
+            ExitCodeSuccess -> 
+                "Daedalus exited with ExitSuccess, will shutdown cardano-launcher"
+            ExitCodeFailure af -> mconcat
+                ["Daedalus exited with ExitFailure "
+                , Cardano.Prelude.show af
+                , ", will shutdown cardano-launcher"
+                ]
+
+    logNotice logDep $ msg
 
     -- Here we can interpret what that simple "language" means. This allows us to "cut"
     -- through the function and separate it. When we decouple it, we can test parts in isolation.
