@@ -4,6 +4,10 @@
 [Daedalus](https://github.com/input-output-hk/daedalus) as well as handling
 restart/exit process.
 
+The high-level overview:
+
+![launcher_updater_flowchart](https://user-images.githubusercontent.com/6264437/66833560-54c90280-ef5c-11e9-95cf-df8f9a1eb9dc.jpeg)
+
 Key responsibilities include:
 
 1. Generate TLS certificates that are needed for Daedalus to communicate with [cardano-wallet](https://github.com/input-output-hk/cardano-wallet).

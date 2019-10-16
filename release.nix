@@ -47,6 +47,9 @@ commonLib.nix-tools.release-nix {
   # The required jobs that must pass for ci not to fail:
   required-name = "cardano-shell-required-checks";
   required-targets = jobs: [
+    # TODO(KS): I find this very strange, we need the tests to cover crosscompilation as well,
+    # since I see some that should have failed!
+
     # targets are specified using above nomenclature:
     jobs.nix-tools.tests.cardano-shell.cardano-shell-test.x86_64-linux
 

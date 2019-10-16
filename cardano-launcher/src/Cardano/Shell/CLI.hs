@@ -16,10 +16,12 @@ import           Data.Yaml (ParseException, decodeFileEither)
 import           Options.Applicative (Parser, ParserInfo, execParser, fullDesc,
                                       header, help, helper, info, long, metavar,
                                       progDesc, short, strOption, value)
+
 import           System.Directory (XdgDirectory (XdgData), getXdgDirectory)
 import           System.Environment (getExecutablePath, setEnv)
 import           System.FilePath (takeDirectory, (</>))
 
+import           Cardano.Shell.Types (LoggingDependencies (..))
 import           Cardano.Shell.Configuration (LauncherOptions)
 
 -- | Path to launcher-config.yaml file
@@ -58,12 +60,12 @@ data LauncherOptionError
     deriving Show
 
 -- | Command line argument parser for @LauncherOptions@
-getLauncherOptions :: IO (Either LauncherOptionError LauncherOptions)
-getLauncherOptions = do
+getLauncherOptions :: LoggingDependencies -> IO (Either LauncherOptionError LauncherOptions)
+getLauncherOptions logDeps = do
     defaultPath <- getDefaultConfigPath
     loPath <- execParser $ opts defaultPath
     setupEnvVars loPath
-    eLauncherOption <- decodeLauncherOption loPath
+    eLauncherOption <- decodeLauncherOption logDeps loPath
     case eLauncherOption of
         Left decodeError      -> return . Left $ decodeError
         Right launcherOptions -> return . Right $ launcherOptions
@@ -76,14 +78,23 @@ getLauncherOptions = do
         )
 -- There a lot of @withExceptT@ 's since all these function returns different
 -- types of @Either@ so I have to make the types align
-decodeLauncherOption :: LauncherOptionPath -> IO (Either LauncherOptionError LauncherOptions)
-decodeLauncherOption loPath = runExceptT $ do
+decodeLauncherOption
+    :: LoggingDependencies
+    -> LauncherOptionPath
+    -> IO (Either LauncherOptionError LauncherOptions)
+decodeLauncherOption logDeps loPath = runExceptT $ do
+
         decodedVal <- withExceptT FailedToDecodeFile .
             ExceptT . decodeFileEither . getLauncherOptionPath $ loPath
+
         substituted <- withExceptT SubstitutionFailed .
             substituteEnvVars $ decodedVal
+
+        lift $ logNotice logDeps $ "Launcher substituted ENV variables: " <> show substituted
+
         parsed <- withExceptT FailedToParseLauncherOption .
             liftEither . resultToEither . fromJSON $ substituted
+
         return parsed
 
 -- Set environment variables that we need in order for launcher to perform

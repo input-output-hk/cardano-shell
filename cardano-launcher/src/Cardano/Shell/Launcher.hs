@@ -33,7 +33,8 @@ import           Cardano.Shell.Configuration (ConfigurationOptions (..),
                                               WalletArguments (..),
                                               WalletPath (..))
 import           Cardano.Shell.Types (LoggingDependencies (..))
-import           Cardano.Shell.Update.Lib (UpdaterData (..),
+import           Cardano.Shell.Update.Lib (RemoveArchiveAfterInstall (..),
+                                           UpdaterData (..),
                                            runDefaultUpdateProcess, runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
@@ -203,16 +204,16 @@ runWalletProcess logDep walletMode walletPath walletArguments walletRunner updat
         exitCode = isoTo walletExitStatus
 
     let msg = case exitCode of
-            RunUpdate -> 
+            RunUpdate ->
                 "Running the update system"
-            RestartInGPUNormalMode -> 
+            RestartInGPUNormalMode ->
                 "Restart Daedalus in normal mode"
-            RestartInGPUSafeMode -> 
+            RestartInGPUSafeMode ->
                 "Restart Daedalus in GPU safe mode"
-            ExitCodeSuccess -> 
+            ExitCodeSuccess ->
                 "Daedalus exited with ExitSuccess, will shutdown cardano-launcher"
             ExitCodeFailure af -> mconcat
-                ["Daedalus exited with ExitFailure "
+                [ "Daedalus exited with ExitFailure "
                 , Cardano.Prelude.show af
                 , ", will shutdown cardano-launcher"
                 ]
@@ -224,7 +225,7 @@ runWalletProcess logDep walletMode walletPath walletArguments walletRunner updat
     -- We separate the description of the computation, from the computation itself.
     -- There are other ways of doing this, of course.
     isoFrom <$> handleDaedalusExitCode
-        (UpdateRunner $ runUpdater runDefaultUpdateProcess logDep updaterData)
+        (UpdateRunner $ runUpdater RemoveArchiveAfterInstall runDefaultUpdateProcess logDep updaterData)
         (RestartRunner restart)
         exitCode
 
@@ -349,7 +350,15 @@ data TLSError =
 
 instance Show TLSError where
     show = \case
-        CannotGenerateTLS reasons -> "Couldn't generate TLS certificates due to: " <> Prelude.show reasons
-        CertConfigNotFound filepath -> "Cert configuration file was not found on: " <> Prelude.show filepath
-        InvalidKey key -> "Cert configuration key value was invalid: " <> Prelude.show key
-        TLSDirectoryNotFound path -> "Given TLS path does not exist: " <> Prelude.show path
+        CannotGenerateTLS reasons ->
+            "Couldn't generate TLS certificates due to: " <> Prelude.show reasons
+
+        CertConfigNotFound filepath ->
+            "Cert configuration file was not found on: " <> Prelude.show filepath
+
+        InvalidKey key ->
+            "Cert configuration key value was invalid: " <> Prelude.show key
+
+        TLSDirectoryNotFound path ->
+            "Given TLS path does not exist: " <> Prelude.show path
+
