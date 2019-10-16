@@ -28,18 +28,18 @@ nodePath: cardano-node
 launcherLogsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs/
 walletArgs: []
 nodeDbPath: ${XDG_DATA_HOME}/Daedalus/mainnet/DB/
-updaterPath: ./cardano-launcher/test/testUpdater.sh
+updaterPath: bash
 workingDir: ./
 frontendOnlyMode: true
 nodeLogPath: null
-updaterArgs: []
+updaterArgs: ["main"]
 logsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs
 configuration:
   seed: null
   filePath: ./cardano-launcher/configuration/cert-configuration.yaml
   key: dev
   systemStart: null
-updateArchive: "main"
+updateArchive: ./cardano-launcher/test/testUpdater.sh
 nodeLogConfig: ${DAEDALUS_CONFIG}/log-config-prod.yaml
 nodeTimeoutSec: 60
 tlsPath: "./configuration"

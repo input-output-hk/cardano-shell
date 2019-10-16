@@ -102,6 +102,8 @@ launcherDatas =
     , "launcher-config-mainnet.macos64.yaml"
     , "launcher-config-staging.macos64.yaml"
     , "launcher-config-testnet.macos64.yaml"
+    , "launcher-config.demo.yaml"
+    , "launcher-config-demo.windows.yaml"
     ]
 
 -- | Test that given configuration file can be parsed as @LauncherOptions@
