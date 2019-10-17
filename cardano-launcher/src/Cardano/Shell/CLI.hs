@@ -103,7 +103,6 @@ setupEnvVars :: LauncherOptionPath -> IO ()
 setupEnvVars (LauncherOptionPath configPath) = do
     daedalusDir <- takeDirectory <$> getExecutablePath
     setEnv "DAEDALUS_INSTALL_DIRECTORY" daedalusDir
-    setEnv "DAEDALUS_CONFIG" daedalusDir
     getXdgDirectory XdgData "" >>= setEnv "XDG_DATA_HOME"
     setEnv "LAUNCHER_CONFIG" configPath
 
