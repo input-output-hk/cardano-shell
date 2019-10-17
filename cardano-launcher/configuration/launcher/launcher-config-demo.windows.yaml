@@ -10,8 +10,8 @@ workingDir: ./
 frontendOnlyMode: true
 nodeLogPath: null
 updaterArgs: []
-updaterPath: updater.exe
-updateArchive: null
+updaterPath: Installer.bat
+updateArchive: updater.exe
 logsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs
 configuration:
   seed: null

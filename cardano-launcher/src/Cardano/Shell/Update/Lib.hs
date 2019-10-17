@@ -169,8 +169,6 @@ runUpdater
     -> IO ExitCode
 runUpdater removeArchive runCommand loggingDep updaterData = do
 
-    -- The thing that runs the update installation.
-    let updaterPath     = udUpdaterPath updaterData
     -- The update installation.
     let archivePath     = udArchivePath updaterData
 
