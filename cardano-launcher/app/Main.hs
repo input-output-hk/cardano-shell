@@ -90,23 +90,27 @@ main = do
             updaterData = getUpdaterData launcherOptions
 
         -- where to generate the certificates
-        let tlsPath :: TLSPath
-            tlsPath = TLSPath $ loTlsPath launcherOptions
+        let mTlsPath :: Maybe TLSPath
+            mTlsPath = TLSPath <$> loTlsPath launcherOptions
 
-        -- | If we need to, we first check if there are certificates so we don't have
-        -- to generate them. Since the function is called `generate...`, that's what
-        -- it does, it generates the certificates.
-        eTLSGeneration <- generateTlsCertificates
-            loggingDependencies
-            configurationOptions
-            tlsPath
 
-        case eTLSGeneration of
-            Left generationError -> do
-                Trace.logError baseTrace $
-                    "Error occured while generating TLS certificates: " <> show generationError
-                throwM $ FailedToGenerateTLS generationError
-            Right _              -> return ()
+        case mTlsPath of
+            Just tlsPath -> do
+                -- | If we need to, we first check if there are certificates so we don't have
+                -- to generate them. Since the function is called `generate...`, that's what
+                -- it does, it generates the certificates.
+                eTLSGeneration <- generateTlsCertificates
+                    loggingDependencies
+                    configurationOptions
+                    tlsPath
+
+                case eTLSGeneration of
+                    Left generationError -> do
+                        Trace.logError baseTrace $
+                            "Error occured while generating TLS certificates: " <> show generationError
+                        throwM $ FailedToGenerateTLS generationError
+                    Right _              -> return ()
+            Nothing -> pure () -- TLS generation has been disabled
 
         -- In the case the user wants to avoid installing the update now, we
         -- run the update (if there is one) when we have it downloaded.

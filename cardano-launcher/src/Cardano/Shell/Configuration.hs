@@ -43,7 +43,7 @@ newtype WalletPath = WalletPath
 -- | Launcher options
 data LauncherOptions = LauncherOptions
     { loConfiguration       :: !ConfigurationOptions
-    , loTlsPath             :: !FilePath
+    , loTlsPath             :: !(Maybe FilePath)
     , loUpdaterPath         :: !FilePath
     , loUpdaterArgs         :: ![Text]
     , loUpdateArchive       :: !FilePath
@@ -62,7 +62,7 @@ instance FromJSON LauncherOptions where
         updaterArgs         <- o .: "updaterArgs"
         updateArchive       <- o .: "updateArchive"
         configuration       <- o .: "configuration"
-        tlsPath             <- o .: "tlsPath"
+        tlsPath             <- o .:? "tlsPath"
         workingDir          <- o .: "workingDir"
 
         pure $ LauncherOptions
