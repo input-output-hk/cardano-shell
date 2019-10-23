@@ -82,6 +82,11 @@ executable cardano-launcher
     -- exception handling
     , safe-exceptions
     , text
+    , silently
+    , Cabal
+
+  if os(windows)
+    ghc-options: -optl-mwindows
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude

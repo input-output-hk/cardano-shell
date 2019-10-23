@@ -49,6 +49,8 @@
             (hsPkgs.iohk-monitoring)
             (hsPkgs.safe-exceptions)
             (hsPkgs.text)
+            (hsPkgs.silently)
+            (hsPkgs.Cabal)
             ];
           };
         "mock-daedalus-frontend" = {
