@@ -8,6 +8,7 @@ extra-deps:
   - quickcheck-state-machine-0.6.0  # Used a specific dependency, new release.
   - pretty-show-1.9.5               # Used for quickcheck-state-machine.
   - time-units-1.0.0
+  - silently-1.2.5.1
 
   - git: https://github.com/input-output-hk/cardano-prelude
     commit: 12ab51e27539c9cce042ded0c89efc0ccae6137a

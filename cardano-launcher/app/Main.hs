@@ -6,8 +6,10 @@ module Main where
 import           Cardano.Prelude
 import qualified Prelude
 
+import           Distribution.System (OS (Windows), buildOS)
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
+import           System.IO.Silently (hSilence)
 
 import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
@@ -37,7 +39,7 @@ import           Data.Text.Lazy.Builder (fromString, fromText)
 
 -- | Main function.
 main :: IO ()
-main = do
+main = silence $ do
 
     logConfig       <- defaultConfigStdout
 
@@ -150,3 +152,7 @@ instance Show LauncherExceptions where
 
 instance Exception LauncherExceptions
 
+silence :: IO a -> IO a
+silence action = case buildOS of
+    Windows -> hSilence [stdout, stderr] action
+    _       -> action
