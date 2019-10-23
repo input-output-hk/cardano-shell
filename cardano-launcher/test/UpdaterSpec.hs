@@ -24,9 +24,9 @@ updaterSpec :: Spec
 updaterSpec = describe "Update system" $ do
     it "should be successful" $ monadicIO $ do
         exitCode <- run $ runUpdater
+            nullLogging
             DoNotRemoveArchiveAfterInstall
             runDefaultUpdateProcess
-            nullLogging
             testUpdaterData
 
         run . putTextLn . show $ exitCode
@@ -34,9 +34,9 @@ updaterSpec = describe "Update system" $ do
 
     prop "should return expected error" $ \(exitNum :: ExitNum) -> monadicIO $ do
         exitCode <- run $ runUpdater
+            nullLogging
             DoNotRemoveArchiveAfterInstall
             (testRunCmd exitNum)
-            nullLogging
             testUpdaterData
 
         assert $ exitCode == (ExitFailure . getExitNum $ exitNum)

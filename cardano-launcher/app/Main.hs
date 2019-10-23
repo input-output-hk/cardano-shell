@@ -24,12 +24,10 @@ import           Cardano.Shell.Configuration (ConfigurationOptions (..),
                                               getWPath, getWargs,
                                               setWorkingDirectory)
 import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
-                                         TLSPath (..), WalletMode (..),
-                                         generateTlsCertificates,
-                                         runWalletProcess, walletRunnerProcess)
-import           Cardano.Shell.Update.Lib (RemoveArchiveAfterInstall (..),
-                                           UpdaterData (..),
-                                           runDefaultUpdateProcess, runUpdater)
+                                         TLSPath (..), generateTlsCertificates,
+                                         runLauncher, walletRunnerProcess)
+import           Cardano.Shell.Update.Lib (UpdaterData (..),
+                                           runDefaultUpdateProcess)
 import           Control.Exception.Safe (throwM)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
@@ -75,8 +73,7 @@ main = do
             Trace.logError baseTrace $ "Working directory does not exist: " <> toS workingDir
             throwM . WorkingDirectoryDoesNotExist $ workingDir
 
-        -- Really no clue what to put there and how will the wallet work.
-        -- These will be refactored in the future
+        -- Configuration from the launcher options.
         let configurationOptions :: ConfigurationOptions
             configurationOptions = loConfiguration launcherOptions
 
@@ -89,11 +86,12 @@ main = do
         let updaterData :: UpdaterData
             updaterData = getUpdaterData launcherOptions
 
+
         -- where to generate the certificates
         let mTlsPath :: Maybe TLSPath
             mTlsPath = TLSPath <$> loTlsPath launcherOptions
 
-
+        -- If the path doesn't exist, then TLS has been disabled!
         case mTlsPath of
             Just tlsPath -> do
                 -- | If we need to, we first check if there are certificates so we don't have
@@ -112,25 +110,16 @@ main = do
                     Right _              -> return ()
             Nothing -> pure () -- TLS generation has been disabled
 
-        -- In the case the user wants to avoid installing the update now, we
-        -- run the update (if there is one) when we have it downloaded.
-        void $ runUpdater
-            RemoveArchiveAfterInstall
-            runDefaultUpdateProcess
-            loggingDependencies
-            updaterData
-
-        -- You still want to run the wallet even if the update fails
-        exitCode <- runWalletProcess
+        -- Finally, run the launcher once everything is set up!
+        exitCode <- runLauncher
                         loggingDependencies
-                        WalletModeNormal
+                        -- WalletPath -> WalletArguments -> IO ExitCode
+                        walletRunnerProcess
                         walletPath
                         walletArgs
-                        walletRunnerProcess
+                        -- FilePath -> [String] -> IO ExitCode
+                        runDefaultUpdateProcess
                         updaterData
-
-        Trace.logNotice baseTrace $
-            "Shutting down cardano-launcher with exitcode: " <> show exitCode
 
         -- Exit the program with exit code.
         exitWith exitCode

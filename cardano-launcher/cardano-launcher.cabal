@@ -48,6 +48,7 @@ library
     , cardano-sl-x509
     , safe-exceptions
     , x509-validation
+    , logict
 
   if os(windows)
     build-depends:     Win32
