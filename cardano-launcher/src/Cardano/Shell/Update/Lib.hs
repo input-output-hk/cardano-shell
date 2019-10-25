@@ -7,7 +7,7 @@
 
 module Cardano.Shell.Update.Lib
     ( UpdaterData (..)
-    , RunCmdFunc
+    , RunUpdateFunc
     , runUpdater
     , runDefaultUpdateProcess
     -- * Intepretable language
@@ -84,7 +84,7 @@ runDefaultUpdateProcess path args =
         $ \_in _out _err ph -> waitForProcess ph
 
 -- The function for executing the update.
-type RunCmdFunc = FilePath -> [String] -> IO ExitCode
+type RunUpdateFunc = FilePath -> [String] -> IO ExitCode
 
 -- | A flag for the existence of the updater file.
 data UpdaterExists
@@ -128,7 +128,7 @@ isUpdaterRunOnUnix (UnixRunUpdate _ _)  = True
 isUpdaterRunOnUnix _                    = False
 
 -- | Interpret the small language into the "real" semantics.
-evaluateUpdaterCmdExitCode :: RunCmdFunc -> UpdaterCommand -> IO ExitCode
+evaluateUpdaterCmdExitCode :: RunUpdateFunc -> UpdaterCommand -> IO ExitCode
 evaluateUpdaterCmdExitCode runCommand = \case
     -- The update needs to be run on Windows.
     WindowsRunUpdate updaterPath args -> do
@@ -162,12 +162,12 @@ evaluateUpdaterCmdLogging loggingDep = \case
 -- first have to generate a @.bat@ file which will act as a script.
 -- After it being generated, you run that script.
 runUpdater
-    :: RemoveArchiveAfterInstall
-    -> RunCmdFunc
-    -> LoggingDependencies
+    :: LoggingDependencies
+    -> RemoveArchiveAfterInstall
+    -> RunUpdateFunc
     -> UpdaterData
     -> IO ExitCode
-runUpdater removeArchive runCommand loggingDep updaterData = do
+runUpdater loggingDep removeArchive runCommand  updaterData = do
 
     -- The update installation.
     let archivePath     = udArchivePath updaterData

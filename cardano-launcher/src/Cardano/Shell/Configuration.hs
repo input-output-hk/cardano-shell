@@ -2,10 +2,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Cardano.Shell.Configuration
-    ( WalletArguments(..)
-    , WalletPath(..)
-    , LauncherOptions(..)
-    , ConfigurationOptions(..)
+    ( WalletArguments (..)
+    , WalletPath (..)
+    , LauncherOptions (..)
+    , ConfigurationOptions (..)
     -- * Getters
     , getUpdaterData
     , getWargs
@@ -42,14 +42,14 @@ newtype WalletPath = WalletPath
 -- Todo: Add haddock comment for each field
 -- | Launcher options
 data LauncherOptions = LauncherOptions
-    { loConfiguration       :: !ConfigurationOptions
-    , loTlsPath             :: !(Maybe FilePath)
-    , loUpdaterPath         :: !FilePath
-    , loUpdaterArgs         :: ![Text]
-    , loUpdateArchive       :: !FilePath
-    , loWalletPath          :: !FilePath
-    , loWalletArgs          :: ![Text]
-    , loWorkingDirectory    :: !FilePath
+    { loConfiguration    :: !ConfigurationOptions
+    , loTlsPath          :: !(Maybe FilePath)
+    , loUpdaterPath      :: !FilePath
+    , loUpdaterArgs      :: ![Text]
+    , loUpdateArchive    :: !FilePath
+    , loWalletPath       :: !FilePath
+    , loWalletArgs       :: ![Text]
+    , loWorkingDirectory :: !FilePath
     -- On WIN it should set this directory as current.
     } deriving (Show, Generic)
 

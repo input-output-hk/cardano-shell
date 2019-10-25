@@ -9,6 +9,7 @@ module Cardano.Shell.Launcher
     , walletRunnerProcess
     , LoggingDependencies (..)
     -- * Functions
+    , runLauncher
     , runWalletProcess
     -- * Critical exports (testing)
     , DaedalusExitCode (..)
@@ -34,8 +35,8 @@ import           Cardano.Shell.Configuration (ConfigurationOptions (..),
                                               WalletPath (..))
 import           Cardano.Shell.Types (LoggingDependencies (..))
 import           Cardano.Shell.Update.Lib (RemoveArchiveAfterInstall (..),
-                                           UpdaterData (..),
-                                           runDefaultUpdateProcess, runUpdater)
+                                           RunUpdateFunc, UpdaterData (..),
+                                           runUpdater)
 import           Cardano.X509.Configuration (ConfigurationKey (..),
                                              DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
@@ -167,9 +168,17 @@ runWalletProcess
     -> WalletPath
     -> WalletArguments
     -> WalletRunner
+    -> RunUpdateFunc
     -> UpdaterData
     -> IO ExitCode
-runWalletProcess logDep walletMode walletPath walletArguments walletRunner updaterData = do
+runWalletProcess
+    logDep
+    walletMode
+    walletPath
+    walletArguments
+    walletRunner
+    runUpdateFunc
+    updaterData = do
 
     -- Parametrized by @WalletMode@ so we can change it on restart depending
     -- on the Daedalus exit code.
@@ -180,6 +189,7 @@ runWalletProcess logDep walletMode walletPath walletArguments walletRunner updat
                         walletPath
                         walletArguments
                         walletRunner
+                        runUpdateFunc
                         updaterData
 
     -- Additional arguments we need to pass if it's a SAFE mode.
@@ -225,7 +235,7 @@ runWalletProcess logDep walletMode walletPath walletArguments walletRunner updat
     -- We separate the description of the computation, from the computation itself.
     -- There are other ways of doing this, of course.
     isoFrom <$> handleDaedalusExitCode
-        (UpdateRunner $ runUpdater RemoveArchiveAfterInstall runDefaultUpdateProcess logDep updaterData)
+        (UpdateRunner $ runUpdater logDep RemoveArchiveAfterInstall runUpdateFunc updaterData)
         (RestartRunner restart)
         exitCode
 
@@ -258,6 +268,35 @@ newtype TLSPath = TLSPath { getTLSFilePath :: FilePath }
 --------------------------------------------------------------------------------
 -- Functions
 --------------------------------------------------------------------------------
+
+-- | The function that runs the launcher once everything is set up!
+runLauncher
+    :: LoggingDependencies
+    -> WalletRunner
+    -> WalletPath
+    -> WalletArguments
+    -> RunUpdateFunc
+    -> UpdaterData
+    -> IO ExitCode
+runLauncher loggingDependencies walletRunner walletPath walletArgs runUpdateFunc updaterData = do
+
+        -- In the case the user wants to avoid installing the update now, we
+        -- run the update (if there is one) when we have it downloaded.
+        void $ runUpdater
+            loggingDependencies
+            RemoveArchiveAfterInstall
+            runUpdateFunc
+            updaterData
+
+        -- You still want to run the wallet even if the update fails
+        runWalletProcess
+            loggingDependencies
+            WalletModeNormal
+            walletPath
+            walletArgs
+            walletRunner
+            runUpdateFunc
+            updaterData
 
 -- | Generation of the TLS certificates.
 -- This just covers the generation of the TLS certificates and nothing else.
