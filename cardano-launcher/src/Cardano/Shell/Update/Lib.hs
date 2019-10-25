@@ -29,7 +29,8 @@ import           Distribution.System (OS (..), buildOS)
 import           Prelude (String)
 
 import           System.Directory (doesFileExist, removeFile)
-import           System.Process (proc, waitForProcess, withCreateProcess)
+import           System.Process (CreateProcess (..), StdStream (..), proc,
+                                 waitForProcess, withCreateProcess)
 
 #ifdef mingw32_HOST_OS
 import qualified Data.Text as T
@@ -79,8 +80,13 @@ osToUpdateOSPlatform _          = UnixOS
 
 -- | The way we should run the process normally.
 runDefaultUpdateProcess :: FilePath -> [String] -> IO ExitCode
-runDefaultUpdateProcess path args =
-    withCreateProcess (proc path args)
+runDefaultUpdateProcess path args = do
+    let process = (proc path args)
+            { std_in  = CreatePipe
+            , std_out = CreatePipe
+            , std_err = CreatePipe
+            }
+    withCreateProcess process
         $ \_in _out _err ph -> waitForProcess ph
 
 -- The function for executing the update.
