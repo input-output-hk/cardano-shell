@@ -22,6 +22,8 @@
 \usepackage{bussproofs}
 % for inserting images
 \usepackage{graphicx}
+% for code syntax highlighting
+\usepackage{listings}
 
 \usetikzlibrary{calc,positioning,arrows}
 
@@ -711,6 +713,72 @@ Let's take a look at some of the key functions we will use:
 
 %endif
 
-If we take a look at the typical state transition of such a system, we can easily imagine something like this.
+If we take a look at the typical state transition of such a system, we can easily imagine something like this on ~\ref{fig:updateStateMachineFig}.\\.
+
+\begin{figure}[ht] % ’ht’ tells LaTeX to place the figure ’here’ or at the top of the page
+    \centering % centers the figure
+    \begin{tikzpicture}
+        \node[state, accepting, initial] (q1) {$UpdateMode$};
+        \node[state, right of=q1] (q2) {$WalletNormal$};
+        \node[state, right of=q2] (q3) {$WalletSafe$};
+        \node[state, below of=q1] (q4) {$Failure$};
+        \node[state, accepting, right of=q4] (q5) {$Success$};
+        \draw
+            (q1) edge[above] node{} (q2)
+            (q2) edge[above] node{} (q3)
+            (q3) edge[bend right, above] node{} (q2) %return
+            
+            (q3) edge[bend right, above] node{} (q1) %return
+            (q2) edge[bend left, below] node{} (q1)
+            
+            (q1) edge[below] node{} (q4)
+            %(q1) edge[below] node{} (q5)
+            
+            (q2) edge[below] node{} (q4)
+            (q2) edge[below] node{} (q5)
+            
+            (q3) edge[below] node{} (q4)
+            (q3) edge[below] node{} (q5)
+            
+            
+    \end{tikzpicture}
+    \caption{Update FSM.}
+    \label{fig:updateStateMachineFig}
+\end{figure}
+
+We essentially start with an update and run it if it exists. That was put there in order to try to force the user to install the new version of the software. It is not really forcing, but it's there to nudge the user into submission.
+After that we simply run the wallet (\textbf{Deadalus}) in the \textbf{WalletNormal} mode (without any GPU issues). 
+If there are any GPU issues we can switch to \textbf{WalletSafe} mode (which adds specific flags for \textit{Electron}).
+At any point we can switch to the \textbf{UpdateMode} where we actually run the update. The result of the update operation is not relevant and we eventually ignore the result, hoping that the update passed.
+
+We can see that the two results for \textbf{Failure} and \textbf{Success} are ever present in the whole transition space and maybe they should be removed but there are some relevant details why they should remain. For one, the \textbf{UpdateMode} can't ever reach \textbf{Success} without running the \textbf{WalletNormal} mode first!
+
+Also here is the code for a Prolog program that can be used to guide the state transitions:
+
+\begin{lstlisting}[language=Prolog]
+state_transition(start,init,run_update).  
+
+state_transition(run_update,update_fail, updater_file_missing).
+state_transition(run_update,update_success,run_wallet_normal).
+
+state_transition(run_wallet_normal, safe_mode, run_wallet_safe). 
+state_transition(run_wallet_normal, update_mode, run_update).
+state_transition(run_wallet_normal, failure, run_failure).
+state_transition(run_wallet_normal, success, run_success).
+
+state_transition(run_wallet_safe, normal_mode, run_wallet_normal). 
+state_transition(run_wallet_safe, update_mode, run_update). 
+state_transition(run_wallet_safe, failure, run_failure).
+state_transition(run_wallet_safe, success, run_success).
+
+
+enumerate_states(Start, [], [Start]).
+enumerate_states(Start, [Input|Inputs], [Start|States]) :-
+    state_transition(Start, Input, State),
+    enumerate_states(State, Inputs, States).
+
+% enumerate_states(start, TRANSITION, END_STATE).
+% enumerate_states(start, TRANSITION, run_wallet_normal).
+\end{lstlisting}
 
 \end{document}
