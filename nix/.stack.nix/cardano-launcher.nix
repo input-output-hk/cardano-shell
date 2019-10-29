@@ -51,6 +51,7 @@
             (hsPkgs.text)
             (hsPkgs.silently)
             (hsPkgs.Cabal)
+            (hsPkgs.optparse-applicative)
             ];
           };
         "mock-daedalus-frontend" = {

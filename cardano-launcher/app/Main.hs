@@ -8,6 +8,7 @@ import qualified Prelude
 
 -- Yes, we should use these seldomly but here it seems quite acceptable.
 import           Data.IORef (newIORef, readIORef, writeIORef)
+import           Data.Text.Lazy.Builder (fromString, fromText)
 
 import           Distribution.System (OS (Windows), buildOS)
 import           System.Environment (setEnv)
@@ -17,7 +18,9 @@ import           System.IO.Silently (hSilence)
 import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
 
-import           Options.Applicative
+import           Options.Applicative (Parser, ParserInfo, auto, execParser,
+                                      fullDesc, header, help, helper, info,
+                                      long, metavar, option, optional, progDesc)
 
 import           Cardano.BM.Setup (withTrace)
 import qualified Cardano.BM.Trace as Trace
@@ -38,7 +41,7 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
 import           Control.Exception.Safe (throwM)
-import           Data.Text.Lazy.Builder (fromString, fromText)
+
 
 --------------------------------------------------------------------------------
 -- Main
@@ -65,7 +68,7 @@ main = silence $ do
 
     -- This function either stubs out the wallet exit code or
     -- returns the "real" function.
-    let _walletExectionFunction =
+    let walletExectionFunction =
             WalletRunner $ \walletPath walletArguments -> do
                 -- Check if we have any exit codes remaining.
                 stubExitCodes       <- readIORef walletTestExitCodesMVar
@@ -82,7 +85,7 @@ main = silence $ do
 
     -- This function either stubs out the updater exit code or
     -- returns the "real" function.
-    let _updaterExecutionFunction =
+    let updaterExecutionFunction =
             \filePath arguments -> do
                 -- Check if we have any exit codes remaining.
                 stubExitCodes       <- readIORef updaterTestExitCodesMVar
@@ -172,12 +175,10 @@ main = silence $ do
         -- Finally, run the launcher once everything is set up!
         exitCode <- runLauncher
                         loggingDependencies
-                        _walletExectionFunction
-                        --walletRunnerProcess
+                        walletExectionFunction
                         walletPath
                         walletArgs
-                        _updaterExecutionFunction
-                        --runDefaultUpdateProcess
+                        updaterExecutionFunction
                         updaterData
 
         -- Exit the program with exit code.
