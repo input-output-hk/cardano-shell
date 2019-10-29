@@ -33,7 +33,7 @@ import           Turtle (system)
 import           Cardano.Shell.Configuration (ConfigurationOptions (..),
                                               WalletArguments (..),
                                               WalletPath (..))
-import           Cardano.Shell.Types (LoggingDependencies (..))
+import           Cardano.Shell.Launcher.Types (LoggingDependencies (..))
 import           Cardano.Shell.Update.Lib (RemoveArchiveAfterInstall (..),
                                            RunUpdateFunc, UpdaterData (..),
                                            runUpdater)

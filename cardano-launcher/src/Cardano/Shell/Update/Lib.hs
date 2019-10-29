@@ -40,7 +40,7 @@ import           System.Win32.Process (getCurrentProcessId)
 
 import           Test.QuickCheck (Arbitrary (..), oneof)
 
-import           Cardano.Shell.Types (LoggingDependencies (..))
+import           Cardano.Shell.Launcher.Types (LoggingDependencies (..))
 
 
 -- We need to add the check if the archive exists first!

@@ -1,5 +1,5 @@
 -- | General types for both the update and the launcher.
-module Cardano.Shell.Types
+module Cardano.Shell.Launcher.Types
     ( LoggingDependencies (..)
     , nullLogging
     ) where
