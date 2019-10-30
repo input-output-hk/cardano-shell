@@ -27,7 +27,7 @@ import           Cardano.Shell.Launcher (DaedalusExitCode (..),
                                          TLSPath (..), UpdateRunner (..),
                                          generateTlsCertificates,
                                          handleDaedalusExitCode)
-import           Cardano.Shell.Types (nullLogging)
+import           Cardano.Shell.Launcher.Types (nullLogging)
 
 -- | The simple launcher spec.
 launcherSpec :: Spec

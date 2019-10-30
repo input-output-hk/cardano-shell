@@ -26,7 +26,7 @@ library
     , Cardano.Shell.Environment
     , Cardano.Shell.CLI
     , Cardano.Shell.Configuration
-    , Cardano.Shell.Types
+    , Cardano.Shell.Launcher.Types
   hs-source-dirs:
       src
   build-depends:
@@ -84,6 +84,8 @@ executable cardano-launcher
     , text
     , silently
     , Cabal
+    -- cli
+    , optparse-applicative
 
   if os(windows)
     ghc-options: -optl-mwindows

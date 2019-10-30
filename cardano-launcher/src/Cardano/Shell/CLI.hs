@@ -4,6 +4,9 @@ module Cardano.Shell.CLI
     , LauncherOptionPath(..)
     , LauncherOptionError(..)
     , setupEnvVars
+    -- * config parsing
+    , getDefaultConfigPath
+    , launcherArgsParser
     ) where
 
 import           Cardano.Prelude
@@ -13,21 +16,20 @@ import           Cardano.Shell.Environment (SubstitutionError,
 import           Control.Monad.Except (liftEither)
 import           Data.Aeson (Result (..), fromJSON)
 import           Data.Yaml (ParseException, decodeFileEither)
-import           Options.Applicative (Parser, ParserInfo, execParser, fullDesc,
-                                      header, help, helper, info, long, metavar,
-                                      progDesc, short, strOption, value)
+import           Options.Applicative (Parser, help, long, metavar, short,
+                                      strOption, value)
 
 import           System.Directory (XdgDirectory (XdgData), getXdgDirectory)
 import           System.Environment (getExecutablePath, setEnv)
 import           System.FilePath (takeDirectory, (</>))
 
-import           Cardano.Shell.Types (LoggingDependencies (..))
 import           Cardano.Shell.Configuration (LauncherOptions)
+import           Cardano.Shell.Launcher.Types (LoggingDependencies (..))
 
 -- | Path to launcher-config.yaml file
 newtype LauncherOptionPath = LauncherOptionPath
     { getLauncherOptionPath  :: FilePath
-    }
+    } deriving (Eq, Show)
 
 -- | Default path to the launcher-config.yaml file
 --
@@ -60,22 +62,19 @@ data LauncherOptionError
     deriving Show
 
 -- | Command line argument parser for @LauncherOptions@
-getLauncherOptions :: LoggingDependencies -> IO (Either LauncherOptionError LauncherOptions)
-getLauncherOptions logDeps = do
-    defaultPath <- getDefaultConfigPath
-    loPath <- execParser $ opts defaultPath
+getLauncherOptions
+    :: LoggingDependencies
+    -> LauncherOptionPath
+    -> IO (Either LauncherOptionError LauncherOptions)
+getLauncherOptions logDeps loPath = do
+
     setupEnvVars loPath
+
     eLauncherOption <- decodeLauncherOption logDeps loPath
     case eLauncherOption of
         Left decodeError      -> return . Left $ decodeError
         Right launcherOptions -> return . Right $ launcherOptions
-  where
-    opts :: FilePath -> ParserInfo LauncherOptionPath
-    opts path = info (launcherArgsParser path <**> helper)
-        ( fullDesc
-        <> progDesc "Tool for launching Daedalus"
-        <> header "cardano-launcher"
-        )
+
 -- There a lot of @withExceptT@ 's since all these function returns different
 -- types of @Either@ so I have to make the types align
 decodeLauncherOption
@@ -110,3 +109,4 @@ setupEnvVars (LauncherOptionPath configPath) = do
 resultToEither :: Result a -> Either Text a
 resultToEither (Success a) = Right a
 resultToEither (Error str) = Left (toS str)
+

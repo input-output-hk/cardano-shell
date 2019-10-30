@@ -10,7 +10,7 @@ import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck (Arbitrary (..), elements, (===))
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
 
-import           Cardano.Shell.Types (nullLogging)
+import           Cardano.Shell.Launcher.Types (nullLogging)
 import           Cardano.Shell.Update.Lib (RemoveArchiveAfterInstall (..),
                                            UpdateOSPlatform (..),
                                            UpdaterData (..), executeUpdater,
