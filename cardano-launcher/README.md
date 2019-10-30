@@ -62,6 +62,69 @@ nix-build release.nix -A nix-tools.cexes.x86_64-pc-mingw32-cardano-shell.cardano
 2. If the build is successful, there should be a `cardano-launcher.exe` file in the 
 `result/bin/` directory.
 
+## Stubbing the exit codes for the wallet and the updater (AKA state machine testing)
+
+`cardano-launcher` has the support for stubbing out the wallet and the updater.
+This enables controlled testing and supports QA and people who want to see how it behaves without
+actually providing all the required environment and configuration.
+
+```
+                                               +------------------------+
+                                               |                        |
+                                               |                        |
+                                               |                        |
+                           +------------------>+        Wallet          |
+                           |                   |                        |
+                           |                   |                        |
+                           |                   |                        |
+                           |                   |                        |
++--------------------------+                   +------------------------+
+|                          |
+|                          |
+|                          |
+|                          |
+|                          |
+|        Launcher          |
+|                          |
+|                          |
+|                          |
+|                          |
+|                          |
+|                          |
++--------------------------+                 +---------------------------+
+                           |                 |                           |
+                           |                 |                           |
+                           |                 |                           |
+                           |                 |                           |
+                           +---------------->+          Updater          |
+                                             |                           |
+                                             |                           |
+                                             |                           |
+                                             |                           |
+                                             |                           |
+                                             +---------------------------+
+
+```
+
+We can simply imagine that we stub out the wallet and the updater with a list of exit codes.
+
+So when we run something like:
+```
+stack exec cardano-launcher -- --config ./cardano-launcher/configuration/launcher/launcher-config.demo.yaml --wallet-exit-codes "[CLIExitCodeFailure 21, CLIExitCodeFailure 22, CLIExitCodeFailure 20, CLIExitCodeSuccess]" --updater-exit-codes "[CLIExitCodeFailure 1, CLIExitCodeSuccess]"
+```
+
+We stub out both the wallet and the updater with a list of exit codes we defines.
+So the first time we run the wallet, the wallet will return the first exit code.
+When we run it the second time, the wallet will return the second exit code.
+And so on.
+After the fourth time (there are 4 exit codes) the real wallet execution will be run
+and the exit code we get will be from the actual wallet execution.
+
+It works the same for the updater. It will return stubbed exit codes in order until
+it exhaust the exit codes and then it will run the actual updater function.
+
+_If we don't define either of both of these, the real function will be used._
+
 ## Manual testing on Windows
 
 `cardano-launcher` have a script that will package everything you need to test the
@@ -73,3 +136,5 @@ directory.
 ```terminal
 nix-build updater-test-win.nix
 ```
+
+
