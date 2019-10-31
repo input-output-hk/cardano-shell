@@ -10,12 +10,12 @@ import qualified Prelude
 import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
-import           Distribution.System (OS (Windows), buildOS)
-
+import           Distribution.System (OS (Windows, OSX), buildOS)
 import           System.Directory (getHomeDirectory)
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
+import           System.Process (waitForProcess, withCreateProcess, proc)
 
 import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
@@ -43,7 +43,7 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
 import           Cardano.Shell.Application (checkIfApplicationIsRunning)
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
-import           Control.Exception.Safe (throwM)
+import           Control.Exception.Safe (throwM, tryAny)
 
 --------------------------------------------------------------------------------
 -- Main
@@ -51,7 +51,7 @@ import           Control.Exception.Safe (throwM)
 
 -- | Main function.
 main :: IO ()
-main = silence $ do
+main = showErrorDarwin $ silence $ do
 
     homeDirectory       <- getHomeDirectory
 
@@ -288,3 +288,27 @@ silence :: IO a -> IO a
 silence runAction = case buildOS of
     Windows -> hSilence [stdout, stderr] runAction
     _       -> runAction
+
+showErrorDarwin :: IO a -> IO a
+showErrorDarwin action = case buildOS of 
+    OSX -> do
+        eVal <- tryAny action
+        case eVal of
+            Left err -> do
+                displayErrorDarwin (show err)
+                throwM err
+            Right val -> return val
+    _ -> action
+  where
+    displayErrorDarwin :: Text -> IO ()
+    displayErrorDarwin errorMessage = do
+        let displayProcess = proc "osascript" ["-e", toS (mkErrorMessage errorMessage)]
+        void $ withCreateProcess displayProcess (\ _ _ _ ph -> waitForProcess ph)
+    mkErrorMessage :: Text -> Text
+    mkErrorMessage errorMessage = mconcat
+          [ "display dialog "
+          , show (errorMessage :: Text)
+          , " buttons {\"Ok\"} "
+          , "default button 1 with title "
+          , show ("Cardano Launcher Error" :: Text)
+          ]

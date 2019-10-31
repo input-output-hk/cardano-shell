@@ -10,7 +10,7 @@ import           Cardano.Prelude
 import           Cardano.Shell.Template (substituteA)
 import           Data.Yaml (Value (..))
 import           System.Environment (lookupEnv)
-
+import Prelude (Show(..))
 -- | Substitute envrionment variable with value of its name.
 --
 -- @
@@ -33,7 +33,10 @@ expandVariable var = do
 data SubstitutionError
   = FailedToLookupEnv Text
   -- ^ Failed to lookup environment variable
-  deriving (Eq, Show)
+  deriving (Eq)
+
+instance Show SubstitutionError where
+  show (FailedToLookupEnv env) = "Failed to lookup environment variable: " <> toS env
 
 -- | Given an Aeson 'Value', parse and substitute environment variables in all
 -- 'String' objects.
