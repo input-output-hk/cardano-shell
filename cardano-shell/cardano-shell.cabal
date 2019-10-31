@@ -44,7 +44,6 @@ library
     , cardano-prelude
     , concurrency
     , containers
-    , directory
     , formatting
     , process
     , QuickCheck
@@ -107,8 +106,6 @@ test-suite cardano-shell-test
     , base >=4.7 && <5
     , cardano-shell
     , cardano-prelude
-    , process
-    , yaml
     -- quickcheck
     , QuickCheck
     -- SM
