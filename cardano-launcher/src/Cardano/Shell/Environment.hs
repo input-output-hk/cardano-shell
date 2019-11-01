@@ -9,8 +9,9 @@ import           Cardano.Prelude
 
 import           Cardano.Shell.Template (substituteA)
 import           Data.Yaml (Value (..))
+import           Prelude (Show (..))
 import           System.Environment (lookupEnv)
-import Prelude (Show(..))
+
 -- | Substitute envrionment variable with value of its name.
 --
 -- @

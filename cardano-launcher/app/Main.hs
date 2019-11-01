@@ -10,12 +10,16 @@ import qualified Prelude
 import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
+<<<<<<< HEAD
 import           Distribution.System (OS (Windows, OSX), buildOS)
 import           System.Directory (getHomeDirectory)
+=======
+import           Distribution.System (OS (OSX, Windows), buildOS)
+>>>>>>> Emit only error message
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
-import           System.Process (waitForProcess, withCreateProcess, proc)
+import           System.Process (proc, waitForProcess, withCreateProcess)
 
 import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
@@ -43,7 +47,7 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
 import           Cardano.Shell.Application (checkIfApplicationIsRunning)
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
-import           Control.Exception.Safe (throwM, tryAny)
+import           Control.Exception.Safe (throwM)
 
 --------------------------------------------------------------------------------
 -- Main
@@ -51,7 +55,7 @@ import           Control.Exception.Safe (throwM, tryAny)
 
 -- | Main function.
 main :: IO ()
-main = showErrorDarwin $ silence $ do
+main = silence $ do
 
     homeDirectory       <- getHomeDirectory
 
@@ -133,7 +137,7 @@ main = showErrorDarwin $ silence $ do
             eLauncherOptions <- getLauncherOptions loggingDependencies (launcherConfigPath launcherCLI)
             case eLauncherOptions of
                 Left err -> do
-                    Trace.logError baseTrace $
+                    logErrorMessage baseTrace $
                         "Error occured while parsing configuration file: " <> show err
                     throwM $ LauncherOptionsError (show err)
                 Right lo -> pure lo
@@ -143,7 +147,7 @@ main = showErrorDarwin $ silence $ do
         -- Every platform will run a script before running the launcher that creates a
         -- working directory, so workingDir should always exist.
         unlessM (setWorkingDirectory workingDir) $ do
-            Trace.logError baseTrace $ "Working directory does not exist: " <> toS workingDir
+            logErrorMessage baseTrace $ "Working directory does not exist: " <> toS workingDir
             throwM . WorkingDirectoryDoesNotExist $ workingDir
 
         -- Configuration from the launcher options.
@@ -177,7 +181,7 @@ main = showErrorDarwin $ silence $ do
 
                 case eTLSGeneration of
                     Left generationError -> do
-                        Trace.logError baseTrace $
+                        logErrorMessage baseTrace $
                             "Error occured while generating TLS certificates: " <> show generationError
                         throwM $ FailedToGenerateTLS generationError
                     Right _              -> return ()
@@ -289,23 +293,25 @@ silence runAction = case buildOS of
     Windows -> hSilence [stdout, stderr] runAction
     _       -> runAction
 
-showErrorDarwin :: IO a -> IO a
-showErrorDarwin action = case buildOS of 
-    OSX -> do
-        eVal <- tryAny action
-        case eVal of
-            Left err -> do
-                displayErrorDarwin (show err)
-                throwM err
-            Right val -> return val
-    _ -> action
+-- | Log error message
+-- |
+-- | On darwin, it will use osascript to emit a error dialog to notify user about
+-- | it
+-- | https://scriptingosx.com/2018/08/user-interaction-from-bash-scripts/
+logErrorMessage :: MonadIO m => Trace m Text -> Text -> m ()
+logErrorMessage tracer msg = do
+    Trace.logError tracer msg
+    case buildOS of
+        OSX -> liftIO $ displayErrorDarwin msg
+        _   -> return ()
+
+displayErrorDarwin :: Text -> IO ()
+displayErrorDarwin errorMessage = do
+    let displayProcess = proc "osascript" ["-e", toS mkErrorMessage]
+    void $ withCreateProcess displayProcess (\ _ _ _ ph -> waitForProcess ph)
   where
-    displayErrorDarwin :: Text -> IO ()
-    displayErrorDarwin errorMessage = do
-        let displayProcess = proc "osascript" ["-e", toS (mkErrorMessage errorMessage)]
-        void $ withCreateProcess displayProcess (\ _ _ _ ph -> waitForProcess ph)
-    mkErrorMessage :: Text -> Text
-    mkErrorMessage errorMessage = mconcat
+    mkErrorMessage :: Text
+    mkErrorMessage = mconcat
           [ "display dialog "
           , show (errorMessage :: Text)
           , " buttons {\"Ok\"} "
