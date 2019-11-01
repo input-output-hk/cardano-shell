@@ -19,14 +19,16 @@ source-repository head
 library
   exposed-modules:
       Cardano.Shell.Launcher
+    , Cardano.Shell.Launcher.Types
       -- Update system
     , Cardano.Shell.Update.Lib
     , Cardano.Shell.Update.Types
+      -- Other subsystems
+    , Cardano.Shell.Application 
     , Cardano.Shell.Template
     , Cardano.Shell.Environment
     , Cardano.Shell.CLI
     , Cardano.Shell.Configuration
-    , Cardano.Shell.Launcher.Types
   hs-source-dirs:
       src
   build-depends:
@@ -72,9 +74,6 @@ executable cardano-launcher
       base >=4.7 && <5
     , cardano-prelude
     , cardano-launcher
-    -- directory
-    , directory
-    , filepath
     -- formatting
     , formatting
     -- logging
@@ -86,6 +85,8 @@ executable cardano-launcher
     , Cabal
     -- cli
     , optparse-applicative
+    -- directory
+    , directory
 
   if os(windows)
     ghc-options: -optl-mwindows
@@ -110,13 +111,6 @@ executable mock-daedalus-frontend
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
-    -- directory
-    , directory
-    , filepath
-    -- formatting
-    , formatting
-    -- exception handling
-    , safe-exceptions
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
@@ -138,13 +132,6 @@ executable mock-installer
   build-depends:
       base >=4.7 && <5
     , cardano-prelude
-    -- directory
-    , directory
-    , filepath
-    -- formatting
-    , formatting
-    -- exception handling
-    , safe-exceptions
 
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude

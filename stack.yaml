@@ -10,6 +10,8 @@ extra-deps:
   - time-units-1.0.0
   - silently-1.2.5.1
 
+  - Win32-2.5.4.1@sha256:e623a1058bd8134ec14d62759f76cac52eee3576711cb2c4981f398f1ec44b85
+
   - git: https://github.com/input-output-hk/cardano-prelude
     commit: 12ab51e27539c9cce042ded0c89efc0ccae6137a
     subdirs:

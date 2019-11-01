@@ -12,6 +12,7 @@
         "streaming-binary" = (((hackage.streaming-binary)."0.3.0.1").revisions).default;
         "cborg" = (((hackage.cborg)."0.2.2.0").revisions).default;
         "canonical-json" = (((hackage.canonical-json)."0.6.0.0").revisions).default;
+        "Win32" = (((hackage.Win32)."2.5.4.1").revisions)."e623a1058bd8134ec14d62759f76cac52eee3576711cb2c4981f398f1ec44b85";
         } // {
         cardano-shell = ./cardano-shell.nix;
         cardano-launcher = ./cardano-launcher.nix;

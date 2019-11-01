@@ -11,6 +11,8 @@ import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
 import           Distribution.System (OS (Windows), buildOS)
+
+import           System.Directory (getHomeDirectory)
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
@@ -38,10 +40,10 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
                                          TLSPath (..), WalletRunner (..),
                                          generateTlsCertificates, runLauncher,
                                          walletRunnerProcess)
+import           Cardano.Shell.Application (checkIfApplicationIsRunning)
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
 import           Control.Exception.Safe (throwM)
-
 
 --------------------------------------------------------------------------------
 -- Main
@@ -50,6 +52,15 @@ import           Control.Exception.Safe (throwM)
 -- | Main function.
 main :: IO ()
 main = silence $ do
+
+    homeDirectory       <- getHomeDirectory
+
+    -- The name of the lock file
+    let lockFile = homeDirectory <> "/daedalus_lockfile"
+
+    -- Check if it's locked or not. Will throw an exception if the
+    -- application is already running.
+    _                   <- checkIfApplicationIsRunning lockFile
 
     defaultConfigPath   <- getDefaultConfigPath
 
