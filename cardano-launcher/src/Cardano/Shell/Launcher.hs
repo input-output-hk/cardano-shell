@@ -32,7 +32,7 @@ import           Turtle (system)
 
 import           Cardano.Shell.Configuration (ConfigurationOptions (..),
                                               WalletArguments (..),
-                                              WalletPath (..))
+                                              DaedalusBin (..))
 import           Cardano.Shell.Launcher.Types (LoggingDependencies (..))
 import           Cardano.Shell.Update.Lib (RemoveArchiveAfterInstall (..),
                                            RunUpdateFunc, UpdaterData (..),
@@ -155,7 +155,7 @@ handleDaedalusExitCode runUpdater' restartWallet = isoTo <<$>> \case
 -- I give you the path to the wallet, it's arguments and you execute it
 -- and return me the @ExitCode@.
 newtype WalletRunner = WalletRunner
-    { runWalletSystemProcess :: WalletPath -> WalletArguments -> IO ExitCode
+    { runWalletSystemProcess :: DaedalusBin -> WalletArguments -> IO ExitCode
     }
 
 -- | Launching the wallet.
@@ -165,8 +165,7 @@ newtype WalletRunner = WalletRunner
 runWalletProcess
     :: LoggingDependencies
     -> WalletMode
-    -> WalletPath
-    -> WalletArguments
+    -> DaedalusBin
     -> WalletRunner
     -> RunUpdateFunc
     -> UpdaterData
@@ -174,8 +173,7 @@ runWalletProcess
 runWalletProcess
     logDep
     walletMode
-    walletPath
-    walletArguments
+    daedalusBin
     walletRunner
     runUpdateFunc
     updaterData = do
@@ -186,8 +184,7 @@ runWalletProcess
         restart =  \walletMode' -> runWalletProcess
                         logDep
                         walletMode'
-                        walletPath
-                        walletArguments
+                        daedalusBin
                         walletRunner
                         runUpdateFunc
                         updaterData
@@ -199,13 +196,13 @@ runWalletProcess
     -- Daedalus safe mode.
     let walletArgs :: WalletArguments
         walletArgs =    if walletMode == WalletModeSafe
-                            then walletArguments <> walletSafeModeArgs
-                            else walletArguments
+                            then walletSafeModeArgs
+                            else WalletArguments []
 
     logNotice logDep $ "Starting the wallet with arguments: " <> Cardano.Prelude.show walletArgs
 
     -- create the wallet process
-    walletExitStatus <- runWalletSystemProcess walletRunner walletPath walletArgs
+    walletExitStatus <- runWalletSystemProcess walletRunner daedalusBin walletArgs
 
     logNotice logDep $ "Wallet exited with exitcode: " <> Cardano.Prelude.show walletExitStatus
 
@@ -242,16 +239,16 @@ runWalletProcess
 
 -- | Create the wallet runner proces which will actually run the wallet.
 walletRunnerProcess :: WalletRunner
-walletRunnerProcess = WalletRunner $ \walletPath walletArgs ->
-    system (createProc Process.Inherit walletPath walletArgs) mempty
+walletRunnerProcess = WalletRunner $ \daedalusBin walletArgs ->
+    system (createProc Process.Inherit daedalusBin walletArgs) mempty
   where
     -- | The creation of the process.
     createProc
         :: Process.StdStream
-        -> WalletPath
+        -> DaedalusBin
         -> WalletArguments
         -> Process.CreateProcess
-    createProc stdStream (WalletPath commandPath) (WalletArguments commandArguments) =
+    createProc stdStream (DaedalusBin commandPath) (WalletArguments commandArguments) =
         (Process.proc (toS commandPath) (map toS commandArguments))
             { Process.std_in    = Process.CreatePipe
             , Process.std_out   = stdStream
@@ -273,12 +270,11 @@ newtype TLSPath = TLSPath { getTLSFilePath :: FilePath }
 runLauncher
     :: LoggingDependencies
     -> WalletRunner
-    -> WalletPath
-    -> WalletArguments
+    -> DaedalusBin
     -> RunUpdateFunc
     -> UpdaterData
     -> IO ExitCode
-runLauncher loggingDependencies walletRunner walletPath walletArgs runUpdateFunc updaterData = do
+runLauncher loggingDependencies walletRunner daedalusBin runUpdateFunc updaterData = do
 
         -- In the case the user wants to avoid installing the update now, we
         -- run the update (if there is one) when we have it downloaded.
@@ -292,8 +288,7 @@ runLauncher loggingDependencies walletRunner walletPath walletArgs runUpdateFunc
         runWalletProcess
             loggingDependencies
             WalletModeNormal
-            walletPath
-            walletArgs
+            daedalusBin
             walletRunner
             runUpdateFunc
             updaterData

@@ -6,7 +6,7 @@
 # - nix build -f default.nix nix-tools.tests.cardano-shell # All `cardano-shell` tests
 # - nix build -f default.nix nix-tools.tests.cardano-shell.tests
 # - nix build -f default.nix nix-tools.exes.cardano-shell # All `cardano-shell` executables
-# - nix build -f default.nix nix-tools.cexes.cardano-shell.cardano-launcher
+# - nix build -f default.nix nix-tools.cexes.cardano-launcher.cardano-launcher
 #
 # Generated targets include anything from stack.yaml (via
 # nix-tools:stack-to-nix and the nix/regenerate.sh script)
