@@ -49,6 +49,7 @@
             (hsPkgs.text)
             (hsPkgs.silently)
             (hsPkgs.Cabal)
+            (hsPkgs.process)
             (hsPkgs.optparse-applicative)
             (hsPkgs.directory)
             ];
