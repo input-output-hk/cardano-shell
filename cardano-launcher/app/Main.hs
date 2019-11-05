@@ -1,5 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE CPP #-}
+
 
 module Main where
 
@@ -10,12 +12,8 @@ import qualified Prelude
 import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
-<<<<<<< HEAD
-import           Distribution.System (OS (Windows, OSX), buildOS)
+import           Distribution.System (OS (Windows), buildOS)
 import           System.Directory (getHomeDirectory)
-=======
-import           Distribution.System (OS (OSX, Windows), buildOS)
->>>>>>> Emit only error message
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
@@ -301,9 +299,9 @@ silence runAction = case buildOS of
 logErrorMessage :: MonadIO m => Trace m Text -> Text -> m ()
 logErrorMessage tracer msg = do
     Trace.logError tracer msg
-    case buildOS of
-        OSX -> liftIO $ displayErrorDarwin msg
-        _   -> return ()
+#ifdef darwin_HOST_OS
+    liftIO $ displayErrorDarwin msg
+#endif
 
 displayErrorDarwin :: Text -> IO ()
 displayErrorDarwin errorMessage = do
