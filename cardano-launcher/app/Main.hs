@@ -1,6 +1,6 @@
+{-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE CPP #-}
 
 
 module Main where
@@ -26,10 +26,12 @@ import           Options.Applicative (Parser, ParserInfo, auto, execParser,
                                       fullDesc, header, help, helper, info,
                                       long, metavar, option, optional, progDesc)
 
+import           Cardano.BM.Configuration.Model (setup, setScribes)
 import           Cardano.BM.Setup (withTrace)
 import qualified Cardano.BM.Trace as Trace
-import           Cardano.BM.Tracing
+import           Cardano.BM.Tracing (Trace)
 
+import           Cardano.Shell.Application (checkIfApplicationIsRunning)
 import           Cardano.Shell.CLI (LauncherOptionPath, getDefaultConfigPath,
                                     getLauncherOptions, launcherArgsParser)
 import           Cardano.Shell.Configuration (ConfigurationOptions (..),
@@ -42,7 +44,6 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
                                          TLSPath (..), WalletRunner (..),
                                          generateTlsCertificates, runLauncher,
                                          walletRunnerProcess)
-import           Cardano.Shell.Application (checkIfApplicationIsRunning)
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
 import           Control.Exception.Safe (throwM)
@@ -114,8 +115,9 @@ main = silence $ do
                         runDefaultUpdateProcess filePath arguments
 
 
-    logConfig           <- defaultConfigStdout
+    logConfig           <- setup "./log-config.yaml"
 
+    
     -- A safer way to close the tracing.
     withTrace logConfig "launcher" $ \baseTrace -> do
 
