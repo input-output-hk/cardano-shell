@@ -29,7 +29,6 @@ updaterSpec = describe "Update system" $ do
             runDefaultUpdateProcess
             testUpdaterData
 
-        run . putTextLn . show $ exitCode
         assert $ exitCode == ExitSuccess
 
     prop "should return expected error" $ \(exitNum :: ExitNum) -> monadicIO $ do

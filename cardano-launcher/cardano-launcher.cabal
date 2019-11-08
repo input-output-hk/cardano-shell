@@ -83,6 +83,7 @@ executable cardano-launcher
     , text
     , silently
     , Cabal
+    , process
     -- cli
     , optparse-applicative
     -- directory
