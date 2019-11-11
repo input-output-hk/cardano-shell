@@ -1,5 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE CPP #-}
+
 
 module Main where
 
@@ -11,11 +13,11 @@ import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
 import           Distribution.System (OS (Windows), buildOS)
-
 import           System.Directory (getHomeDirectory)
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
+import           System.Process (proc, waitForProcess, withCreateProcess)
 
 import           Formatting (bprint, build, formatToString)
 import           Formatting.Buildable (Buildable (..))
@@ -132,7 +134,7 @@ main = silence $ do
             eLauncherOptions <- getLauncherOptions loggingDependencies (launcherConfigPath launcherCLI)
             case eLauncherOptions of
                 Left err -> do
-                    Trace.logError baseTrace $
+                    logErrorMessage baseTrace $
                         "Error occured while parsing configuration file: " <> show err
                     throwM $ LauncherOptionsError (show err)
                 Right lo -> pure lo
@@ -142,7 +144,7 @@ main = silence $ do
         -- Every platform will run a script before running the launcher that creates a
         -- working directory, so workingDir should always exist.
         unlessM (setWorkingDirectory workingDir) $ do
-            Trace.logError baseTrace $ "Working directory does not exist: " <> toS workingDir
+            logErrorMessage baseTrace $ "Working directory does not exist: " <> toS workingDir
             throwM . WorkingDirectoryDoesNotExist $ workingDir
 
         -- Configuration from the launcher options.
@@ -173,7 +175,7 @@ main = silence $ do
 
                 case eTLSGeneration of
                     Left generationError -> do
-                        Trace.logError baseTrace $
+                        logErrorMessage baseTrace $
                             "Error occured while generating TLS certificates: " <> show generationError
                         throwM $ FailedToGenerateTLS generationError
                     Right _              -> return ()
@@ -283,3 +285,29 @@ silence :: IO a -> IO a
 silence runAction = case buildOS of
     Windows -> hSilence [stdout, stderr] runAction
     _       -> runAction
+
+-- | Log error message
+-- |
+-- | On darwin, it will use osascript to emit a error dialog to notify user about
+-- | it
+-- | https://scriptingosx.com/2018/08/user-interaction-from-bash-scripts/
+logErrorMessage :: MonadIO m => Trace m Text -> Text -> m ()
+logErrorMessage tracer msg = do
+    Trace.logError tracer msg
+#ifdef darwin_HOST_OS
+    liftIO $ displayErrorDarwin msg
+#endif
+
+displayErrorDarwin :: Text -> IO ()
+displayErrorDarwin errorMessage = do
+    let displayProcess = proc "osascript" ["-e", toS mkErrorMessage]
+    void $ withCreateProcess displayProcess (\ _ _ _ ph -> waitForProcess ph)
+  where
+    mkErrorMessage :: Text
+    mkErrorMessage = mconcat
+          [ "display dialog "
+          , show (errorMessage :: Text)
+          , " buttons {\"Ok\"} "
+          , "default button 1 with title "
+          , show ("Cardano Launcher Error" :: Text)
+          ]
