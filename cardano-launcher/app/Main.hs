@@ -37,9 +37,8 @@ import           Cardano.Shell.CLI (LauncherOptionPath, getDefaultConfigPath,
                                     getLauncherOptions, launcherArgsParser)
 import           Cardano.Shell.Configuration (ConfigurationOptions (..),
                                               LauncherOptions (..),
-                                              WalletArguments (..),
-                                              WalletPath (..), getUpdaterData,
-                                              getWPath, getWargs,
+                                              DaedalusBin (..), getUpdaterData,
+                                              getDPath,
                                               setWorkingDirectory)
 import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
                                          TLSPath (..), WalletRunner (..),
@@ -75,7 +74,7 @@ main = silence $ do
     -- This function either stubs out the wallet exit code or
     -- returns the "real" function.
     let walletExectionFunction =
-            WalletRunner $ \walletPath walletArguments -> do
+            WalletRunner $ \daedalusBin walletArguments -> do
                 -- Check if we have any exit codes remaining.
                 stubExitCodes       <- readIORef walletTestExitCodesMVar
                 let currentStubExitCode = head stubExitCodes
@@ -87,7 +86,7 @@ main = silence $ do
                         pure stubExitCode
                     Nothing             ->
                         -- Otherwise run the real deal, the real function.
-                        runWalletSystemProcess walletRunnerProcess walletPath walletArguments
+                        runWalletSystemProcess walletRunnerProcess daedalusBin walletArguments
 
     -- This function either stubs out the updater exit code or
     -- returns the "real" function.
@@ -152,7 +151,7 @@ main = silence $ do
                     throwM $ LauncherOptionsError (show err)
                 Right lo -> pure lo
 
-        let lockFile = loStatePath launcherOptions <> "/daedalus_lockfile"
+        let lockFile = loStateDir launcherOptions <> "/daedalus_lockfile"
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
         -- Check if it's locked or not. Will throw an exception if the
         -- application is already running.
@@ -168,14 +167,11 @@ main = silence $ do
             throwM . WorkingDirectoryDoesNotExist $ workingDir
 
         -- Configuration from the launcher options.
-        let configurationOptions :: ConfigurationOptions
-            configurationOptions = loConfiguration launcherOptions
+        let mConfigurationOptions :: Maybe ConfigurationOptions
+            mConfigurationOptions = loConfiguration launcherOptions
 
-        let walletPath :: WalletPath
-            walletPath = getWPath launcherOptions
-
-        let walletArgs :: WalletArguments
-            walletArgs = getWargs launcherOptions
+        let daedalusBin :: DaedalusBin
+            daedalusBin = getDPath launcherOptions
 
         let updaterData :: UpdaterData
             updaterData = getUpdaterData launcherOptions
@@ -186,8 +182,8 @@ main = silence $ do
             mTlsPath = TLSPath <$> loTlsPath launcherOptions
 
         -- If the path doesn't exist, then TLS has been disabled!
-        case mTlsPath of
-            Just tlsPath -> do
+        case (mTlsPath, mConfigurationOptions) of
+            (Just tlsPath, Just configurationOptions) -> do
                 -- | If we need to, we first check if there are certificates so we don't have
                 -- to generate them. Since the function is called `generate...`, that's what
                 -- it does, it generates the certificates.
@@ -202,14 +198,13 @@ main = silence $ do
                             "Error occured while generating TLS certificates: " <> show generationError
                         throwM $ FailedToGenerateTLS generationError
                     Right _              -> return ()
-            Nothing -> pure () -- TLS generation has been disabled
+            _ -> pure () -- TLS generation has been disabled
 
         -- Finally, run the launcher once everything is set up!
         exitCode <- runLauncher
                         loggingDependencies
                         walletExectionFunction
-                        walletPath
-                        walletArgs
+                        daedalusBin
                         updaterExecutionFunction
                         updaterData
 

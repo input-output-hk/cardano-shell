@@ -3,13 +3,12 @@
 
 module Cardano.Shell.Configuration
     ( WalletArguments (..)
-    , WalletPath (..)
+    , DaedalusBin (..)
     , LauncherOptions (..)
     , ConfigurationOptions (..)
     -- * Getters
     , getUpdaterData
-    , getWargs
-    , getWPath
+    , getDPath
     -- * Setting up working directory
     , setWorkingDirectory
     ) where
@@ -35,37 +34,35 @@ instance Semigroup WalletArguments where
     (<>) = \wArgs1 wArgs2 -> WalletArguments $ getWalletArguments wArgs1 <> getWalletArguments wArgs2
 
 -- | Path to wallet executable
-newtype WalletPath = WalletPath
-    { getWalletPath :: Text
+newtype DaedalusBin = DaedalusBin
+    { getDaedalusBin :: Text
     } deriving (Eq, Show)
 
 -- Todo: Add haddock comment for each field
 -- | Launcher options
 data LauncherOptions = LauncherOptions
-    { loConfiguration    :: !ConfigurationOptions
-    , loTlsPath          :: !(Maybe FilePath)
-    , loUpdaterPath      :: !FilePath
-    , loUpdaterArgs      :: ![Text]
-    , loUpdateArchive    :: !FilePath
-    , loWalletPath       :: !FilePath
-    , loWalletArgs       :: ![Text]
-    , loWorkingDirectory :: !FilePath
-    , loStatePath        :: !FilePath
+    { loConfiguration       :: !(Maybe ConfigurationOptions)
+    , loTlsPath             :: !(Maybe FilePath)
+    , loUpdaterPath         :: !FilePath
+    , loUpdaterArgs         :: ![Text]
+    , loUpdateArchive       :: !FilePath
+    , loDaedalusBin         :: !FilePath
+    , loWorkingDirectory    :: !FilePath
+    , loStateDir            :: !FilePath
     -- On WIN it should set this directory as current.
     } deriving (Show, Generic)
 
 instance FromJSON LauncherOptions where
     parseJSON = withObject "LauncherOptions" $ \o -> do
 
-        walletPath          <- o .: "walletPath"
-        walletArgs          <- o .: "walletArgs"
+        daedalusBin         <- o .: "daedalusBin"
         updaterPath         <- o .: "updaterPath"
         updaterArgs         <- o .: "updaterArgs"
         updateArchive       <- o .: "updateArchive"
-        configuration       <- o .: "configuration"
+        configuration       <- o .:? "configuration"
         tlsPath             <- o .:? "tlsPath"
         workingDir          <- o .: "workingDir"
-        statePath           <- o .: "statePath"
+        stateDir            <- o .: "stateDir"
 
         pure $ LauncherOptions
             configuration
@@ -73,10 +70,9 @@ instance FromJSON LauncherOptions where
             updaterPath
             updaterArgs
             updateArchive
-            walletPath
-            walletArgs
+            daedalusBin
             workingDir
-            statePath
+            stateDir
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
@@ -122,13 +118,9 @@ getUpdaterData lo =
         archivePath     = loUpdateArchive lo
     in UpdaterData updaterPath updaterArgs archivePath
 
--- | Return WalletArguments
-getWargs :: LauncherOptions -> WalletArguments
-getWargs lo = WalletArguments $ loWalletArgs lo
-
--- | Return WalletPath
-getWPath :: LauncherOptions -> WalletPath
-getWPath lo = WalletPath $ toS $ loWalletPath lo
+-- | Return DaedalusBin
+getDPath :: LauncherOptions -> DaedalusBin
+getDPath lo = DaedalusBin $ toS $ loDaedalusBin lo
 
 -- | Set working directory to given @FilePath@, return false if directory does
 -- not exist
