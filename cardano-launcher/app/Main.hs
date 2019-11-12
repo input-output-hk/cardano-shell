@@ -25,6 +25,9 @@ import           Options.Applicative (Parser, ParserInfo, auto, execParser,
                                       fullDesc, header, help, helper, info,
                                       long, metavar, option, optional, progDesc)
 
+import qualified Cardano.BM.Configuration.Model as CM
+import           Cardano.BM.Data.Output
+import           Cardano.BM.Data.Rotation
 import           Cardano.BM.Setup (withTrace)
 import qualified Cardano.BM.Trace as Trace
 import           Cardano.BM.Tracing
@@ -104,7 +107,26 @@ main = silence $ do
                         runDefaultUpdateProcess filePath arguments
 
 
+    -- the log output path (TODO: get base path from configuration)
+    logfilepath <- pure "Logs/launcher"
+
     logConfig           <- defaultConfigStdout
+    scribes0 <- CM.getSetupScribes logConfig
+    CM.setSetupScribes logConfig $ scribes0 <>
+        [ScribeDefinition {
+            scName = logfilepath,
+            scFormat = ScText,
+            scKind = FileSK,
+            scPrivacy = ScPublic,
+            scRotation = Just $ RotationParameters
+              {
+                  rpLogLimitBytes = 10000000,
+                  rpMaxAgeHours = 24,
+                  rpKeepFilesNum = 3
+              }
+        }]
+    CM.setDefaultScribes logConfig [ "StdoutSK::text"
+                                   , "FileSK::" <> logfilepath ]
 
     -- A safer way to close the tracing.
     withTrace logConfig "launcher" $ \baseTrace -> do
