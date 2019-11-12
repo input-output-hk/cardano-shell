@@ -50,6 +50,7 @@ data LauncherOptions = LauncherOptions
     , loWalletPath       :: !FilePath
     , loWalletArgs       :: ![Text]
     , loWorkingDirectory :: !FilePath
+    , loStatePath        :: !FilePath
     -- On WIN it should set this directory as current.
     } deriving (Show, Generic)
 
@@ -64,6 +65,7 @@ instance FromJSON LauncherOptions where
         configuration       <- o .: "configuration"
         tlsPath             <- o .:? "tlsPath"
         workingDir          <- o .: "workingDir"
+        statePath           <- o .: "statePath"
 
         pure $ LauncherOptions
             configuration
@@ -74,6 +76,7 @@ instance FromJSON LauncherOptions where
             walletPath
             walletArgs
             workingDir
+            statePath
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
