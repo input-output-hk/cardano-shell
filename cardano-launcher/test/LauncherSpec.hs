@@ -94,17 +94,25 @@ instance Arbitrary ExitCodeNumber where
 --
 -- Ideally, you want to test with the config file generated from Daedalus CI
 -- but setting it up will be very tricky (credentials, etc.)
+--
+-- TODO(KS): Currently moving the tests to check for the Jormungandr config files
+-- since this has (sudden) priority, otherwise we should sync this up for all config
+-- files.
 launcherDatas :: [FilePath]
 launcherDatas =
-    [ "launcher-config-mainnet.linux.yaml"
-    , "launcher-config-staging.linux.yaml"
-    , "launcher-config-testnet.linux.yaml"
-    , "launcher-config-mainnet.macos64.yaml"
-    , "launcher-config-staging.macos64.yaml"
-    , "launcher-config-testnet.macos64.yaml"
-    , "launcher-config.demo.yaml"
-    , "launcher-config-demo.windows.yaml"
+    [ "jormungandr/launcher-config-qa.linux.yaml"
+    , "jormungandr/launcher-config-qa.windows.yaml"
     ]
+
+--    [ "launcher-config-mainnet.linux.yaml"
+--    , "launcher-config-staging.linux.yaml"
+--    , "launcher-config-testnet.linux.yaml"
+--    , "launcher-config-mainnet.macos64.yaml"
+--    , "launcher-config-staging.macos64.yaml"
+--    , "launcher-config-testnet.macos64.yaml"
+--    , "launcher-config.demo.yaml"
+--    , "launcher-config-demo.windows.yaml"
+--    ]
 
 -- | Test that given configuration file can be parsed as @LauncherOptions@
 testLauncherParsable :: FilePath -> Spec
@@ -115,6 +123,7 @@ testLauncherParsable configFilePath = describe "Launcher configuration" $ do
 
     it ("should be able to parse configuration file: " <> configFilePath) $ monadicIO $ do
         eParsedConfigFile <- run $ decodeFileEither (configFullFilePath configFilePath)
+        run $ putTextLn $ show eParsedConfigFile
         assert $ isRight (eParsedConfigFile :: Either ParseException LauncherOptions)
 
 setWorkingDirectorySpec :: Spec
@@ -181,6 +190,7 @@ testGetLauncherOption configPath = it ("should be able to perform env substituti
         let launcherOptionPath = LauncherOptionPath (configFullFilePath configPath)
         withSystemTempDirectory "test-XXXXXX" $ \tmpDir ->
             withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption nullLogging launcherOptionPath
+    run $ putTextLn $ show eLauncherOption
     assert $ isRight eLauncherOption
 
 configFullFilePath :: FilePath -> FilePath
@@ -189,10 +199,11 @@ configFullFilePath configPath = "./configuration/launcher/" <> configPath
 -- | Set all the envrionment variables that are needed to perform env var
 -- substituion then unset them afterwards
 withSetEnvs :: LauncherOptionPath -> FilePath -> IO a -> IO a
-withSetEnvs path homePath action = bracket
-    setEnvs
-    (\_ -> unsetEnvs)
-    (\_ -> action)
+withSetEnvs path homePath action =
+    bracket
+        setEnvs
+        (\_ -> unsetEnvs)
+        (\_ -> action)
   where
     setEnvs :: IO ()
     setEnvs = do
@@ -200,7 +211,9 @@ withSetEnvs path homePath action = bracket
         setEnv "DAEDALUS_CONFIG" "Foo"
         -- Every operating system have HOME variable set
         setEnv "HOME" homePath
+        setEnv "APPDATA" homePath
         setupEnvVars path
+
     unsetEnvs :: IO ()
     unsetEnvs = mapM_ unsetEnv
         [ "DAEDALUS_CONFIG"
