@@ -107,27 +107,7 @@ main = silence $ do
                         -- Otherwise run the real deal, the real function.
                         runDefaultUpdateProcess filePath arguments
 
-
-    -- the log output path (TODO: get base path from configuration)
-    logfilepath <- pure "Logs/launcher"
-
     logConfig           <- defaultConfigStdout
-    scribes0 <- CM.getSetupScribes logConfig
-    CM.setSetupScribes logConfig $ scribes0 <>
-        [ScribeDefinition {
-            scName = logfilepath,
-            scFormat = ScText,
-            scKind = FileSK,
-            scPrivacy = ScPublic,
-            scRotation = Just $ RotationParameters
-              {
-                  rpLogLimitBytes = 10000000,
-                  rpMaxAgeHours = 24,
-                  rpKeepFilesNum = 3
-              }
-        }]
-    CM.setDefaultScribes logConfig [ "StdoutSK::text"
-                                   , "FileSK::" <> logfilepath ]
 
     -- A safer way to close the tracing.
     withTrace logConfig "launcher" $ \baseTrace -> do
@@ -153,7 +133,27 @@ main = silence $ do
                     throwM $ LauncherOptionsError (show err)
                 Right lo -> pure lo
 
-        let lockFile = loStateDir launcherOptions </> "daedalus_lockfile"
+        -- the log output path (TODO: get base path from configuration)
+        let logfilepath = lologsPrefix launcherOptions <> "Logs/launcher"
+
+        scribes0 <- CM.getSetupScribes logConfig
+        CM.setSetupScribes logConfig $ scribes0 <>
+            [ScribeDefinition {
+                scName = toS logfilepath,
+                scFormat = ScText,
+                scKind = FileSK,
+                scPrivacy = ScPublic,
+                scRotation = Just $ RotationParameters
+                  {
+                      rpLogLimitBytes = 10000000,
+                      rpMaxAgeHours = 24,
+                      rpKeepFilesNum = 3
+                  }
+            }]
+        CM.setDefaultScribes logConfig [ "StdoutSK::text"
+                                       , "FileSK::" <> toS logfilepath ]
+
+        let lockFile = loStateDir launcherOptions <> "/daedalus_lockfile"
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
         -- Check if it's locked or not. Will throw an exception if the
         -- application is already running.
@@ -177,7 +177,6 @@ main = silence $ do
 
         let updaterData :: UpdaterData
             updaterData = getUpdaterData launcherOptions
-
 
         -- where to generate the certificates
         let mTlsPath :: Maybe TLSPath
