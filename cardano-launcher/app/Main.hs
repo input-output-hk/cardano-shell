@@ -15,6 +15,7 @@ import           Data.Text.Lazy.Builder (fromString, fromText)
 import           Distribution.System (OS (Windows), buildOS)
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
+import           System.FilePath ((</>))
 import           System.IO.Silently (hSilence)
 import           System.Process (proc, waitForProcess, withCreateProcess)
 
@@ -28,7 +29,7 @@ import           Options.Applicative (Parser, ParserInfo, auto, execParser,
 import qualified Cardano.BM.Configuration.Model as CM
 import           Cardano.BM.Data.Output
 import           Cardano.BM.Data.Rotation
-import           Cardano.BM.Setup (withTrace)
+import           Cardano.BM.Setup (setupTrace_, shutdown, withTrace)
 import qualified Cardano.BM.Trace as Trace
 import           Cardano.BM.Tracing
 
@@ -75,7 +76,7 @@ main = silence $ do
 
     -- This function either stubs out the wallet exit code or
     -- returns the "real" function.
-    let walletExectionFunction =
+    let walletExecutionFunction =
             WalletRunner $ \daedalusBin walletArguments -> do
                 -- Check if we have any exit codes remaining.
                 stubExitCodes       <- readIORef walletTestExitCodesMVar
@@ -107,60 +108,36 @@ main = silence $ do
                         -- Otherwise run the real deal, the real function.
                         runDefaultUpdateProcess filePath arguments
 
-    logConfig           <- defaultConfigStdout
+    launcherOptions <- readLauncherOptions launcherCLI
 
-    -- A safer way to close the tracing.
-    withTrace logConfig "launcher" $ \baseTrace -> do
+    let logfilepath = lologsPrefix launcherOptions </> "launcher"
 
-        Trace.logNotice baseTrace "Starting cardano-launcher"
-
-        let loggingDependencies :: LoggingDependencies
-            loggingDependencies = LoggingDependencies
-                { logInfo       = Trace.logInfo baseTrace
-                , logError      = Trace.logError baseTrace
-                , logNotice     = Trace.logNotice baseTrace
+    logConfig <- defaultConfigStdout
+    CM.setSetupScribes logConfig
+        [ScribeDefinition {
+            scName = toS logfilepath,
+            scFormat = ScText,
+            scKind = FileSK,
+            scPrivacy = ScPublic,
+            scRotation = Just $ RotationParameters
+                {
+                    rpLogLimitBytes = 10000000,
+                    rpMaxAgeHours = 24,
+                    rpKeepFilesNum = 3
                 }
+        }]
+    CM.setDefaultScribes logConfig [ "FileSK::" <> toS logfilepath ]
 
-        setEnv "LC_ALL" "en_GB.UTF-8"
-        setEnv "LANG"   "en_GB.UTF-8"
-
-        launcherOptions <- do
-            eLauncherOptions <- getLauncherOptions loggingDependencies (launcherConfigPath launcherCLI)
-            case eLauncherOptions of
-                Left err -> do
-                    logErrorMessage baseTrace $
-                        "Error occured while parsing configuration file: " <> show err
-                    throwM $ LauncherOptionsError (show err)
-                Right lo -> pure lo
-
-        -- the log output path (TODO: get base path from configuration)
-        let logfilepath = lologsPrefix launcherOptions <> "Logs/launcher"
-
-        scribes0 <- CM.getSetupScribes logConfig
-        CM.setSetupScribes logConfig $ scribes0 <>
-            [ScribeDefinition {
-                scName = toS logfilepath,
-                scFormat = ScText,
-                scKind = FileSK,
-                scPrivacy = ScPublic,
-                scRotation = Just $ RotationParameters
-                  {
-                      rpLogLimitBytes = 10000000,
-                      rpMaxAgeHours = 24,
-                      rpKeepFilesNum = 3
-                  }
-            }]
-        CM.setDefaultScribes logConfig [ "StdoutSK::text"
-                                       , "FileSK::" <> toS logfilepath ]
-
-        let lockFile = loStateDir launcherOptions <> "/daedalus_lockfile"
+    withTrace logConfig "launcher" $ \baseTrace -> do
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
         -- Check if it's locked or not. Will throw an exception if the
         -- application is already running.
-        _                   <- checkIfApplicationIsRunning lockFile
+
+        let lockFile = loStateDir launcherOptions </> "daedalus_lockfile"
+        Trace.logDebug baseTrace $ toS lockFile
+        _ <- checkIfApplicationIsRunning lockFile
 
         let workingDir = loWorkingDirectory launcherOptions
-
 
         -- Every platform will run a script before running the launcher that creates a
         -- working directory, so workingDir should always exist.
@@ -181,6 +158,13 @@ main = silence $ do
         -- where to generate the certificates
         let mTlsPath :: Maybe TLSPath
             mTlsPath = TLSPath <$> loTlsPath launcherOptions
+
+        let loggingDependencies :: LoggingDependencies
+            loggingDependencies = LoggingDependencies
+                { logInfo       = Trace.logInfo baseTrace
+                , logError      = Trace.logError baseTrace
+                , logNotice     = Trace.logNotice baseTrace
+                }
 
         -- If the path doesn't exist, then TLS has been disabled!
         case (mTlsPath, mConfigurationOptions) of
@@ -204,13 +188,41 @@ main = silence $ do
         -- Finally, run the launcher once everything is set up!
         exitCode <- runLauncher
                         loggingDependencies
-                        walletExectionFunction
+                        walletExecutionFunction
                         daedalusBin
                         updaterExecutionFunction
                         updaterData
 
         -- Exit the program with exit code.
         exitWith exitCode
+  where
+    readLauncherOptions launcherCLI = do
+        logConfig <- defaultConfigStdout
+
+        (stdoutTrace, sb) <- setupTrace_ logConfig "prelauncher"
+        Trace.logNotice stdoutTrace "Starting cardano-launcher"
+
+        let loggingDependencies :: LoggingDependencies
+            loggingDependencies = LoggingDependencies
+                { logInfo       = Trace.logInfo stdoutTrace
+                , logError      = Trace.logError stdoutTrace
+                , logNotice     = Trace.logNotice stdoutTrace
+                }
+
+        setEnv "LC_ALL" "en_GB.UTF-8"
+        setEnv "LANG"   "en_GB.UTF-8"
+
+        launcherOptions <- do
+            eLauncherOptions <- getLauncherOptions loggingDependencies (launcherConfigPath launcherCLI)
+            case eLauncherOptions of
+                Left err -> do
+                    logErrorMessage stdoutTrace $
+                        "Error occured while parsing configuration file: " <> show err
+                    throwM $ LauncherOptionsError (show err)
+                Right lo -> pure lo
+
+        shutdown sb -- close logging
+        return launcherOptions
 
 --------------------------------------------------------------------------------
 -- CLI
