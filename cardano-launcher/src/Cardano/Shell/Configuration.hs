@@ -41,14 +41,14 @@ newtype DaedalusBin = DaedalusBin
 -- Todo: Add haddock comment for each field
 -- | Launcher options
 data LauncherOptions = LauncherOptions
-    { loConfiguration    :: !(Maybe ConfigurationOptions)
-    , loTlsPath          :: !(Maybe FilePath)
-    , loUpdaterPath      :: !FilePath
-    , loUpdaterArgs      :: ![Text]
-    , loUpdateArchive    :: !FilePath
-    , loDaedalusBin      :: !FilePath
-    , loWorkingDirectory :: !FilePath
-    , loStatePath        :: !FilePath
+    { loConfiguration       :: !(Maybe ConfigurationOptions)
+    , loTlsPath             :: !(Maybe FilePath)
+    , loUpdaterPath         :: !FilePath
+    , loUpdaterArgs         :: ![Text]
+    , loUpdateArchive       :: !FilePath
+    , loDaedalusBin         :: !FilePath
+    , loWorkingDirectory    :: !FilePath
+    , loStateDir            :: !FilePath
     -- On WIN it should set this directory as current.
     } deriving (Show, Generic)
 
@@ -62,7 +62,7 @@ instance FromJSON LauncherOptions where
         configuration       <- o .:? "configuration"
         tlsPath             <- o .:? "tlsPath"
         workingDir          <- o .: "workingDir"
-        statePath           <- o .: "statePath"
+        stateDir            <- o .: "stateDir"
 
         pure $ LauncherOptions
             configuration
@@ -72,7 +72,7 @@ instance FromJSON LauncherOptions where
             updateArchive
             daedalusBin
             workingDir
-            statePath
+            stateDir
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys

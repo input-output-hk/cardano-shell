@@ -1,0 +1,37 @@
+{
+   "cliBin":"${DAEDALUS_INSTALL_DIRECTORY}\\jcli.exe",
+   "daedalusBin":"${DAEDALUS_INSTALL_DIRECTORY}\\Daedalus qa.exe",
+   "frontendOnlyMode":true,
+   "launcherLogsPrefix":"Logs\\pub",
+   "logsPrefix":"Logs",
+   "nodeArgs":[
+
+   ],
+   "nodeBin":"${DAEDALUS_INSTALL_DIRECTORY}\\jormungandr.exe",
+   "nodeImplementation":"jormungandr",
+   "nodeLogConfig":null,
+   "nodeLogPath":null,
+   "nodeTimeoutSec":60,
+   "stateDir":"${APPDATA}\\Daedalus\\qa",
+   "tlsPath":null,
+   "updateArchive":"/bar",
+   "updateWindowsRunner":"Installer.bat",
+   "updaterArgs":[
+
+   ],
+   "updaterPath":"/foo",
+   "walletArgs":[
+      "launch",
+      "--genesis-block-hash",
+      "6a40cf890d84981353457fcab6c892af57ee3c3286b33b530cd46b1af5b0e3a7",
+      "--state-dir",
+      "${APPDATA}\\Daedalus\\qa",
+      "--",
+      "--config",
+      "${DAEDALUS_INSTALL_DIRECTORY}\\jormungandr-config.yaml"
+   ],
+   "walletBin":"${DAEDALUS_INSTALL_DIRECTORY}\\cardano-wallet-jormungandr.exe",
+   "walletLogging":true,
+   "workingDir":"${APPDATA}\\Daedalus\\qa",
+   "x509ToolPath":null
+}

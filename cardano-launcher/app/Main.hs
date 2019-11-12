@@ -129,7 +129,7 @@ main = silence $ do
                     throwM $ LauncherOptionsError (show err)
                 Right lo -> pure lo
 
-        let lockFile = loStatePath launcherOptions <> "/daedalus_lockfile"
+        let lockFile = loStateDir launcherOptions <> "/daedalus_lockfile"
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
         -- Check if it's locked or not. Will throw an exception if the
         -- application is already running.
