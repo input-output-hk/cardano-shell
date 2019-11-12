@@ -22,7 +22,7 @@ nodeArgs:
 - --wallet-address
 - 127.0.0.1:0
 - --update-with-package
-statePath: ${XDG_DATA_HOME}/Daedalus/mainnet
+statePath: .
 walletPath: ./cardano-launcher/test/testDaedalusFrontend.sh
 nodePath: cardano-node
 launcherLogsPrefix: ${XDG_DATA_HOME}/Daedalus/mainnet/Logs/
