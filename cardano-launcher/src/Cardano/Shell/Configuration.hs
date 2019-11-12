@@ -50,6 +50,7 @@ data LauncherOptions = LauncherOptions
     , loWorkingDirectory    :: !FilePath
     , loStateDir            :: !FilePath
     -- On WIN it should set this directory as current.
+    , lologsPrefix          :: !FilePath
     } deriving (Show, Generic)
 
 instance FromJSON LauncherOptions where
@@ -63,6 +64,7 @@ instance FromJSON LauncherOptions where
         tlsPath             <- o .:? "tlsPath"
         workingDir          <- o .: "workingDir"
         stateDir            <- o .: "stateDir"
+        logsPrefix          <- o .: "logsPrefix"
 
         pure $ LauncherOptions
             configuration
@@ -73,6 +75,7 @@ instance FromJSON LauncherOptions where
             daedalusBin
             workingDir
             stateDir
+            logsPrefix
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
