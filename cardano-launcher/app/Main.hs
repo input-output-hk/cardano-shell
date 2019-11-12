@@ -1,6 +1,6 @@
+{-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE CPP #-}
 
 
 module Main where
@@ -13,7 +13,6 @@ import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
 import           Distribution.System (OS (Windows), buildOS)
-import           System.Directory (getHomeDirectory)
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
@@ -30,6 +29,7 @@ import           Cardano.BM.Setup (withTrace)
 import qualified Cardano.BM.Trace as Trace
 import           Cardano.BM.Tracing
 
+import           Cardano.Shell.Application (checkIfApplicationIsRunning)
 import           Cardano.Shell.CLI (LauncherOptionPath, getDefaultConfigPath,
                                     getLauncherOptions, launcherArgsParser)
 import           Cardano.Shell.Configuration (ConfigurationOptions (..),
@@ -42,7 +42,6 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
                                          TLSPath (..), WalletRunner (..),
                                          generateTlsCertificates, runLauncher,
                                          walletRunnerProcess)
-import           Cardano.Shell.Application (checkIfApplicationIsRunning)
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
 import           Control.Exception.Safe (throwM)
@@ -54,15 +53,6 @@ import           Control.Exception.Safe (throwM)
 -- | Main function.
 main :: IO ()
 main = silence $ do
-
-    homeDirectory       <- getHomeDirectory
-
-    -- The name of the lock file
-    let lockFile = homeDirectory <> "/daedalus_lockfile"
-
-    -- Check if it's locked or not. Will throw an exception if the
-    -- application is already running.
-    _                   <- checkIfApplicationIsRunning lockFile
 
     defaultConfigPath   <- getDefaultConfigPath
 
@@ -140,7 +130,14 @@ main = silence $ do
                     throwM $ LauncherOptionsError (show err)
                 Right lo -> pure lo
 
+        let lockFile = loStatePath launcherOptions <> "/daedalus_lockfile"
+        Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
+        -- Check if it's locked or not. Will throw an exception if the
+        -- application is already running.
+        _                   <- checkIfApplicationIsRunning lockFile
+
         let workingDir = loWorkingDirectory launcherOptions
+
 
         -- Every platform will run a script before running the launcher that creates a
         -- working directory, so workingDir should always exist.
