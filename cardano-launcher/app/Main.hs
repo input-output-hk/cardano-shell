@@ -49,8 +49,6 @@ import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
 import           Control.Exception.Safe (throwM)
 
-import           System.FilePath ((</>))
-
 --------------------------------------------------------------------------------
 -- Main
 --------------------------------------------------------------------------------
