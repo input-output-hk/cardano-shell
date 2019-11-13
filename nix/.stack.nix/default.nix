@@ -2,6 +2,7 @@
   extras = hackage:
     {
       packages = {
+        "katip" = (((hackage.katip)."0.8.3.0").revisions).default;
         "quickcheck-state-machine" = (((hackage.quickcheck-state-machine)."0.6.0").revisions).default;
         "pretty-show" = (((hackage.pretty-show)."1.9.5").revisions).default;
         "time-units" = (((hackage.time-units)."1.0.0").revisions).default;
