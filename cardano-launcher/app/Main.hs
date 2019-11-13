@@ -120,19 +120,19 @@ main = silence $ do
             Right lo -> pure lo
 
     logConfig           <- defaultConfigStdout
-    let logfilepath = lologsPrefix launcherOptions </> "launcher"
+    let logfilepath     = lologsPrefix launcherOptions </> "launcher"
 
+    -- We configure the logging to be on stdout and in the file as well.
     CM.setSetupScribes logConfig
         [ScribeDefinition {
-            scName = toS logfilepath,
-            scFormat = ScText,
-            scKind = FileSK,
-            scPrivacy = ScPublic,
-            scRotation = Just $ RotationParameters
-                {
-                    rpLogLimitBytes = 10000000,
-                    rpMaxAgeHours = 24,
-                    rpKeepFilesNum = 3
+            scName      = toS logfilepath,
+            scFormat    = ScText,
+            scKind      = FileSK,
+            scPrivacy   = ScPublic,
+            scRotation  = Just $ RotationParameters
+                { rpLogLimitBytes = 10000000
+                , rpMaxAgeHours   = 24
+                , rpKeepFilesNum  = 3
                 }
         }]
 
