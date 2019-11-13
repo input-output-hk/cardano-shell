@@ -24,7 +24,7 @@ library
     , Cardano.Shell.Update.Lib
     , Cardano.Shell.Update.Types
       -- Other subsystems
-    , Cardano.Shell.Application 
+    , Cardano.Shell.Application
     , Cardano.Shell.Template
     , Cardano.Shell.Environment
     , Cardano.Shell.CLI
@@ -75,6 +75,7 @@ executable cardano-launcher
     , cardano-prelude
     , cardano-launcher
     -- formatting
+    , filepath
     , formatting
     -- logging
     , iohk-monitoring
@@ -88,6 +89,7 @@ executable cardano-launcher
     , optparse-applicative
     -- directory
     , directory
+    , filepath
 
   if os(windows)
     ghc-options: -optl-mwindows

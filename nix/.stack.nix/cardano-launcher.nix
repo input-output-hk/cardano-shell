@@ -43,6 +43,7 @@
             (hsPkgs.base)
             (hsPkgs.cardano-prelude)
             (hsPkgs.cardano-launcher)
+            (hsPkgs.filepath)
             (hsPkgs.formatting)
             (hsPkgs.iohk-monitoring)
             (hsPkgs.safe-exceptions)
@@ -52,6 +53,7 @@
             (hsPkgs.process)
             (hsPkgs.optparse-applicative)
             (hsPkgs.directory)
+            (hsPkgs.filepath)
             ];
           };
         "mock-daedalus-frontend" = {

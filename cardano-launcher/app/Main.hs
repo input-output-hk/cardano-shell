@@ -8,11 +8,15 @@ module Main where
 import           Cardano.Prelude hiding (option)
 import qualified Prelude
 
+import           Control.Exception.Safe (throwM)
+
 -- Yes, we should use these seldomly but here it seems quite acceptable.
 import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
 import           Distribution.System (OS (Windows), buildOS)
+
+import           System.FilePath ((</>))
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
@@ -44,9 +48,9 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
                                          TLSPath (..), WalletRunner (..),
                                          generateTlsCertificates, runLauncher,
                                          walletRunnerProcess)
+import           Cardano.Shell.Launcher.Types (nullLogging)
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
-import           Control.Exception.Safe (throwM)
 
 --------------------------------------------------------------------------------
 -- Main
@@ -73,7 +77,7 @@ main = silence $ do
 
     -- This function either stubs out the wallet exit code or
     -- returns the "real" function.
-    let walletExectionFunction =
+    let walletExecutionFunction =
             WalletRunner $ \daedalusBin walletArguments -> do
                 -- Check if we have any exit codes remaining.
                 stubExitCodes       <- readIORef walletTestExitCodesMVar
@@ -105,7 +109,37 @@ main = silence $ do
                         -- Otherwise run the real deal, the real function.
                         runDefaultUpdateProcess filePath arguments
 
+    -- We get the launcher options. We don't log them currently because of the cat-mouse deps.
+    launcherOptions <- do
+        eLauncherOptions <- getLauncherOptions nullLogging (launcherConfigPath launcherCLI)
+        case eLauncherOptions of
+            Left err -> do
+                putTextLn $
+                    "Error occured while parsing configuration file: " <> show err
+                throwM $ LauncherOptionsError (show err)
+            Right lo -> pure lo
+
     logConfig           <- defaultConfigStdout
+    let logfilepath = lologsPrefix launcherOptions </> "launcher"
+
+    CM.setSetupScribes logConfig
+        [ScribeDefinition {
+            scName = toS logfilepath,
+            scFormat = ScText,
+            scKind = FileSK,
+            scPrivacy = ScPublic,
+            scRotation = Just $ RotationParameters
+                {
+                    rpLogLimitBytes = 10000000,
+                    rpMaxAgeHours = 24,
+                    rpKeepFilesNum = 3
+                }
+        }]
+
+    CM.setDefaultScribes logConfig
+        [ "StdoutSK::text"
+        , "FileSK::" <> toS logfilepath
+        ]
 
     -- A safer way to close the tracing.
     withTrace logConfig "launcher" $ \baseTrace -> do
@@ -122,36 +156,7 @@ main = silence $ do
         setEnv "LC_ALL" "en_GB.UTF-8"
         setEnv "LANG"   "en_GB.UTF-8"
 
-        launcherOptions <- do
-            eLauncherOptions <- getLauncherOptions loggingDependencies (launcherConfigPath launcherCLI)
-            case eLauncherOptions of
-                Left err -> do
-                    logErrorMessage baseTrace $
-                        "Error occured while parsing configuration file: " <> show err
-                    throwM $ LauncherOptionsError (show err)
-                Right lo -> pure lo
-
-        -- the log output path (TODO: get base path from configuration)
-        let logfilepath = lologsPrefix launcherOptions <> "Logs/launcher"
-
-        scribes0 <- CM.getSetupScribes logConfig
-        CM.setSetupScribes logConfig $ scribes0 <>
-            [ScribeDefinition {
-                scName = toS logfilepath,
-                scFormat = ScText,
-                scKind = FileSK,
-                scPrivacy = ScPublic,
-                scRotation = Just $ RotationParameters
-                  {
-                      rpLogLimitBytes = 10000000,
-                      rpMaxAgeHours = 24,
-                      rpKeepFilesNum = 3
-                  }
-            }]
-        CM.setDefaultScribes logConfig [ "StdoutSK::text"
-                                       , "FileSK::" <> toS logfilepath ]
-
-        let lockFile = loStateDir launcherOptions <> "/daedalus_lockfile"
+        let lockFile = loStateDir launcherOptions </> "daedalus_lockfile"
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
         -- Check if it's locked or not. Will throw an exception if the
         -- application is already running.
@@ -203,7 +208,7 @@ main = silence $ do
         -- Finally, run the launcher once everything is set up!
         exitCode <- runLauncher
                         loggingDependencies
-                        walletExectionFunction
+                        walletExecutionFunction
                         daedalusBin
                         updaterExecutionFunction
                         updaterData
