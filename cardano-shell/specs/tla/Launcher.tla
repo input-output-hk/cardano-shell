@@ -35,7 +35,7 @@ Next     == \/  /\  current_state   = "update_mode"
                 /\  current_state'  = "failure"
 
 (* 
-If the current state is the wallet normal mode, we will eventuall end up in one of these states - "success", "failure", "update_mode", "wallet_safe_mode".
+If the current state is the wallet normal mode, we will eventually end up in one of these states - "success", "failure", "update_mode", "wallet_safe_mode".
 And the current state will, AT SOME POINT, go through the wallet normal mode.
 *)
 Properties ==   /\  current_state = "wallet_normal_mode" ~> current_state \in {"success", "failure", "update_mode", "wallet_safe_mode"}
