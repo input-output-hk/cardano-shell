@@ -1,4 +1,4 @@
-resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/ad19158c7599bc5d50fe7cb0111a1488a139a381/snapshot.yaml
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/3c40edcf5bdba8721d3430d0aaaeea8770ce9bec/snapshot.yaml
 
 packages:
 - ./cardano-shell
@@ -14,13 +14,13 @@ extra-deps:
   - Win32-2.5.4.1@sha256:e623a1058bd8134ec14d62759f76cac52eee3576711cb2c4981f398f1ec44b85
 
   - git: https://github.com/input-output-hk/cardano-prelude
-    commit: ad19158c7599bc5d50fe7cb0111a1488a139a381
+    commit: 3c40edcf5bdba8721d3430d0aaaeea8770ce9bec
     subdirs:
       - .
       - test
 
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
-    commit: b4268cedecbbe2a35437effc17a8af10abda8ea8
+    commit: 4956b32f039579a0e7e4fd10793f65b4c77d9044
     subdirs:
       - contra-tracer
       - iohk-monitoring
