@@ -22,7 +22,7 @@
 \usepackage{bussproofs}
 % for inserting images
 \usepackage{graphicx}
-% for code syntax highlighting
+% for code highlighting
 \usepackage{listings}
 
 \usetikzlibrary{calc,positioning,arrows}
@@ -713,7 +713,9 @@ Let's take a look at some of the key functions we will use:
 
 %endif
 
+
 If we take a look at the typical state transition of such a system, we can easily imagine something like this on ~\ref{fig:updateStateMachineFig}.\\.
+
 
 \begin{figure}[ht] % ’ht’ tells LaTeX to place the figure ’here’ or at the top of the page
     \centering % centers the figure
@@ -721,7 +723,7 @@ If we take a look at the typical state transition of such a system, we can easil
         \node[state, accepting, initial] (q1) {$UpdateMode$};
         \node[state, right of=q1] (q2) {$WalletNormal$};
         \node[state, right of=q2] (q3) {$WalletSafe$};
-        \node[state, below of=q1] (q4) {$Failure$};
+        \node[state, below of=q2] (q4) {$Failure$};
         \node[state, accepting, right of=q4] (q5) {$Success$};
         \draw
             (q1) edge[above] node{} (q2)
@@ -731,7 +733,7 @@ If we take a look at the typical state transition of such a system, we can easil
             (q3) edge[bend right, above] node{} (q1) %return
             (q2) edge[bend left, below] node{} (q1)
             
-            (q1) edge[below] node{} (q4)
+            %(q1) edge[below] node{} (q4)
             %(q1) edge[below] node{} (q5)
             
             (q2) edge[below] node{} (q4)
@@ -761,12 +763,14 @@ state_transition(start,init,run_update).
 state_transition(run_update,update_fail, updater_file_missing).
 state_transition(run_update,update_success,run_wallet_normal).
 
-state_transition(run_wallet_normal, safe_mode, run_wallet_safe). 
+state_transition(run_wallet_normal, safe_mode, 
+    run_wallet_safe).
 state_transition(run_wallet_normal, update_mode, run_update).
 state_transition(run_wallet_normal, failure, run_failure).
 state_transition(run_wallet_normal, success, run_success).
 
-state_transition(run_wallet_safe, normal_mode, run_wallet_normal). 
+state_transition(run_wallet_safe, normal_mode, 
+    run_wallet_normal). 
 state_transition(run_wallet_safe, update_mode, run_update). 
 state_transition(run_wallet_safe, failure, run_failure).
 state_transition(run_wallet_safe, success, run_success).
