@@ -54,7 +54,6 @@
             (hsPkgs.process)
             (hsPkgs.optparse-applicative)
             (hsPkgs.directory)
-            (hsPkgs.filepath)
             ];
           };
         "mock-daedalus-frontend" = {

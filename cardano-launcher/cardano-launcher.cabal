@@ -90,7 +90,6 @@ executable cardano-launcher
     , optparse-applicative
     -- directory
     , directory
-    , filepath
 
   if os(windows)
     ghc-options: -optl-mwindows
