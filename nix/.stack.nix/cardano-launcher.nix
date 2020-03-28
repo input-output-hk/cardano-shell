@@ -43,6 +43,7 @@
             (hsPkgs.base)
             (hsPkgs.cardano-prelude)
             (hsPkgs.cardano-launcher)
+            (hsPkgs.cardano-sl-x509)
             (hsPkgs.filepath)
             (hsPkgs.formatting)
             (hsPkgs.iohk-monitoring)

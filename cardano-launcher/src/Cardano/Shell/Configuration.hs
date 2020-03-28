@@ -20,6 +20,7 @@ import           Data.Yaml (FromJSON (..), withObject, (.:), (.:?))
 import           System.Directory (doesDirectoryExist, setCurrentDirectory)
 
 import           Cardano.Shell.Update.Lib (UpdaterData (..))
+import           Cardano.X509.Configuration (TLSConfiguration)
 
 --------------------------------------------------------------------------------
 -- Configuration
@@ -43,6 +44,7 @@ newtype DaedalusBin = DaedalusBin
 data LauncherOptions = LauncherOptions
     { loConfiguration       :: !(Maybe ConfigurationOptions)
     , loTlsPath             :: !(Maybe FilePath)
+    , loTlsConfig           :: !(Maybe TLSConfiguration)
     , loUpdaterPath         :: !FilePath
     , loUpdaterArgs         :: ![Text]
     , loUpdateArchive       :: !FilePath
@@ -62,6 +64,7 @@ instance FromJSON LauncherOptions where
         updateArchive       <- o .: "updateArchive"
         configuration       <- o .:? "configuration"
         tlsPath             <- o .:? "tlsPath"
+        tlsConfig           <- o .:? "tlsConfig"
         workingDir          <- o .: "workingDir"
         stateDir            <- o .: "stateDir"
         logsPrefix          <- o .: "logsPrefix"
@@ -69,6 +72,7 @@ instance FromJSON LauncherOptions where
         pure $ LauncherOptions
             configuration
             tlsPath
+            tlsConfig
             updaterPath
             updaterArgs
             updateArchive

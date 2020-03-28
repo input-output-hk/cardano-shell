@@ -39,8 +39,7 @@ import           Cardano.BM.Tracing
 import           Cardano.Shell.Application (checkIfApplicationIsRunning)
 import           Cardano.Shell.CLI (LauncherOptionPath, getDefaultConfigPath,
                                     getLauncherOptions, launcherArgsParser)
-import           Cardano.Shell.Configuration (ConfigurationOptions (..),
-                                              LauncherOptions (..),
+import           Cardano.Shell.Configuration (LauncherOptions (..),
                                               DaedalusBin (..), getUpdaterData,
                                               getDPath,
                                               setWorkingDirectory)
@@ -51,6 +50,7 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
 import           Cardano.Shell.Launcher.Types (nullLogging)
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
+import           Cardano.X509.Configuration (TLSConfiguration)
 
 --------------------------------------------------------------------------------
 -- Main
@@ -172,8 +172,8 @@ main = silence $ do
             throwM . WorkingDirectoryDoesNotExist $ workingDir
 
         -- Configuration from the launcher options.
-        let mConfigurationOptions :: Maybe ConfigurationOptions
-            mConfigurationOptions = loConfiguration launcherOptions
+        let mTlsConfig :: Maybe TLSConfiguration
+            mTlsConfig = loTlsConfig launcherOptions
 
         let daedalusBin :: DaedalusBin
             daedalusBin = getDPath launcherOptions
@@ -187,14 +187,14 @@ main = silence $ do
             mTlsPath = TLSPath <$> loTlsPath launcherOptions
 
         -- If the path doesn't exist, then TLS has been disabled!
-        case (mTlsPath, mConfigurationOptions) of
-            (Just tlsPath, Just configurationOptions) -> do
+        case (mTlsPath, mTlsConfig) of
+            (Just tlsPath, Just tlsConfig) -> do
                 -- | If we need to, we first check if there are certificates so we don't have
                 -- to generate them. Since the function is called `generate...`, that's what
                 -- it does, it generates the certificates.
                 eTLSGeneration <- generateTlsCertificates
                     loggingDependencies
-                    configurationOptions
+                    tlsConfig
                     tlsPath
 
                 case eTLSGeneration of
