@@ -322,7 +322,7 @@ generateTlsCertificates externalDependencies' tlsConfig (TLSPath tlsPath) = runE
                 , outDirCA      = Nothing
                 }
 
-        -- From configuraiton
+        -- From configuration
         (caDesc, descs) <-
             liftIO $ fromConfiguration tlsConfig outDirectories genRSA256KeyPair <$> genRSA256KeyPair
 
