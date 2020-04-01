@@ -30,24 +30,20 @@ import           Prelude (Show (..))
 import qualified System.Process as Process
 import           Turtle (system)
 
-import           Cardano.Shell.Configuration (ConfigurationOptions (..),
-                                              WalletArguments (..),
+import           Cardano.Shell.Configuration (WalletArguments (..),
                                               DaedalusBin (..))
 import           Cardano.Shell.Launcher.Types (LoggingDependencies (..))
 import           Cardano.Shell.Update.Lib (RemoveArchiveAfterInstall (..),
                                            RunUpdateFunc, UpdaterData (..),
                                            runUpdater)
-import           Cardano.X509.Configuration (ConfigurationKey (..),
-                                             DirConfiguration (..), certChecks,
+import           Cardano.X509.Configuration (DirConfiguration (..), certChecks,
                                              certFilename, certOutDir,
-                                             decodeConfigFile,
+                                             TLSConfiguration,
                                              fromConfiguration, genCertificate)
-import           Control.Exception.Safe (onException)
 import           Data.X509.Extra (genRSA256KeyPair, validateCertificate,
                                   writeCertificate, writeCredentials)
 import           Data.X509.Validation (FailedReason)
-import           System.Directory (createDirectoryIfMissing, doesDirectoryExist,
-                                   doesFileExist)
+import           System.Directory (createDirectoryIfMissing)
 import           System.FilePath ((</>))
 
 --------------------------------------------------------------------------------
@@ -297,14 +293,10 @@ runLauncher loggingDependencies walletRunner daedalusBin runUpdateFunc updaterDa
 -- This just covers the generation of the TLS certificates and nothing else.
 generateTlsCertificates
     :: LoggingDependencies
-    -> ConfigurationOptions
+    -> TLSConfiguration
     -> TLSPath
     -> IO (Either TLSError ())
-generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsPath) = runExceptT $ do
-    doesCertConfigExist <- liftIO $ doesFileExist (cfoFilePath configurationOptions)
-    doesTLSPathExist <- liftIO $ doesDirectoryExist tlsPath
-    unless doesCertConfigExist $ throwError . CertConfigNotFound . cfoFilePath $ configurationOptions
-    unless doesTLSPathExist $ throwError . TLSDirectoryNotFound $ tlsPath
+generateTlsCertificates externalDependencies' tlsConfig (TLSPath tlsPath) = runExceptT $ do
 
     let tlsServer = tlsPath </> "server"
     let tlsClient = tlsPath </> "client"
@@ -312,6 +304,7 @@ generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsP
     -- Create the directories.
     liftIO $ do
         logInfo externalDependencies' $ "Generating the certificates!"
+        createDirectoryIfMissing True tlsPath
         createDirectoryIfMissing True tlsServer
         createDirectoryIfMissing True tlsClient
 
@@ -322,24 +315,14 @@ generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsP
     -- `cardano-sl`.
     generateCertificates :: FilePath -> FilePath -> ExceptT TLSError IO ()
     generateCertificates tlsServer' tlsClient = do
-
-        let configFile = cfoFilePath configurationOptions
-        -- Configuration key within the config file
-        let configKey :: ConfigurationKey
-            configKey = ConfigurationKey . textToFilePath . cfoKey $ configurationOptions
-
         let outDirectories :: DirConfiguration -- ^ Output directories configuration
             outDirectories = DirConfiguration
                 { outDirServer  = tlsServer'
                 , outDirClients = tlsClient
-                , outDirCA      = Nothing -- TODO(KS): AFAIK, we don't output the CA.
+                , outDirCA      = Nothing
                 }
 
-        -- TLS configuration
-        tlsConfig <- decodeConfigFile configKey configFile `onException`
-            (throwError . InvalidKey . cfoKey $ configurationOptions)
-
-        -- From configuraiton
+        -- From configuration
         (caDesc, descs) <-
             liftIO $ fromConfiguration tlsConfig outDirectories genRSA256KeyPair <$> genRSA256KeyPair
 
@@ -366,9 +349,6 @@ generateTlsCertificates externalDependencies' configurationOptions (TLSPath tlsP
             liftIO $ do
                 writeCredentials (certOutDir desc </> certFilename desc) (key, cert)
                 writeCertificate (certOutDir desc </> caName) caCert
-    -- Utility function.
-    textToFilePath :: Text -> FilePath
-    textToFilePath = strConv Strict
 
 -- | Error that can be thrown when generating TSL certificates
 data TLSError =

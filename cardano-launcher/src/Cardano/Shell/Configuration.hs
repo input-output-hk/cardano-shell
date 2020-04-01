@@ -20,6 +20,7 @@ import           Data.Yaml (FromJSON (..), withObject, (.:), (.:?))
 import           System.Directory (doesDirectoryExist, setCurrentDirectory)
 
 import           Cardano.Shell.Update.Lib (UpdaterData (..))
+import           Cardano.X509.Configuration (TLSConfiguration)
 
 --------------------------------------------------------------------------------
 -- Configuration
@@ -43,6 +44,7 @@ newtype DaedalusBin = DaedalusBin
 data LauncherOptions = LauncherOptions
     { loConfiguration       :: !(Maybe ConfigurationOptions)
     , loTlsPath             :: !(Maybe FilePath)
+    , loTlsConfig           :: !(Maybe TLSConfiguration)
     , loUpdaterPath         :: !FilePath
     , loUpdaterArgs         :: ![Text]
     , loUpdateArchive       :: !FilePath
@@ -50,7 +52,6 @@ data LauncherOptions = LauncherOptions
     , loWorkingDirectory    :: !FilePath
     , loStateDir            :: !FilePath
     -- On WIN it should set this directory as current.
-    , lologsPrefix          :: !FilePath
     } deriving (Show, Generic)
 
 instance FromJSON LauncherOptions where
@@ -62,20 +63,20 @@ instance FromJSON LauncherOptions where
         updateArchive       <- o .: "updateArchive"
         configuration       <- o .:? "configuration"
         tlsPath             <- o .:? "tlsPath"
+        tlsConfig           <- o .:? "tlsConfig"
         workingDir          <- o .: "workingDir"
         stateDir            <- o .: "stateDir"
-        logsPrefix          <- o .: "logsPrefix"
 
         pure $ LauncherOptions
             configuration
             tlsPath
+            tlsConfig
             updaterPath
             updaterArgs
             updateArchive
             daedalusBin
             workingDir
             stateDir
-            logsPrefix
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys

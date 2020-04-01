@@ -8,15 +8,11 @@ module Main where
 import           Cardano.Prelude hiding (option)
 import qualified Prelude
 
-import           Control.Exception.Safe (throwM)
-
 -- Yes, we should use these seldomly but here it seems quite acceptable.
 import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
 import           Distribution.System (OS (Windows), buildOS)
-
-import           System.FilePath ((</>))
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
@@ -29,9 +25,6 @@ import           Options.Applicative (Parser, ParserInfo, auto, execParser,
                                       fullDesc, header, help, helper, info,
                                       long, metavar, option, optional, progDesc)
 
-import qualified Cardano.BM.Configuration.Model as CM
-import           Cardano.BM.Data.Output
-import           Cardano.BM.Data.Rotation
 import           Cardano.BM.Setup (withTrace)
 import qualified Cardano.BM.Trace as Trace
 import           Cardano.BM.Tracing
@@ -39,8 +32,7 @@ import           Cardano.BM.Tracing
 import           Cardano.Shell.Application (checkIfApplicationIsRunning)
 import           Cardano.Shell.CLI (LauncherOptionPath, getDefaultConfigPath,
                                     getLauncherOptions, launcherArgsParser)
-import           Cardano.Shell.Configuration (ConfigurationOptions (..),
-                                              LauncherOptions (..),
+import           Cardano.Shell.Configuration (LauncherOptions (..),
                                               DaedalusBin (..), getUpdaterData,
                                               getDPath,
                                               setWorkingDirectory)
@@ -48,9 +40,12 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
                                          TLSPath (..), WalletRunner (..),
                                          generateTlsCertificates, runLauncher,
                                          walletRunnerProcess)
-import           Cardano.Shell.Launcher.Types (nullLogging)
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
+import           Cardano.X509.Configuration (TLSConfiguration)
+import           Control.Exception.Safe (throwM)
+
+import           System.FilePath ((</>))
 
 --------------------------------------------------------------------------------
 -- Main
@@ -77,7 +72,7 @@ main = silence $ do
 
     -- This function either stubs out the wallet exit code or
     -- returns the "real" function.
-    let walletExecutionFunction =
+    let walletExectionFunction =
             WalletRunner $ \daedalusBin walletArguments -> do
                 -- Check if we have any exit codes remaining.
                 stubExitCodes       <- readIORef walletTestExitCodesMVar
@@ -109,37 +104,8 @@ main = silence $ do
                         -- Otherwise run the real deal, the real function.
                         runDefaultUpdateProcess filePath arguments
 
-    -- We get the launcher options. We don't log them currently because of the cat-mouse deps.
-    launcherOptions <- do
-        eLauncherOptions <- getLauncherOptions nullLogging (launcherConfigPath launcherCLI)
-        case eLauncherOptions of
-            Left err -> do
-                putTextLn $
-                    "Error occured while parsing configuration file: " <> show err
-                throwM $ LauncherOptionsError (show err)
-            Right lo -> pure lo
 
     logConfig           <- defaultConfigStdout
-    let logfilepath     = lologsPrefix launcherOptions </> "launcher"
-
-    -- We configure the logging to be on stdout and in the file as well.
-    CM.setSetupScribes logConfig
-        [ScribeDefinition {
-            scName      = toS logfilepath,
-            scFormat    = ScText,
-            scKind      = FileSK,
-            scPrivacy   = ScPublic,
-            scRotation  = Just $ RotationParameters
-                { rpLogLimitBytes = 10000000
-                , rpMaxAgeHours   = 24
-                , rpKeepFilesNum  = 3
-                }
-        }]
-
-    CM.setDefaultScribes logConfig
-        [ "StdoutSK::text"
-        , "FileSK::" <> toS logfilepath
-        ]
 
     -- A safer way to close the tracing.
     withTrace logConfig "launcher" $ \baseTrace -> do
@@ -155,6 +121,15 @@ main = silence $ do
 
         setEnv "LC_ALL" "en_GB.UTF-8"
         setEnv "LANG"   "en_GB.UTF-8"
+
+        launcherOptions <- do
+            eLauncherOptions <- getLauncherOptions loggingDependencies (launcherConfigPath launcherCLI)
+            case eLauncherOptions of
+                Left err -> do
+                    logErrorMessage baseTrace $
+                        "Error occured while parsing configuration file: " <> show err
+                    throwM $ LauncherOptionsError (show err)
+                Right lo -> pure lo
 
         let lockFile = loStateDir launcherOptions </> "daedalus_lockfile"
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
@@ -172,8 +147,8 @@ main = silence $ do
             throwM . WorkingDirectoryDoesNotExist $ workingDir
 
         -- Configuration from the launcher options.
-        let mConfigurationOptions :: Maybe ConfigurationOptions
-            mConfigurationOptions = loConfiguration launcherOptions
+        let mTlsConfig :: Maybe TLSConfiguration
+            mTlsConfig = loTlsConfig launcherOptions
 
         let daedalusBin :: DaedalusBin
             daedalusBin = getDPath launcherOptions
@@ -187,14 +162,14 @@ main = silence $ do
             mTlsPath = TLSPath <$> loTlsPath launcherOptions
 
         -- If the path doesn't exist, then TLS has been disabled!
-        case (mTlsPath, mConfigurationOptions) of
-            (Just tlsPath, Just configurationOptions) -> do
+        case (mTlsPath, mTlsConfig) of
+            (Just tlsPath, Just tlsConfig) -> do
                 -- | If we need to, we first check if there are certificates so we don't have
                 -- to generate them. Since the function is called `generate...`, that's what
                 -- it does, it generates the certificates.
                 eTLSGeneration <- generateTlsCertificates
                     loggingDependencies
-                    configurationOptions
+                    tlsConfig
                     tlsPath
 
                 case eTLSGeneration of
@@ -208,7 +183,7 @@ main = silence $ do
         -- Finally, run the launcher once everything is set up!
         exitCode <- runLauncher
                         loggingDependencies
-                        walletExecutionFunction
+                        walletExectionFunction
                         daedalusBin
                         updaterExecutionFunction
                         updaterData

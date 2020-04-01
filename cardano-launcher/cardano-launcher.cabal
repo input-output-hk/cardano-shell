@@ -74,6 +74,7 @@ executable cardano-launcher
       base >=4.7 && <5
     , cardano-prelude
     , cardano-launcher
+    , cardano-sl-x509
     -- formatting
     , filepath
     , formatting
@@ -89,7 +90,6 @@ executable cardano-launcher
     , optparse-applicative
     -- directory
     , directory
-    , filepath
 
   if os(windows)
     ghc-options: -optl-mwindows
