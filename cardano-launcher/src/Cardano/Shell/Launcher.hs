@@ -187,7 +187,7 @@ runWalletProcess
 
     -- Additional arguments we need to pass if it's a SAFE mode.
     let walletSafeModeArgs :: WalletArguments
-        walletSafeModeArgs = WalletArguments [ "--safe-mode", "--disable-gpu", "--disable-d3d11" ]
+        walletSafeModeArgs = WalletArguments [ "--safe-mode" ]
 
     -- Daedalus safe mode.
     let walletArgs :: WalletArguments
