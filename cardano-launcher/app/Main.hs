@@ -46,6 +46,7 @@ import           Cardano.X509.Configuration (TLSConfiguration)
 import           Control.Exception.Safe (throwM)
 
 import           System.FilePath ((</>))
+import           System.IO (hClose)
 
 --------------------------------------------------------------------------------
 -- Main
@@ -131,11 +132,14 @@ main = silence $ do
                     throwM $ LauncherOptionsError (show err)
                 Right lo -> pure lo
 
-        let lockFile = loStateDir launcherOptions </> "daedalus_lockfile"
+        let stateDir :: FilePath
+            stateDir = loStateDir launcherOptions
+
+        let lockFile = stateDir </> "daedalus_lockfile"
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
         -- Check if it's locked or not. Will throw an exception if the
         -- application is already running.
-        _                   <- checkIfApplicationIsRunning lockFile
+        lockHandle          <- checkIfApplicationIsRunning lockFile
 
         let workingDir = loWorkingDirectory launcherOptions
 
@@ -187,6 +191,10 @@ main = silence $ do
                         daedalusBin
                         updaterExecutionFunction
                         updaterData
+                        stateDir
+
+        -- release the lock on the lock file
+        hClose lockHandle
 
         -- Exit the program with exit code.
         exitWith exitCode

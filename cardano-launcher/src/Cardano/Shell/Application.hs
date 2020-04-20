@@ -53,7 +53,7 @@ instance Show ApplicationError where
 -- it can find the app state dir by config, or from the server environment. It can release
 -- the lock file on shutdown (ok, that's actually automatic, but it fits
 -- into the framework as a nice example).
-checkIfApplicationIsRunning :: FilePath -> IO ()
+checkIfApplicationIsRunning :: FilePath -> IO Handle
 checkIfApplicationIsRunning lockFilePath = do
 
     fileExist <- doesFileExist lockFilePath
@@ -71,4 +71,4 @@ checkIfApplicationIsRunning lockFilePath = do
         throwM ApplicationAlreadyRunningException
 
     -- Otherwise, all is good.
-    return ()
+    return lockfileHandle
