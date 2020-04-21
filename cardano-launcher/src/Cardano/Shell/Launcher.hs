@@ -11,6 +11,8 @@ module Cardano.Shell.Launcher
     -- * Functions
     , runLauncher
     , runWalletProcess
+    , saveSafeMode
+    , readSafeMode
     -- * Critical exports (testing)
     , DaedalusExitCode (..)
     , handleDaedalusExitCode
@@ -27,6 +29,8 @@ module Cardano.Shell.Launcher
 import           Cardano.Prelude hiding (onException)
 
 import           Prelude (Show (..))
+import           Data.Aeson (FromJSON, ToJSON(toJSON), genericParseJSON, genericToJSON, defaultOptions)
+import           Data.Yaml as Y
 import qualified System.Process as Process
 import           Turtle (system)
 
@@ -73,6 +77,25 @@ data WalletMode
     = WalletModeNormal
     | WalletModeSafe
     deriving (Eq, Show)
+
+instance FromJSON WalletMode where
+  parseJSON (String "safe") = pure WalletModeSafe
+  parseJSON (String "normal") = pure WalletModeNormal
+  parseJSON _ = pure WalletModeNormal
+
+instance ToJSON WalletMode where
+  toJSON WalletModeNormal = String "normal"
+  toJSON WalletModeSafe = String "safe"
+
+data SafeModeConfig = SafeModeConfig
+  { smcSafeMode :: WalletMode
+  } deriving (Generic, Show)
+
+instance FromJSON SafeModeConfig where
+  parseJSON = genericParseJSON defaultOptions
+
+instance ToJSON SafeModeConfig where
+  toJSON = genericToJSON defaultOptions
 
 -- | All the important exit codes. Since we cover "other" cases as well, this is a total mapping.
 -- That is good.
@@ -125,6 +148,22 @@ instance Isomorphism DaedalusExitCode ExitCode where
 -- Functions
 --------------------------------------------------------------------------------
 
+readSafeMode :: FilePath -> IO WalletMode
+readSafeMode stateDir = do
+  let safeModeConfigFile = getSafeModeConfigPath stateDir
+  decoded <- liftIO $ Y.decodeFileEither safeModeConfigFile
+  case decoded of
+    Right value -> pure $ smcSafeMode value
+    Left _      -> pure WalletModeNormal
+
+saveSafeMode :: FilePath -> WalletMode -> IO ()
+saveSafeMode stateDir mode = do
+  let safeModeConfigFile = getSafeModeConfigPath stateDir
+  Y.encodeFile safeModeConfigFile $ SafeModeConfig mode
+
+getSafeModeConfigPath :: FilePath -> FilePath
+getSafeModeConfigPath stateDir = stateDir </> "safemode.yaml"
+
 -- | Here we handle the exit codes.
 -- It's a simple mapping from exit code to actions that the launcher takes.
 --
@@ -165,6 +204,7 @@ runWalletProcess
     -> WalletRunner
     -> RunUpdateFunc
     -> UpdaterData
+    -> FilePath
     -> IO ExitCode
 runWalletProcess
     logDep
@@ -172,18 +212,22 @@ runWalletProcess
     daedalusBin
     walletRunner
     runUpdateFunc
-    updaterData = do
+    updaterData
+    stateDir = do
 
     -- Parametrized by @WalletMode@ so we can change it on restart depending
     -- on the Daedalus exit code.
     let restart :: WalletMode -> IO ExitCode
-        restart =  \walletMode' -> runWalletProcess
+        restart =  \walletMode' -> do
+              saveSafeMode stateDir walletMode'
+              runWalletProcess
                         logDep
                         walletMode'
                         daedalusBin
                         walletRunner
                         runUpdateFunc
                         updaterData
+                        stateDir
 
     -- Additional arguments we need to pass if it's a SAFE mode.
     let walletSafeModeArgs :: WalletArguments
@@ -269,8 +313,10 @@ runLauncher
     -> DaedalusBin
     -> RunUpdateFunc
     -> UpdaterData
+    -> FilePath
     -> IO ExitCode
-runLauncher loggingDependencies walletRunner daedalusBin runUpdateFunc updaterData = do
+runLauncher loggingDependencies walletRunner daedalusBin runUpdateFunc updaterData stateDir = do
+        safeMode <- readSafeMode stateDir
 
         -- In the case the user wants to avoid installing the update now, we
         -- run the update (if there is one) when we have it downloaded.
@@ -283,11 +329,12 @@ runLauncher loggingDependencies walletRunner daedalusBin runUpdateFunc updaterDa
         -- You still want to run the wallet even if the update fails
         runWalletProcess
             loggingDependencies
-            WalletModeNormal
+            safeMode
             daedalusBin
             walletRunner
             runUpdateFunc
             updaterData
+            stateDir
 
 -- | Generation of the TLS certificates.
 -- This just covers the generation of the TLS certificates and nothing else.

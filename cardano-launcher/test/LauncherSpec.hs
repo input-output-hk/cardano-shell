@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module LauncherSpec where
 
@@ -21,9 +22,10 @@ import           Cardano.Shell.CLI (LauncherOptionPath (..),
                                     decodeLauncherOption, setupEnvVars)
 import           Cardano.Shell.Configuration (LauncherOptions (..),
                                               setWorkingDirectory)
-import           Cardano.Shell.Launcher (DaedalusExitCode (..),
+import           Cardano.Shell.Launcher (DaedalusExitCode (..), WalletMode (..),
                                          RestartRunner (..), UpdateRunner (..),
-                                         handleDaedalusExitCode)
+                                         handleDaedalusExitCode,
+                                         readSafeMode, saveSafeMode)
 import           Cardano.Shell.Launcher.Types (nullLogging)
 
 -- | The simple launcher spec.
@@ -32,7 +34,17 @@ launcherSpec = do
     configurationSpec
     launcherSystemSpec
     setWorkingDirectorySpec
+    safeModeSpec
     --generateTLSCertSpec
+
+safeModeSpec :: Spec
+safeModeSpec =
+    describe "safemode persisting system" $ modifyMaxSuccess (const 10000) $ do
+
+        prop "safemode roundtrips" $ \(mode :: WalletMode) -> monadicIO $ do
+            run $ saveSafeMode "/tmp" mode
+            readback <- run $ readSafeMode "/tmp"
+            assert $ mode == readback
 
 -- | The launcher system spec.
 launcherSystemSpec :: Spec
@@ -85,6 +97,9 @@ newtype ExitCodeNumber = ExitCodeNumber { getExitCodeNumber :: Int }
 -- http://tldp.org/LDP/abs/html/exitcodes.html
 instance Arbitrary ExitCodeNumber where
     arbitrary = ExitCodeNumber <$> elements [1, 2, 126, 127, 128, 130, 255]
+
+instance Arbitrary WalletMode where
+  arbitrary = elements [ WalletModeSafe, WalletModeNormal ]
 
 -- | List of files we want to test on
 -- These are config files downloaded from Daedalus CI
