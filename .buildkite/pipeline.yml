@@ -1,12 +1,20 @@
 steps:
+  # TODO: @craige fix this
   - label: 'stack coveralls coverage'
     command:
       - 'nix-shell -A runCoveralls'
+    soft_fail:
+      - exit_status: '*'
     agents:
       system: x86_64-linux
 
-  - label: 'check-hydra'
-    command: 'ci/check-hydra.sh'
+  - label: 'check-cabal-project'
+    command: 'nix-build ./nix -A iohkNix.checkCabalProject -o check-cabal-project.sh && ./check-cabal-project.sh'
+    agents:
+      system: x86_64-linux
+
+  - label: 'stack-cabal-sync'
+    command: 'nix-shell ./nix -A iohkNix.stack-cabal-sync-shell --run scripts/buildkite/stack-cabal-sync.sh'
     agents:
       system: x86_64-linux
 
@@ -14,3 +22,4 @@ steps:
     command: 'ci/check-regenerate-nix.sh'
     agents:
       system: x86_64-linux
+

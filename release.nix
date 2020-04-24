@@ -1,68 +1,95 @@
+############################################################################
+#
+# Hydra release jobset.
+#
+# The purpose of this file is to select jobs defined in default.nix and map
+# them to all supported build platforms.
+#
+############################################################################
+
+# The project sources
+{ cardano-shell? { outPath = ./.; rev = "abcdef"; }
+
+# Function arguments to pass to the project
+, projectArgs ? {
+    config = { allowUnfree = false; inHydra = true; };
+    gitrev = cardano-shell.rev;
+  }
+
+# The systems that the jobset will be built for.
+, supportedSystems ? [ "x86_64-linux" ]
+
+# The systems used for cross-compiling
+, supportedCrossSystems ? [ "x86_64-linux" ]
+
+# A Hydra option
+, scrubJobs ? true
+
+# Dependencies overrides
+, sourcesOverride ? {}
+
+# Import pkgs, including IOHK common nix lib
+, pkgs ? import ./nix { inherit sourcesOverride; }
+
+}:
+
+with (import pkgs.iohkNix.release-lib) {
+  inherit pkgs;
+  inherit supportedSystems supportedCrossSystems scrubJobs projectArgs;
+  packageSet = import cardano-shell;
+  gitrev = cardano-shell.rev;
+};
+
+with pkgs.lib;
+
 let
-  commonLib = import ./nix/iohk-common.nix;
-in
-commonLib.nix-tools.release-nix {
-  package-set-path = ./.;
-
-  # packages from our stack.yaml or plan file (via nix/pkgs.nix) we
-  # are interested in building on CI via nix-tools.
-  packages = [ "cardano-shell" "cardano-launcher" ];
-
-  # non nix-tools jobs from default.nix that we want to build for
-  # all supported systems.
-  builds-on-supported-systems = [ "shell" ];
-
-  # The set of jobs we consider crutial for each CI run.
-  # if a single one of these fails, the build will be marked
-  # as failed.
-  #
-  # The names can be looked up on hydra when in doubt.
-  #
-  # custom jobs will follow their name as set forth in
-  # other-packages.
-  #
-  # nix-tools packages are prefixed with `nix-tools` and
-  # follow the following naming convention:
-  #
-  #   namespace                      optional cross compilation prefix                 build machine
-  #   .-------.                              .-----------------.                .--------------------------.
-  #   nix-tools.{libs,exes,tests,benchmarks}.{x86_64-pc-mingw-,}$pkg.$component.{x86_64-linux,x86_64-darwin}
-  #             '--------------------------'                    '-------------'
-  #                 component type                          cabal pkg and component*
-  #
-  # * note that for `libs`, $component is empty, as cabal only
-  #   provides a single library for packages right now.
-  # * note that for `exes`, $component is also empty, because it
-  #   it provides all exes under a single result directory.
-  #   To  specify a single executable component to build, use
-  #   `cexes` as component type.
-  #
-  # Example:
-  #
-  #   nix-tools.libs.cardano-shell.x86_64-darwin -- will build the cardano-shell library on and for macOS
-  #   nix-tools.libs.x86_64-pc-mingw32-cardano-shell.x86_64-linux -- will build the cardano-shell library on linux for windows.
-  #   nix-tools.tests.cardano-shell.cardano-shell-test.x86_64-linux -- will build and run the tests from the
-  #                                                                    cardano-shell package on linux.
-
-  # The required jobs that must pass for ci not to fail:
-  required-name = "cardano-shell-required-checks";
-  required-targets = jobs: [
-    # TODO(KS): I find this very strange, we need the tests to cover crosscompilation as well,
-    # since I see some that should have failed!
-
-    # targets are specified using above nomenclature:
-    jobs.nix-tools.tests.cardano-shell.cardano-shell-test.x86_64-linux
-
-    jobs.nix-tools.exes.cardano-shell.x86_64-linux
-
-    # cross-compilation
-    jobs.nix-tools.libs.x86_64-pc-mingw32-cardano-shell.x86_64-linux
-    # tests
-    jobs.tests.ipc.x86_64-linux
-    # jobs.tests.ipc.x86_64-darwin # See comment in test.nix
-    jobs.nix-tools.tests.cardano-launcher.cardano-launcher-test.x86_64-linux
-  ];
-  extraBuilds = {
-    tests.ipc = import ./test.nix;
+  getArchDefault = system: let
+    table = {
+      x86_64-linux = import ./. { system = "x86_64-linux"; };
+    };
+  in table.${system};
+  default = getArchDefault builtins.currentSystem;
+  makeScripts = cluster: let
+    getScript = name: {
+      x86_64-linux = (getArchDefault "x86_64-linux").scripts.${cluster}.${name};
+    };
+  in {
+    node = getScript "node";
   };
-}
+  mkPins = inputs: pkgs.runCommand "ifd-pins" {} ''
+    mkdir $out
+    cd $out
+    ${lib.concatMapStringsSep "\n" (input: "ln -sv ${input.value} ${input.key}") (lib.attrValues (lib.mapAttrs (key: value: { inherit key value; }) inputs))}
+  '';
+
+  testsSupportedSystems = [ "x86_64-linux" "x86_64-darwin" ];
+  # Recurse through an attrset, returning all test derivations in a list.
+  collectTests' = ds: filter (d: elem d.system testsSupportedSystems) (collect isDerivation ds);
+  # Adds the package name to the test derivations for windows-testing-bundle.nix
+  # (passthru.identifier.name does not survive mapTestOn)
+  collectTests = ds: concatLists (
+    mapAttrsToList (packageName: package:
+      map (drv: drv // { inherit packageName; }) (collectTests' package)
+    ) ds);
+
+  # Remove build jobs for which cross compiling does not make sense.
+  filterJobsCross = filterAttrs (n: _: n != "dockerImage" && n != "shell");
+
+  sources = import ./nix/sources.nix;
+
+  jobs = {
+    native = mapTestOn (__trace (__toJSON (packagePlatforms project)) (packagePlatforms project));
+    # TODO: fix broken evals
+    ifd-pins = mkPins {
+      inherit (sources) iohk-nix "haskell.nix";
+      inherit (import "${sources.iohk-nix}/nix/sources.nix" {}) nixpkgs;
+      #hackageSrc = (import pkgs.path (import sources."haskell.nix")).haskell-nix.hackageSrc;
+      #stackageSrc = (import pkgs.path (import sources."haskell.nix")).haskell-nix.stackageSrc;
+    };
+  } // (mkRequiredJob (
+      collectTests jobs.native.checks ++
+      collectTests jobs.native.benchmarks ++ [
+      jobs.native.node-ipc.x86_64-linux
+    ]));
+
+in jobs
