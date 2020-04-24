@@ -11,6 +11,9 @@ copyright:      2018 IOHK
 license:        Apache-2.0
 license-files:  LICENSE, NOTICE
 build-type:     Simple
+extra-source-files:
+    configuration/launcher/jormungandr/launcher-config-qa.linux.yaml
+    configuration/launcher/jormungandr/launcher-config-qa.windows.yaml
 
 source-repository head
   type: git

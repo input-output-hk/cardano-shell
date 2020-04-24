@@ -1,5 +1,6 @@
 status = [
   "buildkite/cardano-shell",
+  "ci/hydra-eval",
   "ci/hydra:Cardano:cardano-shell:required",
 ]
 timeout_sec = 7200
