@@ -1,16 +1,27 @@
 steps:
-  - label: 'stack coveralls coverage'
-    command:
-      - 'nix-shell -A runCoveralls'
+  # TODO: Fix the coveralls test
+  #- label: 'stack coveralls coverage'
+  #  command:
+  #    - 'nix-shell -A runCoveralls'
+  #  agents:
+  #    system: x86_64-linux
+
+  - label: hydra-eval-errors
+    command: 'nix-build ./nix -A iohkNix.hydraEvalErrors && ./result/bin/hydra-eval-errors.py'
     agents:
       system: x86_64-linux
 
-  - label: 'check-hydra'
-    command: 'ci/check-hydra.sh'
+  - label: 'check-cabal-project'
+    command: 'nix-build ./nix -A iohkNix.checkCabalProject -o check-cabal-project.sh && ./check-cabal-project.sh'
     agents:
       system: x86_64-linux
 
-  - label: 'stack2nix'
-    command: 'ci/check-regenerate-nix.sh'
+  - label: 'release.nix'
+    command: 'nix-build -A check-hydra -o check-hydra.sh && ./check-hydra.sh'
+    agents:
+      system: x86_64-linux
+
+  - label: 'stack-cabal-sync'
+    command: 'nix-shell ./nix -A iohkNix.stack-cabal-sync-shell --run scripts/buildkite/stack-cabal-sync.sh'
     agents:
       system: x86_64-linux
