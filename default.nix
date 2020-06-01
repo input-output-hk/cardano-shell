@@ -22,7 +22,7 @@ let
     (selectProjectPackages cardanoNodeHaskellPackages);
 
   self = {
-    inherit haskellPackages check-hydra;
+    inherit haskellPackages hydraEvalErrors;
 
     inherit (haskellPackages.cardano-shell.identifier) version;
     # Grab the executable component of our package.
