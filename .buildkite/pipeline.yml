@@ -1,10 +1,9 @@
 steps:
-  # TODO: Fix the coveralls test
-  #- label: 'stack coveralls coverage'
-  #  command:
-  #    - 'nix-shell -A runCoveralls'
-  #  agents:
-  #    system: x86_64-linux
+  - label: 'stack coveralls coverage'
+    command:
+      - 'nix-shell -A runCoveralls'
+    agents:
+      system: x86_64-linux
 
   - label: hydra-eval-errors
     command: 'nix-build ./nix -A iohkNix.hydraEvalErrors && ./result/bin/hydra-eval-errors.py'
