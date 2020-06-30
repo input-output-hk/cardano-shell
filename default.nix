@@ -65,6 +65,7 @@ let
         shc --repo-token=$COVERALLS_REPO_TOKEN combined all
         exit
       '';
+      STACK_IN_NIX_SHELL = true;
     };
 
     shell = import ./shell.nix {
