@@ -39,7 +39,7 @@ module Cardano.Shell.NodeIPC.Lib
     , isNodeChannelCannotBeFound
     ) where
 
-import           Cardano.Prelude hiding (catches, finally, handle)
+import           Cardano.Prelude hiding (Handler, catches, finally, handle)
 
 import           Control.Exception.Safe (Handler (..), catches, finally)
 import           Data.Aeson (FromJSON (parseJSON), ToJSON (toEncoding),
@@ -47,6 +47,8 @@ import           Data.Aeson (FromJSON (parseJSON), ToJSON (toEncoding),
                              genericToEncoding)
 import           Data.Aeson.Types (Options, SumEncoding (ObjectWithSingleField),
                                    sumEncoding)
+import qualified Data.Text as Text
+
 import           GHC.IO.Handle (hIsEOF, hIsOpen, hIsReadable, hIsWritable)
 import           GHC.IO.Handle.FD (fdToHandle)
 
@@ -155,7 +157,7 @@ instance Arbitrary MsgOut where
             ]
 
 genSafeText :: Gen Text
-genSafeText = strConv Lenient <$> listOf1 arbitraryASCIIChar
+genSafeText = Text.pack <$> listOf1 arbitraryASCIIChar
 
 opts :: Options
 opts = defaultOptions { sumEncoding = ObjectWithSingleField }
@@ -215,9 +217,9 @@ data NodeIPCError
 instance Show NodeIPCError where
     show = \case
         NodeChannelNotFound envName ->
-            "Environment variable cannot be found: " <> strConv Lenient envName
+            "Environment variable cannot be found: " <> Text.unpack envName
         UnableToParseNodeChannel err ->
-            "Unable to parse file descriptor: " <> strConv Lenient err
+            "Unable to parse file descriptor: " <> Text.unpack err
         IPCError ->
             "IOError has occured"
         HandleClosed h ->

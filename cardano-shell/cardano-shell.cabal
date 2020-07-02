@@ -104,6 +104,7 @@ test-suite cardano-shell-test
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , cardano-shell
     , cardano-prelude
     -- quickcheck
@@ -111,6 +112,7 @@ test-suite cardano-shell-test
     -- SM
     , quickcheck-state-machine >= 0.6
     -- required because of QSM
+    , text
     , tree-diff
     -- tests
     , hspec

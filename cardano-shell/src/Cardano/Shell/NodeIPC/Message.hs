@@ -32,7 +32,7 @@ data MessageException
     = DecodeFail BSL.ByteString
 
 instance Show MessageException where
-    show (DecodeFail blob) = "Failed to decode given blob: " <> toS blob
+    show (DecodeFail blob) = "Failed to decode given blob: " <> BSLC.unpack blob
 
 instance Exception MessageException
 

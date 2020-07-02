@@ -11,6 +11,8 @@ module NodeIPCSpec
 import           Cardano.Prelude
 
 import           Data.Aeson (FromJSON, ToJSON, encode)
+import qualified Data.ByteString.Lazy.Char8 as LBS
+import qualified Data.Text.Encoding as Text
 import           GHC.IO.Handle (hIsOpen)
 import           System.IO (hClose)
 import           System.IO.Error (eofErrorType, mkIOError, IOError)
@@ -49,7 +51,7 @@ nodeIPCSpec = do
                     assert $ isLeft (eResult :: Either MessageException MsgIn)
 
     describe "startIPC" $ do
-        modifyMaxSuccess (const 1000) $ prop "model based testing" $ 
+        modifyMaxSuccess (const 1000) $ prop "model based testing" $
             -- Have both MsgIn and MsgOut in order to test failing cases
             \(eMsg :: Either MsgOut MsgIn) (randomPort :: Port) -> monadicIO $ do
                 response <- run $ either
@@ -169,9 +171,9 @@ whenLeft _        _ = pure ()
 modelResponse :: Port -> Either MsgOut MsgIn -> MsgOut
 modelResponse (Port portNumber) = \case
     Left msgOut ->
-        let errorMessage = "Failed to decode given blob: " <> toS (encode msgOut)
+        let errorMessage = "Failed to decode given blob: " <> Text.decodeUtf8 (LBS.toStrict $ encode msgOut)
         in MessageOutFailure $ ParseError errorMessage
-    Right QueryPort -> 
+    Right QueryPort ->
         ReplyPort portNumber
     Right Ping ->
         Pong

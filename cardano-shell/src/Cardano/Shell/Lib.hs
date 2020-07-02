@@ -7,11 +7,13 @@ module Cardano.Shell.Lib
     , runCardanoApplicationWithFeatures
     ) where
 
-import           Cardano.Prelude hiding (async, cancel, (%))
+import           Cardano.Prelude hiding (Handler, async, cancel, (%))
 import           Prelude (Show (..))
 
 import           Control.Concurrent.Classy.Async (async, cancel)
 import qualified Control.Concurrent.Classy.Async as CA
+
+import qualified Data.Text as Text
 
 import           Formatting (bprint, build, formatToString, stext, (%))
 import           Formatting.Buildable (Buildable (..))
@@ -33,7 +35,7 @@ instance Exception GeneralException
 
 instance Buildable GeneralException where
     build UnknownFailureException               = bprint ("Something went wrong and we don't know what.")
-    build (FileNotFoundException filePath)      = bprint ("File not found on path '"%stext%"'.") (strConv Lenient filePath)
+    build (FileNotFoundException filePath)      = bprint ("File not found on path '"%stext%"'.") (Text.pack filePath)
     build (ConfigurationError etext)            = bprint ("Configuration error: "%stext%".") etext
 
 -- | Instance so we can see helpful error messages when something goes wrong.
