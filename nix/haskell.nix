@@ -46,6 +46,9 @@ let
 
       }
       {
+        # These tests need files from the source tree.
+        packages.cardano-launcher.components.tests.cardano-launcher-test.keepSource = true;
+
         # Packages we wish to ignore version bounds of.
         # This is similar to jailbreakCabal, however it
         # does not require any messing with cabal files.
