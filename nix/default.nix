@@ -2,7 +2,7 @@
 , crossSystem ? null
 , config ? {}
 , sourcesOverride ? {}
-}@args:
+}:
 let
   sources = import ./sources.nix { inherit pkgs; }
     // sourcesOverride;
@@ -51,7 +51,7 @@ let
 
   pkgs = import nixpkgs {
     inherit system crossSystem overlays;
-    config = haskellNix.config // args.config;
+    config = haskellNix.config // config;
   };
 
 in pkgs
