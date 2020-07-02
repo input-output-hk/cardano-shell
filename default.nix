@@ -47,14 +47,14 @@ let
       GIT_SSL_CAINFO    = "${cacert}/etc/ssl/certs/ca-bundle.crt";
       SSL_CERT_FILE     = "${cacert}/etc/ssl/certs/ca-bundle.crt";
       NIX_SSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
-      SYSTEM_CERTIFICATE_PATH = "${cacert}/etc/ssl/certs/ca-bundle.crt";
+      ;
       shellHook = ''
         echo "GIT_SSL_CAINFO: $GIT_SSL_CAINFO"
         echo "SSL_CERT_FILE: $SSL_CERT_FILE"
         echo "NIX_SSL_CERT_FILE: $NIX_SSL_CERT_FILE"
 
         echo '~~~ stack nix test'
-        stack test --nix --coverage
+        SYSTEM_CERTIFICATE_PATH="${cacert}/etc/ssl/certs/ca-bundle.crt" stack test --nix --coverage
         echo '~~~ shc'
         shc --repo-token=$COVERALLS_REPO_TOKEN combined all
         exit
