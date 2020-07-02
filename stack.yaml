@@ -1,4 +1,4 @@
-resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/3c40edcf5bdba8721d3430d0aaaeea8770ce9bec/snapshot.yaml
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/316c854d1d3089f480708ad5cd5ecf8a74423ddd/snapshot.yaml
 
 packages:
 - ./cardano-shell
@@ -10,20 +10,27 @@ extra-deps:
   - pretty-show-1.9.5               # Used for quickcheck-state-machine.
   - time-units-1.0.0
   - silently-1.2.5.1
+  - network-3.1.1.1
 
   - Win32-2.5.4.1@sha256:e623a1058bd8134ec14d62759f76cac52eee3576711cb2c4981f398f1ec44b85
 
   - git: https://github.com/input-output-hk/cardano-prelude
-    commit: 3c40edcf5bdba8721d3430d0aaaeea8770ce9bec
+    commit: 316c854d1d3089f480708ad5cd5ecf8a74423ddd
     subdirs:
       - .
       - test
 
   - git: https://github.com/input-output-hk/iohk-monitoring-framework
-    commit: 4956b32f039579a0e7e4fd10793f65b4c77d9044
+    commit: efa4b5ecd7f0a13124616b12679cd42517cd905a
     subdirs:
       - contra-tracer
       - iohk-monitoring
+      - tracer-transformers
+
+  - git: https://github.com/input-output-hk/ouroboros-network
+    commit: 1361bb92814c65e5964732777fc7f8ec9ebdccfe
+    subdirs:
+      - Win32-network
 
   # Extracted from cardano-sl since it's quite useful
   - git: https://github.com/input-output-hk/cardano-sl-x509

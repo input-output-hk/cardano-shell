@@ -2,6 +2,7 @@ module Cardano.Shell.Update.Types where
 
 import           Cardano.Prelude
 
+import qualified Data.Text as Text
 import qualified Data.Map as M
 import           Test.QuickCheck (Gen, choose, frequency, listOf1)
 
@@ -55,7 +56,7 @@ genInstallerHash = InstallerHash <$> genSafeText
 
 -- | Generate random ascii string, it's very simplifed.
 genSafeText :: Gen Text
-genSafeText = strConv Lenient <$> (listOf1 $ choose ('a', 'z'))
+genSafeText = Text.pack <$> (listOf1 $ choose ('a', 'z'))
 
 genBlock :: Gen Block
 genBlock = Block <$> genBlockHash <*> genMaybeInstallerVersion
