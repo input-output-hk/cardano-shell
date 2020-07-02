@@ -1,58 +1,36 @@
-index-state: 2020-04-01T00:00:00Z
-
 packages:
-  cardano-shell
-  cardano-launcher
+  ./cardano-shell
+  ./cardano-launcher
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-sl-x509
   tag: 43a036c5bbe68ca2e9cbe611eab7982e2348fe49
-  --sha256: 1aw7ns8lv51fjf45k8yzils2j7a6bqzy8hn65kb3z0dn1qsm8x88
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-prelude
   tag: 3c40edcf5bdba8721d3430d0aaaeea8770ce9bec
-  --sha256: 1z77nwjxj0v9gxhs3mlmqfq705mkkcpnwgr0d8shykjvf0iqdkcn
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-prelude
   tag: 3c40edcf5bdba8721d3430d0aaaeea8770ce9bec
-  --sha256: 1z77nwjxj0v9gxhs3mlmqfq705mkkcpnwgr0d8shykjvf0iqdkcn
   subdir: test
 
 source-repository-package
   type: git
   location: http://github.com/well-typed/canonical-json
   tag: ddfe3593b80b5ceb88842bb7a6f2268df75d2c2f
-  --sha256: 02fzn1xskis1lc1pkz0j92v6ipd89ww0k2p3dvwpm3yap5dpnm7k
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/ouroboros-network
-  tag: 7971422035c0c9e3e35358559b0d441baa24d1d2
-  --sha256: 1f1g8bnqv0j8vpy0cc8r18bp5xglk21n141309l218hgqlh12a9i
-  subdir: Win32-network
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: 4956b32f039579a0e7e4fd10793f65b4c77d9044
-  --sha256: 03lyb2m4i6p7rpjqarnhsx21nx48fwk6rzsrx15k6274a4bv0pix
   subdir: iohk-monitoring
+  tag: 4956b32f039579a0e7e4fd10793f65b4c77d9044
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: 4956b32f039579a0e7e4fd10793f65b4c77d9044
-  --sha256: 03lyb2m4i6p7rpjqarnhsx21nx48fwk6rzsrx15k6274a4bv0pix
   subdir:   contra-tracer
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
   tag: 4956b32f039579a0e7e4fd10793f65b4c77d9044
-  --sha256: 03lyb2m4i6p7rpjqarnhsx21nx48fwk6rzsrx15k6274a4bv0pix
-  subdir:   tracer-transformers
