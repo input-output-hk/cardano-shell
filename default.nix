@@ -44,7 +44,9 @@ let
     runCoveralls = pkgs.stdenv.mkDerivation {
       name = "run-coveralls";
       buildInputs = [ commonLib.stack-hpc-coveralls stack_1_9_3 ];
-      NIX_SSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
+      GIT_SSL_CAINFO="${cacert}/etc/ssl/certs/ca-certificates.crt";
+      SSL_CERT_FILE="${cacert}/etc/ssl/certs/ca-certificates.crt";
+      # NIX_SSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
       shellHook = ''
         echo '~~~ stack nix test'
         stack test --nix --coverage
