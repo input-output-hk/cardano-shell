@@ -13,14 +13,14 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-prelude
-  tag: 3c40edcf5bdba8721d3430d0aaaeea8770ce9bec
-  --sha256: 1z77nwjxj0v9gxhs3mlmqfq705mkkcpnwgr0d8shykjvf0iqdkcn
+  tag: 316c854d1d3089f480708ad5cd5ecf8a74423ddd
+  --sha256: 1srbl3jrkmpwypdz0yrx4nmah3qcsr93dp48zx2bamg51c4hcsyj
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-prelude
-  tag: 3c40edcf5bdba8721d3430d0aaaeea8770ce9bec
-  --sha256: 1z77nwjxj0v9gxhs3mlmqfq705mkkcpnwgr0d8shykjvf0iqdkcn
+  tag: 316c854d1d3089f480708ad5cd5ecf8a74423ddd
+  --sha256: 1srbl3jrkmpwypdz0yrx4nmah3qcsr93dp48zx2bamg51c4hcsyj
   subdir: test
 
 source-repository-package
@@ -39,21 +39,20 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: 4956b32f039579a0e7e4fd10793f65b4c77d9044
-  --sha256: 03lyb2m4i6p7rpjqarnhsx21nx48fwk6rzsrx15k6274a4bv0pix
+  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
+  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
   subdir: iohk-monitoring
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: 4956b32f039579a0e7e4fd10793f65b4c77d9044
-  --sha256: 03lyb2m4i6p7rpjqarnhsx21nx48fwk6rzsrx15k6274a4bv0pix
+  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
+  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
   subdir:   contra-tracer
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: 4956b32f039579a0e7e4fd10793f65b4c77d9044
-  --sha256: 03lyb2m4i6p7rpjqarnhsx21nx48fwk6rzsrx15k6274a4bv0pix
+  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
+  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
   subdir:   tracer-transformers
-
