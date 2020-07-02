@@ -44,10 +44,14 @@ let
     runCoveralls = pkgs.stdenv.mkDerivation {
       name = "run-coveralls";
       buildInputs = [ commonLib.stack-hpc-coveralls stack_1_9_3 ];
-      GIT_SSL_CAINFO="${cacert}/etc/ssl/certs/ca-certificates.crt";
-      SSL_CERT_FILE="${cacert}/etc/ssl/certs/ca-certificates.crt";
-      # NIX_SSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
+      GIT_SSL_CAINFO    ="${cacert}/etc/ssl/certs/ca-bundle.crt";
+      SSL_CERT_FILE     ="${cacert}/etc/ssl/certs/ca-bundle.crt";
+      NIX_SSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
       shellHook = ''
+        echo "GIT_SSL_CAINFO: $GIT_SSL_CAINFO"
+        echo "SSL_CERT_FILE: $SSL_CERT_FILE"
+        echo "NIX_SSL_CERT_FILE: $NIX_SSL_CERT_FILE"
+
         echo '~~~ stack nix test'
         stack test --nix --coverage
         echo '~~~ shc'
