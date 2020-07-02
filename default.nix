@@ -45,6 +45,7 @@ let
       name = "run-coveralls";
       buildInputs = [ commonLib.stack-hpc-coveralls stack_1_9_3 ];
       shellHook = ''
+        NIX_SSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
         echo '~~~ stack nix test'
         stack test --nix --coverage
         echo '~~~ shc'
