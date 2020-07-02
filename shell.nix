@@ -23,25 +23,28 @@ let
     ];
 
     # These programs will be available inside the nix-shell.
-    buildInputs = with haskellPackages; [
+    buildInputs = (with haskellPackages; [
+      profiteur
+      weeder
+    ]) ++ (with pkgs; [
       cabal-install
       ghcid
+      git
       hlint
-      weeder
-      nix
       niv
+      nix
       pkgconfig
-      profiteur
       sqlite-interactive
       tmux
-      git
-    ];
+    ]);
 
     # Prevents cabal from choosing alternate plans, so that
     # *all* dependencies are provided by Nix.
     exactDeps = true;
 
     inherit withHoogle;
+
+    GIT_SSL_CAINFO = "${cacert}/etc/ssl/certs/ca-bundle.crt";
   };
 
   devops = pkgs.stdenv.mkDerivation {
