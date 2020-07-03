@@ -19,9 +19,10 @@ let
 
   haskellPackages = recRecurseIntoAttrs
     # the Haskell.nix package set, reduced to local packages.
-    (selectProjectPackages cardanoNodeHaskellPackages);
+    (selectProjectPackages cardanoShellHaskellPackages);
 
   self = {
+    inherit cardanoShellHaskellPackages;
     inherit haskellPackages hydraEvalErrors;
 
     inherit (haskellPackages.cardano-shell.identifier) version;
