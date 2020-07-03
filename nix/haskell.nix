@@ -25,13 +25,6 @@ let
     ghc = buildPackages.haskell-nix.compiler.${compiler};
   } // {
     inherit src;
-    pkg-def-extras = [
-      (hackage: {
-        packages = {
-          "async-timer" = hackage."async-timer"."0.2.0.0".revisions.default;
-        };
-      })
-    ];
     modules = [
       { compiler.nix-name = compiler; }
 
