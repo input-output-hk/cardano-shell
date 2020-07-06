@@ -75,6 +75,7 @@ in defaultNix // {
     name = "run-coveralls";
     buildInputs = with pkgs; [ commonLib.stack-hpc-coveralls stack ];
     shellHook = ''
+      echo 'Noop'
       echo '~~~ stack nix test'
       stack test --nix --coverage
       echo '~~~ shc'
