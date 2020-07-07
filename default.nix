@@ -44,8 +44,10 @@ let
 
     runCoveralls = pkgs.stdenv.mkDerivation {
       name = "run-coveralls";
-      buildInputs = with pkgs; [ commonLib.stack-hpc-coveralls stack ];
+      buildInputs = [ commonLib.stack-hpc-coveralls stack_1_9_3 nix ];
       shellHook = ''
+        export GIT_SSL_CAINFO="${cacert}/etc/ssl/certs/ca-bundle.crt"
+
         echo '~~~ stack nix test'
         stack test --nix --coverage
         echo '~~~ shc'
