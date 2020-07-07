@@ -3,8 +3,6 @@ steps:
   - label: 'stack coveralls coverage'
     command:
       - 'nix-shell -A runCoveralls'
-    soft_fail:
-      - exit_status: '*'
     agents:
       system: x86_64-linux
 
