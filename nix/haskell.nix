@@ -56,6 +56,7 @@ let
         '';
 
         packages.cardano-launcher.components.library.doCoverage = true;
+        packages.cardano-launcher.components.library.keepSource = true;
         packages.cardano-launcher.components.library.postInstall = ''
           cp -r dist/hpc $out/share
         '';
@@ -71,8 +72,14 @@ let
           done
           ls -lah .hpc/
           find .hpc -iname '*.mix' -print
+          echo ${src}
+          cp -r ${src}/cardano-launcher/src ./
+          ls -lah
           $SETUP_HS build
           $SETUP_HS test
+        '';
+        packages.cardano-launcher.components.tests.cardano-launcher-test.postInstall = ''
+          cp -r dist/hpc $out/share
         '';
         # packages.cardano-launcher.components.tests.cardano-launcher-test.preCheck = ''echo "HELLO"'';
         # packages.cardano-launcher.checks.cardano-launcher-test.doCoverage = true;
