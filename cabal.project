@@ -21,6 +21,10 @@ package cardano-launcher
 
 -- ---------------------------------------------------------
 
+-- The iohk-monitoring requires async-timer >= 0.2.0.0 but does not
+-- list this constraint in it's cabal file.
+constraints: async-timer >= 0.2.0.0
+
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-sl-x509

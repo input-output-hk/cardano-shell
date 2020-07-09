@@ -38,6 +38,15 @@ let
       })
       # And, of course, our haskell-nix-ified cabal project:
       (import ./pkgs.nix)
+      # stack needs to be version 1.9.3, because versions greater than
+      # this can't be re-execed in a nix shell:
+      #
+      # https://github.com/commercialhaskell/stack/issues/5000
+      #
+      # i.e. "runCoveralls" fails with stack > 1.9.3
+      (self: super: {
+        stack_1_9_3 = (import sources."nixpkgs-19.03" {}).stack;
+      })
     ];
 
   pkgs = import nixpkgs {

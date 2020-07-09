@@ -1,6 +1,6 @@
 # our packages overlay
 pkgs: _: with pkgs; {
-  cardanoNodeHaskellPackages = import ./haskell.nix {
+  cardanoShellHaskellPackages = import ./haskell.nix {
     inherit config
       lib
       stdenv
