@@ -49,6 +49,41 @@ let
         # These tests need files from the source tree.
         packages.cardano-launcher.components.tests.cardano-launcher-test.keepSource = true;
 
+        # Coverage
+        packages.cardano-shell.components.library.doCoverage = true;
+        packages.cardano-shell.components.library.postInstall = ''
+          cp -r dist/hpc $out/share
+        '';
+
+        packages.cardano-launcher.components.library.doCoverage = true;
+        packages.cardano-launcher.components.library.keepSource = true;
+        packages.cardano-launcher.components.library.postInstall = ''
+          cp -r dist/hpc $out/share
+        '';
+
+        # packages.cardano-launcher.components.tests.cardano-launcher-test.doCheck = true;
+        packages.cardano-launcher.components.tests.cardano-launcher-test.doCoverage = true;
+        packages.cardano-launcher.components.tests.cardano-launcher-test.preBuild = ''
+          mkdir .hpc
+          for outdir in $buildInputs; do
+            if [ -d "$outdir" ]; then
+              find "$outdir" -iname '*.mix' -exec sh -c 'mixdir="$(basename $(dirname $1))"; mkdir -p .hpc/$mixdir; ln -s $1 --target-directory=.hpc/$mixdir' sh {} \;
+            fi
+          done
+          ls -lah .hpc/
+          find .hpc -iname '*.mix' -print
+          echo ${src}
+          cp -r ${src}/cardano-launcher/src ./
+          ls -lah
+          $SETUP_HS build
+          $SETUP_HS test
+        '';
+        packages.cardano-launcher.components.tests.cardano-launcher-test.postInstall = ''
+          cp -r dist/hpc $out/share
+        '';
+        # packages.cardano-launcher.components.tests.cardano-launcher-test.preCheck = ''echo "HELLO"'';
+        # packages.cardano-launcher.checks.cardano-launcher-test.doCoverage = true;
+
         # Packages we wish to ignore version bounds of.
         # This is similar to jailbreakCabal, however it
         # does not require any messing with cabal files.
@@ -82,7 +117,7 @@ let
     ];
     # TODO add flags to packages (like cs-ledger) so we can turn off tests that will
     # not build for windows on a per package bases (rather than using --disable-tests).
-    configureArgs = lib.optionalString stdenv.hostPlatform.isWindows "--disable-tests";
+    configureArgs = (lib.optionalString stdenv.hostPlatform.isWindows "--disable-tests");
   });
 in
   pkgSet

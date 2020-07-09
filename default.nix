@@ -42,16 +42,40 @@ let
       tests = collectChecks haskellPackages;
     };
 
-    runCoveralls = pkgs.stdenv.mkDerivation {
+    runCoveralls = cardanoShellHaskellPackages.shellFor {
       name = "run-coveralls";
-      buildInputs = [ commonLib.stack-hpc-coveralls stack_1_9_3 nix ];
-      shellHook = ''
-        export GIT_SSL_CAINFO="${cacert}/etc/ssl/certs/ca-bundle.crt"
 
-        echo '~~~ stack nix test'
-        stack test --nix --coverage
-        echo '~~~ shc'
-        shc --repo-token=$COVERALLS_REPO_TOKEN combined all
+      packages = ps: with ps; [
+         ps.cardano-shell
+         ps.cardano-launcher
+         ps.cardano-prelude
+         ps.canonical-json
+         ps.iohk-monitoring
+         ps.Win32-network
+      ];
+  
+      # These programs will be available inside the nix-shell.
+      buildInputs = (with haskellPackages; [
+      ]) ++ (with pkgs; [
+        cabal-install
+        git
+        commonLib.stack-hpc-coveralls
+        pkgconfig
+      ]);
+  
+      # Prevents cabal from choosing alternate plans, so that
+      # *all* dependencies are provided by Nix.
+      exactDeps = true;
+  
+      GIT_SSL_CAINFO = "${cacert}/etc/ssl/certs/ca-bundle.crt";
+
+      shellHook = ''
+        # echo '~~~ cabal coverage'
+        # cabal clean
+        # cabal build all
+      #   cabal test all
+      #   echo '~~~ shc'
+      #   shc --repo-token=$COVERALLS_REPO_TOKEN combined all
         exit
       '';
     };

@@ -20,6 +20,9 @@ let
     packages = ps: with ps; [
        ps.cardano-shell
        ps.cardano-launcher
+       ps.cardano-prelude
+       ps.canonical-json
+       ps.iohk-monitoring
     ];
 
     # These programs will be available inside the nix-shell.
