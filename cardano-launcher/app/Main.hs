@@ -13,9 +13,11 @@ import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
 import           Distribution.System (OS (Windows), buildOS)
+import           System.Directory
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
+import           System.Posix.Files
 import           System.Process (proc, waitForProcess, withCreateProcess)
 
 import           Formatting (bprint, build, formatToString)
@@ -134,6 +136,12 @@ main = silence $ do
 
         let stateDir :: FilePath
             stateDir = loStateDir launcherOptions
+            workingDir = loWorkingDirectory launcherOptions
+
+        createDirectoryIfMissing True stateDir
+        createDirectoryIfMissing True workingDir
+
+        setFileMode stateDir (foldl' unionFileModes ownerReadMode [ ownerWriteMode, ownerExecuteMode])
 
         let lockFile = stateDir </> "daedalus_lockfile"
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
@@ -141,11 +149,7 @@ main = silence $ do
         -- application is already running.
         lockHandle          <- checkIfApplicationIsRunning lockFile
 
-        let workingDir = loWorkingDirectory launcherOptions
 
-
-        -- Every platform will run a script before running the launcher that creates a
-        -- working directory, so workingDir should always exist.
         unlessM (setWorkingDirectory workingDir) $ do
             logErrorMessage baseTrace $ "Working directory does not exist: " <> toS workingDir
             throwM . WorkingDirectoryDoesNotExist $ workingDir
