@@ -2,3 +2,7 @@
 *                       @ksaric @erikd @oneEdoubleD @Jimbo4350
 
 # Specific reviewers for code pieces
+
+doc                          @docs-access
+README.*                     @docs-access
+.readthedocs.yml             @docs-access
