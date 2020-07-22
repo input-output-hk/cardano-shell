@@ -16,12 +16,12 @@ cardano-node
    :titlesonly:
    :hidden:
 
-   document
-   configuration
-   dhall
-   launcher
-   usage
-   plan
+   getting-started/document
+   getting-started/configuration
+   getting-started/dhall
+   getting-started/launcher
+   getting-started/usage
+   getting-started/plan
 
 .. toctree::
    :maxdepth: 3
@@ -29,6 +29,6 @@ cardano-node
    :titlesonly:
    :hidden:
 
-   update-system
-   architecture
+   reference/update-system
+   reference/architecture
    ../CONTRIBUTING
