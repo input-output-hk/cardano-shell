@@ -1,6 +1,6 @@
-############
-cardano-node
-############
+#############
+cardano-shell
+#############
 
 .. include:: ../README.rst
 
