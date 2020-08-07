@@ -59,8 +59,8 @@ discussion is whether we should have a need for a restart on a
 module/process.
 
 For more info about the architecture, please take a look at
-`here <ARCHITECTURE.md>`__. For more info about the launcher, please
-take a look at `here <LAUNCHER.md>`__.
+`here <reference/architecture.md>`__. For more info about the launcher, please
+take a look at `here <getting-started/launcher.md>`__.
 
 Example
 -------
