@@ -1,8 +1,7 @@
 steps:
-  # TODO: @craige fix this
-  - label: 'stack coveralls coverage'
+  - label: 'coveralls coverage'
     command:
-      - 'nix-shell -A runCoveralls'
+      - '$(nix-build -A uploadCoverallsScript --arg config "{ haskellNix = { coverage = true; }; }")/bin/uploadCoveralls.sh'
     agents:
       system: x86_64-linux
 

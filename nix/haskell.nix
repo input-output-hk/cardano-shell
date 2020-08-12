@@ -10,6 +10,8 @@
 , compiler ? config.haskellNix.compiler or "ghc865"
 # Enable profiling
 , profiling ? config.haskellNix.profiling or false
+# Enable coverage
+, coverage ? config.haskellNix.coverage or false
 }:
 let
   src = haskell-nix.haskellLib.cleanGit {
@@ -25,6 +27,7 @@ let
     ghc = buildPackages.haskell-nix.compiler.${compiler};
   } // {
     inherit src;
+    compiler-nix-name = compiler;
     modules = [
       { compiler.nix-name = compiler; }
 
@@ -78,6 +81,10 @@ let
         packages.lens.package.buildType = lib.mkForce "Simple";
         packages.nonempty-vector.package.buildType = lib.mkForce "Simple";
         packages.semigroupoids.package.buildType = lib.mkForce "Simple";
+      })
+      (lib.optionalAttrs coverage {
+        packages.cardano-launcher.components.library.doCoverage = true;
+        packages.cardano-shell.components.library.doCoverage = true;
       })
     ];
     # TODO add flags to packages (like cs-ledger) so we can turn off tests that will
