@@ -148,3 +148,26 @@ these tools in the project repo:
 .. |cardano-shell| image:: https://user-images.githubusercontent.com/6264437/47286557-70baf200-d5ef-11e8-8fe7-8584a9d6ae44.jpg
 .. |cardano-shell-responsibilities| image:: https://user-images.githubusercontent.com/6264437/47286789-736a1700-d5f0-11e8-9056-514101b237f0.jpg
 .. |cardano-shell-integration| image:: https://user-images.githubusercontent.com/6264437/47286815-88df4100-d5f0-11e8-92a7-c807b6d3b47a.jpg
+
+Coverage
+~~~~~~~~
+
+You can generate a coverage report for the entire project like so:
+
+::
+
+   nix-build -A cardanoShellHaskellPackages.projectCoverageReport --arg config "{ haskellNix = { coverage = true; }; }"
+
+or for each package like this:
+
+::
+
+   nix-build -A cardanoShellHaskellPackages.cardano-shell.coverageReport --arg config "{ haskellNix = { coverage = true; }; }"
+   nix-build -A cardanoShellHaskellPackages.cardano-launcher.coverageReport --arg config "{ haskellNix = { coverage = true; }; }"
+
+The CI is currently configured to upload a project coverage report to
+a coverage web service. It does this using the script provided by:
+
+::
+
+   $(nix-build -A uploadCoverallsScript --arg config "{ haskellNix = { coverage = true; }; }")/bin/uploadCoveralls.sh

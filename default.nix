@@ -21,6 +21,18 @@ let
     # the Haskell.nix package set, reduced to local packages.
     (selectProjectPackages cardanoShellHaskellPackages);
 
+  uploadCoverallsScript = pkgSet:
+    let
+      projectPkgs = selectProjectPackages pkgSet;
+      projectCoverageReport = pkgSet.projectCoverageReport;
+    in writeShellScriptBin "uploadCoveralls.sh" ''
+      ${commonLib.hpc-coveralls}/bin/hpc-coveralls all \
+        ${concatStringsSep "\n  " (mapAttrsToList (_: p: "--package-dir .${p.src.origSubDir} \\") projectPkgs)}
+        --hpc-dir ${projectCoverageReport}/share/hpc/vanilla \
+        --coverage-mode StrictlyFullLines \
+        --repo-token=$COVERALLS_REPO_TOKEN
+    '';
+
   self = {
     inherit cardanoShellHaskellPackages;
     inherit haskellPackages hydraEvalErrors;
@@ -42,23 +54,12 @@ let
       tests = collectChecks haskellPackages;
     };
 
-    runCoveralls = pkgs.stdenv.mkDerivation {
-      name = "run-coveralls";
-      buildInputs = [ commonLib.stack-hpc-coveralls stack_1_9_3 nix ];
-      shellHook = ''
-        export GIT_SSL_CAINFO="${cacert}/etc/ssl/certs/ca-bundle.crt"
-
-        echo '~~~ stack nix test'
-        stack test --nix --coverage
-        echo '~~~ shc'
-        shc --repo-token=$COVERALLS_REPO_TOKEN combined all
-        exit
-      '';
-    };
+    inherit (commonLib) hpc-coveralls;
+    uploadCoverallsScript = uploadCoverallsScript cardanoShellHaskellPackages;
 
     shell = import ./shell.nix {
       inherit pkgs;
       withHoogle = true;
     };
-};
+  };
 in self
