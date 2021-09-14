@@ -205,6 +205,7 @@ runWalletProcess
     -> RunUpdateFunc
     -> UpdaterData
     -> FilePath
+    -> Maybe Text
     -> IO ExitCode
 runWalletProcess
     logDep
@@ -213,7 +214,8 @@ runWalletProcess
     walletRunner
     runUpdateFunc
     updaterData
-    stateDir = do
+    stateDir
+    mURL = do
 
     -- Parametrized by @WalletMode@ so we can change it on restart depending
     -- on the Daedalus exit code.
@@ -228,16 +230,17 @@ runWalletProcess
                         runUpdateFunc
                         updaterData
                         stateDir
+                        mURL
 
     -- Additional arguments we need to pass if it's a SAFE mode.
-    let walletSafeModeArgs :: WalletArguments
-        walletSafeModeArgs = WalletArguments [ "--safe-mode" ]
+    let walletSafeModeArgs :: [Text]
+        walletSafeModeArgs = [ "--safe-mode" ]
 
     -- Daedalus safe mode.
     let walletArgs :: WalletArguments
-        walletArgs =    if walletMode == WalletModeSafe
+        walletArgs =  WalletArguments $ (if walletMode == WalletModeSafe
                             then walletSafeModeArgs
-                            else WalletArguments []
+                            else []) <> maybeToList mURL
 
     logNotice logDep $ "Starting the wallet with arguments: " <> Cardano.Prelude.show walletArgs
 
@@ -314,8 +317,9 @@ runLauncher
     -> RunUpdateFunc
     -> UpdaterData
     -> FilePath
+    -> Maybe Text
     -> IO ExitCode
-runLauncher loggingDependencies walletRunner daedalusBin runUpdateFunc updaterData stateDir = do
+runLauncher loggingDependencies walletRunner daedalusBin runUpdateFunc updaterData stateDir mURL = do
         safeMode <- readSafeMode stateDir
 
         -- In the case the user wants to avoid installing the update now, we
@@ -335,6 +339,7 @@ runLauncher loggingDependencies walletRunner daedalusBin runUpdateFunc updaterDa
             runUpdateFunc
             updaterData
             stateDir
+            mURL
 
 -- | Generation of the TLS certificates.
 -- This just covers the generation of the TLS certificates and nothing else.

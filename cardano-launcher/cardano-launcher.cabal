@@ -67,6 +67,7 @@ library
                        -Wincomplete-uni-patterns
                        -Wredundant-constraints
                        -Wpartial-fields
+                       -Wno-name-shadowing
 
 executable cardano-launcher
   main-is: Main.hs

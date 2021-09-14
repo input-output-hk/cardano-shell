@@ -123,7 +123,7 @@ main = silence $ do
         setEnv "LC_ALL" "en_GB.UTF-8"
         setEnv "LANG"   "en_GB.UTF-8"
 
-        launcherOptions <- do
+        (launcherOptions, mURL) <- do
             eLauncherOptions <- getLauncherOptions loggingDependencies (launcherConfigPath launcherCLI)
             case eLauncherOptions of
                 Left err -> do
@@ -192,6 +192,7 @@ main = silence $ do
                         updaterExecutionFunction
                         updaterData
                         stateDir
+                        mURL
 
         -- release the lock on the lock file
         hClose lockHandle

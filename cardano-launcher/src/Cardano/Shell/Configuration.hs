@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RecordWildCards            #-}
 
 module Cardano.Shell.Configuration
     ( WalletArguments (..)
@@ -57,26 +58,17 @@ data LauncherOptions = LauncherOptions
 instance FromJSON LauncherOptions where
     parseJSON = withObject "LauncherOptions" $ \o -> do
 
-        daedalusBin         <- o .: "daedalusBin"
-        updaterPath         <- o .: "updaterPath"
-        updaterArgs         <- o .: "updaterArgs"
-        updateArchive       <- o .: "updateArchive"
-        configuration       <- o .:? "configuration"
-        tlsPath             <- o .:? "tlsPath"
-        tlsConfig           <- o .:? "tlsConfig"
-        workingDir          <- o .: "workingDir"
-        stateDir            <- o .: "stateDir"
+        loConfiguration     <- o .:? "configuration"
+        loTlsPath           <- o .:? "tlsPath"
+        loTlsConfig         <- o .:? "tlsConfig"
+        loUpdaterPath       <- o .: "updaterPath"
+        loUpdaterArgs       <- o .: "updaterArgs"
+        loUpdateArchive     <- o .: "updateArchive"
+        loDaedalusBin       <- o .: "daedalusBin"
+        loWorkingDirectory  <- o .: "workingDir"
+        loStateDir          <- o .: "stateDir"
 
-        pure $ LauncherOptions
-            configuration
-            tlsPath
-            tlsConfig
-            updaterPath
-            updaterArgs
-            updateArchive
-            daedalusBin
-            workingDir
-            stateDir
+        pure $ LauncherOptions{..}
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
