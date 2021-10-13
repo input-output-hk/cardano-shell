@@ -24,9 +24,9 @@
         cardano-sl-x509 = ./cardano-sl-x509.nix;
         cardano-crypto = ./cardano-crypto.nix;
         };
-      compiler.version = "8.6.5";
-      compiler.nix-name = "ghc865";
+      compiler.version = "8.10.6";
+      compiler.nix-name = "ghc810";
       };
   resolver = "lts-13.26";
-  compiler = "ghc-8.6.5";
+  compiler = "ghc-8.10.6";
   }
