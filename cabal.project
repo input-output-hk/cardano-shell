@@ -1,4 +1,4 @@
-index-state: 2020-05-15T00:00:00Z
+index-state: 2021-10-10T00:00:00Z
 
 packages:
   cardano-shell
@@ -28,21 +28,17 @@ constraints: async-timer >= 0.2.0.0
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-sl-x509
-  tag: 43a036c5bbe68ca2e9cbe611eab7982e2348fe49
-  --sha256: 1aw7ns8lv51fjf45k8yzils2j7a6bqzy8hn65kb3z0dn1qsm8x88
+  tag: 12925934c533b3a6e009b61ede555f8f26bac037
+  --sha256: 1kma25g8sl6m3pgsihja7fysmv6vjdfc0x7dyky9g5z156sh8z7i
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-prelude
-  tag: 316c854d1d3089f480708ad5cd5ecf8a74423ddd
-  --sha256: 1srbl3jrkmpwypdz0yrx4nmah3qcsr93dp48zx2bamg51c4hcsyj
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/cardano-prelude
-  tag: 316c854d1d3089f480708ad5cd5ecf8a74423ddd
-  --sha256: 1srbl3jrkmpwypdz0yrx4nmah3qcsr93dp48zx2bamg51c4hcsyj
-  subdir: test
+  tag: c7fc9fba236972c27a55e0f3d34c2758cf616bfc
+  --sha256: 0sg1hhnifqxfc5n5f9ikbxyrjlg77hynbhsql0h4smqniw29dbwk
+  subdir:
+    cardano-prelude
+    cardano-prelude-test
 
 source-repository-package
   type: git
@@ -52,42 +48,17 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/input-output-hk/ouroboros-network
-  tag: 1361bb92814c65e5964732777fc7f8ec9ebdccfe
-  --sha256: 1znl9zzw5hswcd09zcvmgq50ppp46nbzjmw67wm4wpnw5lhnlwfy
-  subdir: Win32-network
+  location: https://github.com/input-output-hk/Win32-network
+  tag: 3825d3abf75f83f406c1f7161883c438dac7277d
+  --sha256: 19wahfv726fa3mqajpqdqhnl9ica3xmf68i254q45iyjcpj1psqx
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
-  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
-  subdir: iohk-monitoring
+  tag: 808724ff8a19a33d0ed06f9ef59fbd900b08553c
+  --sha256: 0298dpl29gxzs9as9ha6y0w18hqwc00ipa3hzkxv7nlfrjjz8hmz
+  subdir:
+    iohk-monitoring
+    contra-tracer
+    tracer-transformers
 
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
-  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
-  subdir:   contra-tracer
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
-  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
-  subdir:   tracer-transformers
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
-  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
-  subdir: tracer-transformers
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/ouroboros-network
-  tag: 1361bb92814c65e5964732777fc7f8ec9ebdccfe
-  --sha256: 1znl9zzw5hswcd09zcvmgq50ppp46nbzjmw67wm4wpnw5lhnlwfy
-  subdir: Win32-network
