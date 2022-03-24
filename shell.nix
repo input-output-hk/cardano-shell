@@ -24,7 +24,9 @@ let
 
     # These programs will be available inside the nix-shell.
     buildInputs = (with haskellPackages; [
+      hindent
       profiteur
+      stylish-haskell
       weeder
     ]) ++ (with pkgs; [
       cabal-install

@@ -12,7 +12,7 @@ import qualified Prelude
 import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 
-import           Distribution.System (OS (Windows), buildOS)
+import           Distribution.System as OS
 import           System.Environment (setEnv)
 import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
@@ -29,12 +29,13 @@ import           Cardano.BM.Setup (withTrace)
 import qualified Cardano.BM.Trace as Trace
 import           Cardano.BM.Tracing
 
-import           Cardano.Shell.Application (checkIfApplicationIsRunning)
+import           Cardano.Shell.Application (ApplicationError (ApplicationAlreadyRunningException),
+                                            checkIfApplicationIsRunning)
 import           Cardano.Shell.CLI (LauncherOptionPath, getDefaultConfigPath,
                                     getLauncherOptions, launcherArgsParser)
-import           Cardano.Shell.Configuration (LauncherOptions (..),
-                                              DaedalusBin (..), getUpdaterData,
-                                              getDPath,
+import           Cardano.Shell.Configuration (DaedalusBin (..),
+                                              LauncherOptions (..), getDPath,
+                                              getUpdaterData,
                                               setWorkingDirectory)
 import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
                                          TLSPath (..), WalletRunner (..),
@@ -44,6 +45,7 @@ import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
 import           Cardano.X509.Configuration (TLSConfiguration)
 import           Control.Exception.Safe (throwM)
+import           Control.Exception.Safe as E
 
 import           System.FilePath ((</>))
 import           System.IO (hClose)
@@ -137,9 +139,26 @@ main = silence $ do
 
         let lockFile = stateDir </> "daedalus_lockfile"
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
-        -- Check if it's locked or not. Will throw an exception if the
-        -- application is already running.
-        lockHandle          <- checkIfApplicationIsRunning lockFile
+        -- Check if it's locked or not.
+        --
+        -- XXX: In a special case, when `cardano-launcher` is given a
+        -- `mURL` (web+cardano://…) on the command line, we want to
+        -- allow the second instance. Then, Daedalus will notify its
+        -- first instance to handle this particular URL. This needs to
+        -- happen only on Linux and Windows, since macOS has its own
+        -- mechanism to notify already running applications to open
+        -- URLs, which Electron implements. In such a case, we also
+        -- skip TLS setup.
+        --
+        -- Otherwise, will throw an exception if the application is
+        -- already running.
+        (isSecondWindowsInstanceWithURL, lockHandle) <- E.try (checkIfApplicationIsRunning lockFile) >>= \case
+            Right hndl -> pure (False, Just hndl)
+            Left exception@ApplicationAlreadyRunningException ->
+                if isJust mURL && (OS.buildOS == OS.Windows || OS.buildOS == OS.Linux) then
+                    pure (True, Nothing)
+                else
+                    throwM exception
 
         let workingDir = loWorkingDirectory launcherOptions
 
@@ -152,7 +171,7 @@ main = silence $ do
 
         -- Configuration from the launcher options.
         let mTlsConfig :: Maybe TLSConfiguration
-            mTlsConfig = loTlsConfig launcherOptions
+            mTlsConfig = if isSecondWindowsInstanceWithURL then Nothing else loTlsConfig launcherOptions
 
         let daedalusBin :: DaedalusBin
             daedalusBin = getDPath launcherOptions
@@ -195,7 +214,7 @@ main = silence $ do
                         mURL
 
         -- release the lock on the lock file
-        hClose lockHandle
+        mapM_ hClose lockHandle
 
         -- Exit the program with exit code.
         exitWith exitCode
@@ -290,9 +309,9 @@ instance Show LauncherExceptions where
 instance Exception LauncherExceptions
 
 silence :: IO a -> IO a
-silence runAction = case buildOS of
-    Windows -> hSilence [stdout, stderr] runAction
-    _       -> runAction
+silence runAction = case OS.buildOS of
+    OS.Windows -> hSilence [stdout, stderr] runAction
+    _          -> runAction
 
 -- | Log error message
 -- |
