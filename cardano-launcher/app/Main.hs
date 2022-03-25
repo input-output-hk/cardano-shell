@@ -43,7 +43,6 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
 import           Cardano.X509.Configuration (TLSConfiguration)
-import           Control.Exception.Safe (throwM)
 import           Control.Exception.Safe as E
 
 import           System.FilePath ((</>))
