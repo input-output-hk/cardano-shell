@@ -14,7 +14,6 @@ import           Data.Text.Lazy.Builder (fromString, fromText)
 
 import           Distribution.System (OS (Windows), buildOS)
 import           System.Environment (setEnv)
-import           System.Exit (exitWith)
 import           System.IO.Silently (hSilence)
 import           System.Process (proc, waitForProcess, withCreateProcess)
 
@@ -23,7 +22,7 @@ import           Formatting.Buildable (Buildable (..))
 
 import           Options.Applicative (Parser, ParserInfo, auto, execParser,
                                       fullDesc, header, help, helper, info,
-                                      long, metavar, option, optional, progDesc)
+                                      long, metavar, option, progDesc)
 
 import           Cardano.BM.Setup (withTrace)
 import qualified Cardano.BM.Trace as Trace
