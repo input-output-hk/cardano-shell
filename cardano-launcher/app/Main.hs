@@ -144,18 +144,20 @@ main = silence $ do
         -- XXX: In a special case, when `cardano-launcher` is given a
         -- `mURL` (web+cardano://…) on the command line, we want to
         -- allow the second instance. Then, Daedalus will notify its
-        -- first instance to handle this particular URL. This needs to
-        -- happen only on Linux and Windows, since macOS has its own
-        -- mechanism to notify already running applications to open
-        -- URLs, which Electron implements. In such a case, we also
-        -- skip TLS setup.
+        -- first instance to handle this particular URL using internal
+        -- Electron mechanism. This must happen on Linux and Windows,
+        -- since macOS has its own mechanism to notify already running
+        -- applications to open URLs, which Electron implements. But
+        -- it’s nice to have on macOS as well, since the user can
+        -- still run Daedalus from a terminal. In second instance, we
+        -- also skip the TLS setup (Daedalus won’t start 2nd cardano).
         --
         -- Otherwise, will throw an exception if the application is
         -- already running.
-        (isSecondWindowsInstanceWithURL, lockHandle) <- E.try (checkIfApplicationIsRunning lockFile) >>= \case
+        (isSecondInstanceWithURL, lockHandle) <- E.try (checkIfApplicationIsRunning lockFile) >>= \case
             Right hndl -> pure (False, Just hndl)
             Left exception@ApplicationAlreadyRunningException ->
-                if isJust mURL && (OS.buildOS == OS.Windows || OS.buildOS == OS.Linux) then
+                if isJust mURL then
                     pure (True, Nothing)
                 else
                     throwM exception
@@ -171,7 +173,7 @@ main = silence $ do
 
         -- Configuration from the launcher options.
         let mTlsConfig :: Maybe TLSConfiguration
-            mTlsConfig = if isSecondWindowsInstanceWithURL then Nothing else loTlsConfig launcherOptions
+            mTlsConfig = if isSecondInstanceWithURL then Nothing else loTlsConfig launcherOptions
 
         let daedalusBin :: DaedalusBin
             daedalusBin = getDPath launcherOptions
