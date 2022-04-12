@@ -6,8 +6,12 @@
 let
   sources = import ./sources.nix { inherit pkgs; }
     // sourcesOverride;
-  iohkNix = import sources.iohk-nix {};
-  haskellNix = import sources."haskell.nix" {};
+  iohkNix = import sources.iohk-nix { inherit system crossSystem; };
+  haskellNix = import sources."haskell.nix" {
+    # Without that, haskell.nilx tries to call builtins.currentSystem, which fails inside flake builds:
+    pkgs = import nixpkgs { inherit system crossSystem; };
+    inherit system crossSystem;
+  };
   # use our own nixpkgs if it exists in our sources,
   # otherwise use iohkNix default nixpkgs.
   nixpkgs = if (sources ? nixpkgs)
