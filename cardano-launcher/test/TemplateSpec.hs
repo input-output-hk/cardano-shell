@@ -9,7 +9,6 @@ module TemplateSpec
     ) where
 
 import           Cardano.Prelude
-import           Data.Char (isAlphaNum)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
 import           System.IO.Error (userError)
 import           Test.Hspec (Spec)

@@ -29,7 +29,7 @@ module Cardano.Shell.Launcher
 import           Cardano.Prelude hiding (onException)
 
 import           Prelude (Show (..))
-import           Data.Aeson (FromJSON, ToJSON(toJSON), genericParseJSON, genericToJSON, defaultOptions)
+import           Data.Aeson (genericParseJSON, genericToJSON, defaultOptions)
 import           Data.Yaml as Y
 import qualified System.Process as Process
 import           Turtle (system)

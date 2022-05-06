@@ -18,8 +18,6 @@ module NodeIPCSMSpec
 
 import           Cardano.Prelude
 
-import           Data.TreeDiff (ToExpr (..))
-
 import           Test.Hspec (Spec, describe, it)
 
 import           Test.QuickCheck (Gen, Property, arbitrary, generate, oneof,
@@ -188,7 +186,7 @@ nodeIPCSM serverHandles = StateMachine
     , shrinker      = mShrinker
     , semantics     = mSemantics
     , mock          = mMock
-    , distribution  = Nothing
+    , cleanup       = const (pure ())
     }
   where
     -- | Let's handle just Ping/Pong for now.
