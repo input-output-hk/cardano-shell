@@ -63,7 +63,7 @@ checkIfApplicationIsRunning lockFilePath = do
     when (not fileExist) $
         writeFile lockFilePath ""
 
-    lockfileHandle      <- openFile lockFilePath ReadMode
+    lockfileHandle      <- openFile lockFilePath ReadWriteMode
     isAlreadyRunning    <- hTryLock lockfileHandle ExclusiveLock
 
     -- We need to inform the user if the application version is already running.

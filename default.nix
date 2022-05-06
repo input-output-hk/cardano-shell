@@ -17,6 +17,9 @@
 with pkgs; with commonLib;
 let
 
+  # FIXME: I really don’t know if this ↓ is right… – @michalrus
+  hpc-coveralls = cardanoShellHaskellPackages.tool "hpc-coveralls" "0.7.0";
+
   haskellPackages = recRecurseIntoAttrs
     # the Haskell.nix package set, reduced to local packages.
     (selectProjectPackages cardanoShellHaskellPackages);
@@ -26,7 +29,7 @@ let
       projectPkgs = selectProjectPackages pkgSet;
       projectCoverageReport = pkgSet.projectCoverageReport;
     in writeShellScriptBin "uploadCoveralls.sh" ''
-      ${commonLib.hpc-coveralls}/bin/hpc-coveralls all \
+      ${hpc-coveralls}/bin/hpc-coveralls all \
         ${concatStringsSep "\n  " (mapAttrsToList (_: p: "--package-dir .${p.src.origSubDir} \\") projectPkgs)}
         --hpc-dir ${projectCoverageReport}/share/hpc/vanilla \
         --coverage-mode StrictlyFullLines \
@@ -54,7 +57,7 @@ let
       tests = collectChecks haskellPackages;
     };
 
-    inherit (commonLib) hpc-coveralls;
+    inherit hpc-coveralls;
     uploadCoverallsScript = uploadCoverallsScript cardanoShellHaskellPackages;
 
     shell = import ./shell.nix {
