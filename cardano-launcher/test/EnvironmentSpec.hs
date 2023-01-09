@@ -8,7 +8,6 @@ module EnvironmentSpec
     ) where
 
 import           Cardano.Prelude
-import           Data.Char (isAlphaNum)
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Vector as V
 import qualified Data.Yaml as Y
