@@ -49,6 +49,8 @@ import           Data.X509.Extra (genRSA256KeyPair, validateCertificate,
 import           Data.X509.Validation (FailedReason)
 import           System.Directory (createDirectoryIfMissing)
 import           System.FilePath ((</>))
+import           System.Environment (lookupEnv)
+import qualified Data.Text as T
 
 --------------------------------------------------------------------------------
 -- Types
@@ -229,15 +231,20 @@ runWalletProcess
                         updaterData
                         stateDir
 
+    electronExtraArgv <- do
+      lookupEnv "ELECTRON_EXTRA_ARGV" >>= \case
+        Nothing -> pure []
+        Just xs -> pure . T.splitOn "\n" . T.pack $ xs
+
     -- Additional arguments we need to pass if it's a SAFE mode.
     let walletSafeModeArgs :: WalletArguments
-        walletSafeModeArgs = WalletArguments [ "--safe-mode" ]
+        walletSafeModeArgs = WalletArguments ([ "--safe-mode" ] ++ electronExtraArgv)
 
     -- Daedalus safe mode.
     let walletArgs :: WalletArguments
         walletArgs =    if walletMode == WalletModeSafe
                             then walletSafeModeArgs
-                            else WalletArguments []
+                            else WalletArguments electronExtraArgv
 
     logNotice logDep $ "Starting the wallet with arguments: " <> Cardano.Prelude.show walletArgs
 

@@ -75,6 +75,7 @@ executable cardano-launcher
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , containers
     , cardano-prelude
     , cardano-launcher
     , cardano-sl-x509

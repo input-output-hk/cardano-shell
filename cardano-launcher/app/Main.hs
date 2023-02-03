@@ -11,6 +11,7 @@ import qualified Prelude
 -- Yes, we should use these seldomly but here it seems quite acceptable.
 import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
+import qualified Data.Map as M
 
 import           Distribution.System (OS (Windows), buildOS)
 import           System.Environment (setEnv)
@@ -130,6 +131,9 @@ main = silence $ do
                         "Error occured while parsing configuration file: " <> show err
                     throwM $ LauncherOptionsError (show err)
                 Right lo -> pure lo
+
+        forM_ (M.toList (loExtraEnvVars launcherOptions)) $ \(name, value) ->
+          setEnv (toS name) (toS value)
 
         let stateDir :: FilePath
             stateDir = loStateDir launcherOptions

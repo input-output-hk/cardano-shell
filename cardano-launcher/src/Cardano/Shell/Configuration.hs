@@ -18,6 +18,7 @@ import           Cardano.Prelude
 import           Data.Time.Units (Microsecond, fromMicroseconds)
 import           Data.Yaml (FromJSON (..), withObject, (.:), (.:?))
 import           System.Directory (doesDirectoryExist, setCurrentDirectory)
+import qualified Data.Map as M
 
 import           Cardano.Shell.Update.Lib (UpdaterData (..))
 import           Cardano.X509.Configuration (TLSConfiguration)
@@ -52,6 +53,7 @@ data LauncherOptions = LauncherOptions
     , loWorkingDirectory    :: !FilePath
     , loStateDir            :: !FilePath
     -- On WIN it should set this directory as current.
+    , loExtraEnvVars        :: !(M.Map Text Text)
     } deriving (Show, Generic)
 
 instance FromJSON LauncherOptions where
@@ -66,6 +68,7 @@ instance FromJSON LauncherOptions where
         tlsConfig           <- o .:? "tlsConfig"
         workingDir          <- o .: "workingDir"
         stateDir            <- o .: "stateDir"
+        extraEnvVars        <- o .: "extraEnvVars"
 
         pure $ LauncherOptions
             configuration
@@ -77,6 +80,7 @@ instance FromJSON LauncherOptions where
             daedalusBin
             workingDir
             stateDir
+            extraEnvVars
 
 -- | Configuration yaml file location and the key to use. The file should
 -- parse to a MultiConfiguration and the 'cfoKey' should be one of the keys
