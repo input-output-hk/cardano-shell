@@ -1,5 +1,6 @@
 module Cardano.Shell.Application
     ( checkIfApplicationIsRunning
+    , ApplicationError(ApplicationAlreadyRunningException)
     ) where
 
 import           Cardano.Prelude

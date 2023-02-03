@@ -17,7 +17,7 @@ import           Control.Monad.Except (liftEither)
 import           Data.Aeson (Result (..), fromJSON)
 import           Data.Yaml (ParseException, decodeFileEither)
 import           Options.Applicative (Parser, help, long, metavar, short,
-                                      strOption, value)
+                                      strOption, strArgument, value)
 
 import           System.Directory (XdgDirectory (XdgData), getXdgDirectory)
 import           System.Environment (getExecutablePath, setEnv)
@@ -27,8 +27,9 @@ import           Cardano.Shell.Configuration (LauncherOptions)
 import           Cardano.Shell.Launcher.Types (LoggingDependencies (..))
 
 -- | Path to launcher-config.yaml file
-newtype LauncherOptionPath = LauncherOptionPath
+data LauncherOptionPath = LauncherOptionPath
     { getLauncherOptionPath  :: FilePath
+    , getUriToOpen :: Maybe Text
     } deriving (Eq, Show)
 
 -- | Default path to the launcher-config.yaml file
@@ -44,13 +45,18 @@ getDefaultConfigPath = do
 
 -- | CLI for @LauncherOptionPath@
 launcherArgsParser :: FilePath -> Parser LauncherOptionPath
-launcherArgsParser defaultPath = LauncherOptionPath <$> strOption (
+launcherArgsParser defaultPath = LauncherOptionPath
+  <$> strOption (
     short   'c' <>
     long    "config" <>
     help    ("Path to the launcher configuration file. If not provided, it'll\
         \ instead use\n" <> defaultPath) <>
     metavar "PATH" <>
     value defaultPath )
+  <*> (optional $ strArgument (
+    help ("a URL to forward on to daedalus un-altered")
+    <> metavar "URL")
+  )
 
 data LauncherOptionError
     = FailedToParseLauncherOption Text
@@ -65,7 +71,7 @@ data LauncherOptionError
 getLauncherOptions
     :: LoggingDependencies
     -> LauncherOptionPath
-    -> IO (Either LauncherOptionError LauncherOptions)
+    -> IO (Either LauncherOptionError (LauncherOptions, Maybe Text))
 getLauncherOptions logDeps loPath = do
 
     setupEnvVars loPath
@@ -73,7 +79,7 @@ getLauncherOptions logDeps loPath = do
     eLauncherOption <- decodeLauncherOption logDeps loPath
     case eLauncherOption of
         Left decodeError      -> return . Left $ decodeError
-        Right launcherOptions -> return . Right $ launcherOptions
+        Right launcherOptions -> return . Right $ (launcherOptions, getUriToOpen loPath)
 
 -- There a lot of @withExceptT@ 's since all these function returns different
 -- types of @Either@ so I have to make the types align
@@ -99,7 +105,7 @@ decodeLauncherOption logDeps loPath = runExceptT $ do
 -- Set environment variables that we need in order for launcher to perform
 -- env var substitution
 setupEnvVars :: LauncherOptionPath -> IO ()
-setupEnvVars (LauncherOptionPath configPath) = do
+setupEnvVars (LauncherOptionPath configPath _) = do
     daedalusDir <- takeDirectory <$> getExecutablePath
     setEnv "DAEDALUS_INSTALL_DIRECTORY" daedalusDir
     getXdgDirectory XdgData "" >>= setEnv "XDG_DATA_HOME"

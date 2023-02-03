@@ -172,14 +172,14 @@ configurationSpec = describe "configuration files" $ modifyMaxSuccess (const 1) 
         it "should fail due to passing wrong file path" $ monadicIO $ do
             eLauncherOption <- run $ do
                 -- Path to the launcher file is incorrect
-                let launcherOptionPath = LauncherOptionPath "this will fail"
+                let launcherOptionPath = LauncherOptionPath "this will fail" Nothing
                 withSystemTempDirectory "test-XXXXXX" $ \tmpDir ->
                     withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption nullLogging launcherOptionPath
             assert $ isLeft eLauncherOption
 
         it "should fail due to missing env vars" $ monadicIO $ do
             eLauncherOption <- run $ do
-                let launcherOptionPath = LauncherOptionPath (configFullFilePath "launcher-config-mainnet.linux.yaml")
+                let launcherOptionPath = LauncherOptionPath (configFullFilePath "launcher-config-mainnet.linux.yaml") Nothing
                 -- Not environment variables are set!
                 decodeLauncherOption nullLogging launcherOptionPath
             assert $ isLeft eLauncherOption
@@ -191,7 +191,7 @@ configurationSpec = describe "configuration files" $ modifyMaxSuccess (const 1) 
                     let val = String "this is not launcher option"
                     let yamlPath = tmpDir </> "launcher.yaml"
                     encodeFile yamlPath val
-                    let launcherOptionPath = LauncherOptionPath yamlPath
+                    let launcherOptionPath = LauncherOptionPath yamlPath Nothing
                     withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption nullLogging launcherOptionPath
             assert $ isLeft eLauncherOption
 
@@ -199,7 +199,7 @@ configurationSpec = describe "configuration files" $ modifyMaxSuccess (const 1) 
 testGetLauncherOption :: FilePath -> Spec
 testGetLauncherOption configPath = it ("should be able to perform env substitution on config: " <> configPath) $ monadicIO $ do
     eLauncherOption <- run $ do
-        let launcherOptionPath = LauncherOptionPath (configFullFilePath configPath)
+        let launcherOptionPath = LauncherOptionPath (configFullFilePath configPath) Nothing
         withSystemTempDirectory "test-XXXXXX" $ \tmpDir ->
             withSetEnvs launcherOptionPath tmpDir $ decodeLauncherOption nullLogging launcherOptionPath
     run $ putTextLn $ show eLauncherOption

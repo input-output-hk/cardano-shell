@@ -13,7 +13,7 @@ import           Data.IORef (newIORef, readIORef, writeIORef)
 import           Data.Text.Lazy.Builder (fromString, fromText)
 import qualified Data.Map as M
 
-import           Distribution.System (OS (Windows), buildOS)
+import           Distribution.System as OS
 import           System.Environment (setEnv)
 import           System.IO.Silently (hSilence)
 import           System.Process (proc, waitForProcess, withCreateProcess)
@@ -29,12 +29,13 @@ import           Cardano.BM.Setup (withTrace)
 import qualified Cardano.BM.Trace as Trace
 import           Cardano.BM.Tracing
 
-import           Cardano.Shell.Application (checkIfApplicationIsRunning)
+import           Cardano.Shell.Application (ApplicationError (ApplicationAlreadyRunningException),
+                                            checkIfApplicationIsRunning)
 import           Cardano.Shell.CLI (LauncherOptionPath, getDefaultConfigPath,
                                     getLauncherOptions, launcherArgsParser)
-import           Cardano.Shell.Configuration (LauncherOptions (..),
-                                              DaedalusBin (..), getUpdaterData,
-                                              getDPath,
+import           Cardano.Shell.Configuration (DaedalusBin (..),
+                                              LauncherOptions (..), getDPath,
+                                              getUpdaterData,
                                               setWorkingDirectory)
 import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
                                          TLSPath (..), WalletRunner (..),
@@ -43,7 +44,7 @@ import           Cardano.Shell.Launcher (LoggingDependencies (..), TLSError,
 import           Cardano.Shell.Update.Lib (UpdaterData (..),
                                            runDefaultUpdateProcess)
 import           Cardano.X509.Configuration (TLSConfiguration)
-import           Control.Exception.Safe (throwM)
+import           Control.Exception.Safe as E
 
 import           System.FilePath ((</>))
 import           System.IO (hClose)
@@ -123,7 +124,7 @@ main = silence $ do
         setEnv "LC_ALL" "en_GB.UTF-8"
         setEnv "LANG"   "en_GB.UTF-8"
 
-        launcherOptions <- do
+        (launcherOptions, mURL) <- do
             eLauncherOptions <- getLauncherOptions loggingDependencies (launcherConfigPath launcherCLI)
             case eLauncherOptions of
                 Left err -> do
@@ -140,9 +141,28 @@ main = silence $ do
 
         let lockFile = stateDir </> "daedalus_lockfile"
         Trace.logNotice baseTrace $ "Locking file so that multiple applications won't run at same time"
-        -- Check if it's locked or not. Will throw an exception if the
-        -- application is already running.
-        lockHandle          <- checkIfApplicationIsRunning lockFile
+        -- Check if it's locked or not.
+        --
+        -- XXX: In a special case, when `cardano-launcher` is given a
+        -- `mURL` (web+cardano://…) on the command line, we want to
+        -- allow the second instance. Then, Daedalus will notify its
+        -- first instance to handle this particular URL using internal
+        -- Electron mechanism. This must happen on Linux and Windows,
+        -- since macOS has its own mechanism to notify already running
+        -- applications to open URLs, which Electron implements. But
+        -- it’s nice to have on macOS as well, since the user can
+        -- still run Daedalus from a terminal. In second instance, we
+        -- also skip the TLS setup (Daedalus won’t start 2nd cardano).
+        --
+        -- Otherwise, will throw an exception if the application is
+        -- already running.
+        (isSecondInstanceWithURL, lockHandle) <- E.try (checkIfApplicationIsRunning lockFile) >>= \case
+            Right hndl -> pure (False, Just hndl)
+            Left exception@ApplicationAlreadyRunningException ->
+                if isJust mURL then
+                    pure (True, Nothing)
+                else
+                    throwM exception
 
         let workingDir = loWorkingDirectory launcherOptions
 
@@ -155,7 +175,7 @@ main = silence $ do
 
         -- Configuration from the launcher options.
         let mTlsConfig :: Maybe TLSConfiguration
-            mTlsConfig = loTlsConfig launcherOptions
+            mTlsConfig = if isSecondInstanceWithURL then Nothing else loTlsConfig launcherOptions
 
         let daedalusBin :: DaedalusBin
             daedalusBin = getDPath launcherOptions
@@ -195,9 +215,10 @@ main = silence $ do
                         updaterExecutionFunction
                         updaterData
                         stateDir
+                        mURL
 
         -- release the lock on the lock file
-        hClose lockHandle
+        mapM_ hClose lockHandle
 
         -- Exit the program with exit code.
         exitWith exitCode
@@ -292,9 +313,9 @@ instance Show LauncherExceptions where
 instance Exception LauncherExceptions
 
 silence :: IO a -> IO a
-silence runAction = case buildOS of
-    Windows -> hSilence [stdout, stderr] runAction
-    _       -> runAction
+silence runAction = case OS.buildOS of
+    OS.Windows -> hSilence [stdout, stderr] runAction
+    _          -> runAction
 
 -- | Log error message
 -- |
