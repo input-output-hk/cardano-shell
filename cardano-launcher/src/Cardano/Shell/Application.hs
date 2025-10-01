@@ -10,6 +10,7 @@ import           Control.Exception.Safe (throwM)
 import           GHC.IO.Handle.Lock (LockMode (..), hTryLock)
 
 import           System.Directory (doesFileExist)
+import           System.IO (writeFile)
 
 --------------------------------------------------------------------------------
 -- Types

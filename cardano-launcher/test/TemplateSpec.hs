@@ -15,6 +15,7 @@ import           Test.Hspec (Spec)
 import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Arbitrary (..), elements, listOf1, suchThat)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
+import           Data.Text.Lazy (toStrict)
 
 import           Cardano.Shell.Template (substituteA)
 

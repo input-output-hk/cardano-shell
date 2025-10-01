@@ -5,7 +5,7 @@
 
 module Main where
 
-import           Cardano.Prelude hiding (option)
+import           Cardano.Prelude
 import qualified Prelude
 
 -- Yes, we should use these seldomly but here it seems quite acceptable.

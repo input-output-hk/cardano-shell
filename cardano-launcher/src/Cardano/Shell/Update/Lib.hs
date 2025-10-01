@@ -31,10 +31,11 @@ import           Prelude (String)
 import           System.Directory (doesFileExist, removeFile)
 import           System.Process (CreateProcess (..), StdStream (..), proc,
                                  waitForProcess, withCreateProcess)
+import           System.IO (writeFile)
 
 #ifdef mingw32_HOST_OS
 import qualified Data.Text as T
-import           System.Environment (getExecutablePath)
+import           System.Environment (getExecutablePath, getArgs)
 import           System.Win32.Process (getCurrentProcessId)
 #endif
 
@@ -240,7 +241,7 @@ writeWindowsUpdaterRunner runnerPath = do
     launcherArgs    <- getArgs
 
     selfPid         <- getCurrentProcessId
-    writeFile (toS runnerPath) $ T.unlines
+    writeFile (toS runnerPath) . T.unpack $ T.unlines
     -- What info can this file supply if it fails?
     -- How can you make this scream if it fails
     -- Checksum of the updater exe?
