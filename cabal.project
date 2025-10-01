@@ -1,4 +1,20 @@
-index-state: 2020-05-15T00:00:00Z
+-- Custom repository for cardano haskell packages, see CONTRIBUTING for more
+repository cardano-haskell-packages
+  url: https://chap.intersectmbo.org/
+  secure: True
+  root-keys:
+    3e0cce471cf09815f930210f7827266fd09045445d65923e6d0238a6cd15126f
+    443abb7fb497a134c343faf52f0b659bd7999bc06b7f63fa76dc99d631f9bea1
+    a86a1f6ce86c449c46666bda44268677abf29b5b2d2eb5ec7af903ec2f117a82
+    bcec67e8e99cabfa7764d75ad9b158d72bfacf70ca1d0ec8bc6b4406d1bf8413
+    c00aae8461a256275598500ea0e187588c35a5d5d7454fb57eac18d9edb86a56
+    d4a35cd3121aa00d18544bb0ac01c3e1691d618f462c46129271bccf39f7e8ee
+
+-- See CONTRIBUTING for information about these, including some Nix commands
+-- you need to run if you change them
+index-state:
+  , hackage.haskell.org 2025-04-16T18:30:40Z
+  , cardano-haskell-packages 2025-04-29T14:14:35Z
 
 packages:
   cardano-shell
@@ -19,75 +35,51 @@ package cardano-shell
 package cardano-launcher
   tests: True
 
+-- See <https://github.com/IntersectMBO/cardano-api/pull/554/files>
+-- disable c++ nonsense on bitvec, to make it compile. The windows linker/loader
+-- chokes on c++ dependencies.
+package bitvec
+   flags: -simd
+
 -- ---------------------------------------------------------
 
 -- The iohk-monitoring requires async-timer >= 0.2.0.0 but does not
 -- list this constraint in it's cabal file.
-constraints: async-timer >= 0.2.0.0
+-- constraints: async-timer >= 0.2.0.0
 
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/cardano-sl-x509
-  tag: 43a036c5bbe68ca2e9cbe611eab7982e2348fe49
-  --sha256: 1aw7ns8lv51fjf45k8yzils2j7a6bqzy8hn65kb3z0dn1qsm8x88
+  tag: a91add165152fa36f08e95fafe7da24f1dba4690
+  --sha256: 1ia8vlqghis92cla8qmqa6kh8f3jn29b01fshyk5hmgy5373s684
 
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/cardano-prelude
-  tag: 316c854d1d3089f480708ad5cd5ecf8a74423ddd
-  --sha256: 1srbl3jrkmpwypdz0yrx4nmah3qcsr93dp48zx2bamg51c4hcsyj
+-- source-repository-package
+--   type: git
+--   location: https://github.com/input-output-hk/cardano-prelude
+--   tag: c7fc9fba236972c27a55e0f3d34c2758cf616bfc
+--   --sha256: 0sg1hhnifqxfc5n5f9ikbxyrjlg77hynbhsql0h4smqniw29dbwk
+--   subdir:
+--     cardano-prelude
+--     cardano-prelude-test
 
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/cardano-prelude
-  tag: 316c854d1d3089f480708ad5cd5ecf8a74423ddd
-  --sha256: 1srbl3jrkmpwypdz0yrx4nmah3qcsr93dp48zx2bamg51c4hcsyj
-  subdir: test
+-- source-repository-package
+--   type: git
+--   location: http://github.com/well-typed/canonical-json
+--   tag: ddfe3593b80b5ceb88842bb7a6f2268df75d2c2f
+--   --sha256: 02fzn1xskis1lc1pkz0j92v6ipd89ww0k2p3dvwpm3yap5dpnm7k
 
-source-repository-package
-  type: git
-  location: http://github.com/well-typed/canonical-json
-  tag: ddfe3593b80b5ceb88842bb7a6f2268df75d2c2f
-  --sha256: 02fzn1xskis1lc1pkz0j92v6ipd89ww0k2p3dvwpm3yap5dpnm7k
+-- source-repository-package
+--   type: git
+--   location: https://github.com/input-output-hk/Win32-network
+--   tag: 3825d3abf75f83f406c1f7161883c438dac7277d
+--   --sha256: 19wahfv726fa3mqajpqdqhnl9ica3xmf68i254q45iyjcpj1psqx
 
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/ouroboros-network
-  tag: 1361bb92814c65e5964732777fc7f8ec9ebdccfe
-  --sha256: 1znl9zzw5hswcd09zcvmgq50ppp46nbzjmw67wm4wpnw5lhnlwfy
-  subdir: Win32-network
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
-  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
-  subdir: iohk-monitoring
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
-  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
-  subdir:   contra-tracer
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
-  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
-  subdir:   tracer-transformers
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/iohk-monitoring-framework
-  tag: efa4b5ecd7f0a13124616b12679cd42517cd905a
-  --sha256: 0h1h5ifl5d7dl3y6fym9pjd6rfrbh5rbyxs0xw5las503pibv2bf
-  subdir: tracer-transformers
-
-source-repository-package
-  type: git
-  location: https://github.com/input-output-hk/ouroboros-network
-  tag: 1361bb92814c65e5964732777fc7f8ec9ebdccfe
-  --sha256: 1znl9zzw5hswcd09zcvmgq50ppp46nbzjmw67wm4wpnw5lhnlwfy
-  subdir: Win32-network
+-- source-repository-package
+--   type: git
+--   location: https://github.com/input-output-hk/iohk-monitoring-framework
+--   tag: 808724ff8a19a33d0ed06f9ef59fbd900b08553c
+--   --sha256: 0298dpl29gxzs9as9ha6y0w18hqwc00ipa3hzkxv7nlfrjjz8hmz
+--   subdir:
+--     iohk-monitoring
+--     contra-tracer
+--     tracer-transformers

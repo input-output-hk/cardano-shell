@@ -9,13 +9,13 @@ module TemplateSpec
     ) where
 
 import           Cardano.Prelude
-import           Data.Char (isAlphaNum)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
 import           System.IO.Error (userError)
 import           Test.Hspec (Spec)
 import           Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import           Test.QuickCheck (Arbitrary (..), elements, listOf1, suchThat)
 import           Test.QuickCheck.Monadic (assert, monadicIO, run)
+import           Data.Text.Lazy (toStrict)
 
 import           Cardano.Shell.Template (substituteA)
 

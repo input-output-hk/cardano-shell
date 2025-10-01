@@ -11,6 +11,7 @@ import           Cardano.Shell.Template (substituteA)
 import           Data.Yaml (Value (..))
 import           Prelude (Show (..))
 import           System.Environment (lookupEnv)
+import           Data.Text.Lazy (toStrict)
 
 -- | Substitute envrionment variable with value of its name.
 --

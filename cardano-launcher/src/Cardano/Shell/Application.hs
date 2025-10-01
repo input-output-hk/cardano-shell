@@ -10,6 +10,7 @@ import           Control.Exception.Safe (throwM)
 import           GHC.IO.Handle.Lock (LockMode (..), hTryLock)
 
 import           System.Directory (doesFileExist)
+import           System.IO (writeFile)
 
 --------------------------------------------------------------------------------
 -- Types
@@ -63,7 +64,7 @@ checkIfApplicationIsRunning lockFilePath = do
     when (not fileExist) $
         writeFile lockFilePath ""
 
-    lockfileHandle      <- openFile lockFilePath ReadMode
+    lockfileHandle      <- openFile lockFilePath ReadWriteMode
     isAlreadyRunning    <- hTryLock lockfileHandle ExclusiveLock
 
     -- We need to inform the user if the application version is already running.

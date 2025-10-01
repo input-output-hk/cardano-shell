@@ -3,7 +3,6 @@
 module Main where
 
 import Cardano.Prelude
-import System.Exit (exitWith)
 
 seconds :: Int
 seconds = 1000000
